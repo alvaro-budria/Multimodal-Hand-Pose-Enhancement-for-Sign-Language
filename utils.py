@@ -80,7 +80,7 @@ def aa_to_xyz(in_aa=None, lengths_in=None, neck_up=None, neck_low=None, out_aa=N
                 p_E_l = out_kp[:,(22+4*i+j)*3:(22+4*i+j)*3+3]
                 v_r, v_l = p_E_r-p_J_r, p_E_l-p_J_l
     
-    out_kp = hstack(out_kp_r, out_kp_l)
+    out_kp = hstack((out_kp_r, out_kp_l))
     pass
 
 
@@ -110,7 +110,7 @@ def _arm_xyz_to_aa(in_kp, idxs, neck_up, neck_low):
         a = np.cross(u, v)
         a = a / np.linalg.norm(a, axis=1)  # rotation axis
 
-        in_aa = np.hstack(in_aa, np.multiply(a, th[:, np.newaxis])) if in_aa.shape[0]!=0 else np.multiply(a, th[:, np.newaxis])
+        in_aa = np.hstack(( in_aa, np.multiply(a, th[:, np.newaxis]) )) if in_aa.shape[0]!=0 else np.multiply(a, th[:, np.newaxis])
 
         p_B = p_J
         p_J = p_E
@@ -141,13 +141,13 @@ def _wh_xyz_to_aa(out_kp, wrist_r, wrist_l):
             a_r, a_l = np.cross(u_r, v_r), np.cross(u_l, v_l)
             a_r, a_l = a_r / np.linalg.norm(a_r, axis=1), a_l / np.linalg.norm(a_l, axis=1)  # rotation axis
 
-            out_aa_r = np.hstack(out_aa_r, np.multiply(a, th_r[:, np.newaxis])) if out_aa_r.shape[0]!=0 else np.multiply(a, th_r[:, np.newaxis])
-            out_aa_l = np.hstack(out_aa_l, np.multiply(a, th_l[:, np.newaxis])) if out_aa_l.shape[0]!=0 else np.multiply(a, th_l[:, np.newaxis])
+            out_aa_r = np.hstack(( out_aa_r, np.multiply(a, th_r[:, np.newaxis]) )) if out_aa_r.shape[0]!=0 else np.multiply(a, th_r[:, np.newaxis])
+            out_aa_l = np.hstack(( out_aa_l, np.multiply(a, th_l[:, np.newaxis]) )) if out_aa_l.shape[0]!=0 else np.multiply(a, th_l[:, np.newaxis])
 
             p_B_r, p_B_l = p_J_r, p_J_l
             p_J_r, p_J_l = p_E_r, p_E_l
             u_r, u_l = v_r, v_l
-    return np.hstack(out_aa_r, out_aa_l)
+    return np.hstack((out_aa_r, out_aa_l))
 
 
 # Converts the spatial representation of a skeleton into axis-angle representation
@@ -202,7 +202,7 @@ def load_clip(clip_path, pipeline):
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
     in_kp, out_kp = np.array([]), np.array([])
-    for frame in sorted(os.listdir(clip_path))[0:35]:  # for each frame, there is an associated .json file
+    for frame in sorted(os.listdir(clip_path))[0:105]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
             f = open(os.path.join(clip_path, frame))
             data = json.load(f)
@@ -226,7 +226,7 @@ def load_clip(clip_path, pipeline):
 def _load_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:7]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:2]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -257,8 +257,8 @@ def _save(fname, lst):
     f = open(fname, "w")
     for t in range(T):
         for i in range(dim):
-        for j in range(len(lst)):
-            f.write("%e\t" % lst[j][t, i])
+            for j in range(len(lst)):
+                f.write("%e\t" % lst[j][t, i])
         f.write("\n")
     f.close()
 
@@ -338,26 +338,41 @@ def get_joints(kp, idx):
     return kp[:,idx]
 
 
+# given a list of clips (possibly with variable length), lifts the keypoints to 3D
+def clips_2d_to_3d():
+    pass
+
+
+# selects the useful keypoints indicated by the indexes. Input is a list, each element containing the keypoints of a (video) clip
+def select_keypoints(kp, idxs):
+    kp_cp = kp.copy()
+    for i in range(len(kp)):
+        new_kp_i = np.array([])
+        for idx in idxs:
+            new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+3])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+3]
+        kp_cp[i] = new_kp_i
+    return kp_cp
+
+
 if __name__ == "__main__":
     (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_data("./Green Screen RGB clips* (frontal view)")
+    print(len(in_train))
+    print(in_train[0].shape, in_train[1].shape)
+    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    print(neck_train[0].shape)
+    print("*"*50)
+    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+
+    print(arms_train[0].shape)
     
-    neck_train, neck_val, neck_test = in_train[:,NECK], in_val[:,NECK], in_test[:,NECK]
-
-    arms_train, arms_val, arms_test = in_train[:,ARMS], in_val[:,ARMS], in_test[:,ARMS]
-
-    print(out_train.shape)
-    hands_train, hands_val, hands_test = out_train[:,:], out_val[:,:], out_test[:,:]
-
-    wrist_train = np.hstack(in_train[:,WRIST[0]], in_train[:,WRIST[1]])
-
-    , wrist_val, wrist_test = in_train[:,WRIST[]], in_val[:,NECK], in_test[:,NECK]
-
-    
+    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    print(hands_train[0].shape)
     
 
-    train = np.hstack(in_train, out_train)
-    val = np.hstack(in_val, out_val)
-    test = np.hstack(in_test, out_test)
+    train = np.hstack((neck_train, arms_train, hands_train))
+    val = np.hstack((neck_val, arms_val, hands_val))
+    test = np.hstack((neck_test, arms_test, hands_test))
 
     
-    
+    # recover neck and wrist keypoints to reconstruct the model's output, from aa to xyz
+    #wrist_train = np.hstack(in_train[:,WRIST[0]], hands_train[:,WRIST[1]])
