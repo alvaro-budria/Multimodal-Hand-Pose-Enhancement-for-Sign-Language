@@ -22,10 +22,11 @@ def norm(x):
 
 
 # A simple percentile computation.
-# Warning: it sorts input list. 
+# Warning: it sorts input list.
+# if p=0.5, it returns the median
 def perc(lst, p):
   lst.sort()
-  return lst[int(p * (len(lst) - 1))] 
+  return lst[int(p * (len(lst) - 1))]
 
 
 # some substitution
@@ -33,7 +34,7 @@ def computeB(ax, ay, az, tx, ty, L):
   hyps = [
     [tx - ax, ty - ay, 0]
   ]
-  foo = L**2 - (tx - ax)**2 - (ty - ay)**2;
+  foo = L**2 - (tx - ax)**2 - (ty - ay)**2
   if foo >= 0:
     hyps.append([tx - ax, ty - ay, -math.sqrt(foo)])
     hyps.append([tx - ax, ty - ay, +math.sqrt(foo)])

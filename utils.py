@@ -1,6 +1,6 @@
 import os
-import h5py
 import json
+import pickle
 import numpy as np
 
 import sys
@@ -263,76 +263,6 @@ def _save(fname, lst):
     f.close()
 
 
-def lift_2d_to_3d():
-    dtype = "float32"
-    randomNubersGenerator = np.random.RandomState(1234)
-
-    # Getting our structure of skeletal model.
-    structure = skeletalModel.getSkeletalModelStructure()
-
-    # Getting 2D data
-    # The sequence is an N-tuple of
-    #   (1sf point - x, 1st point - y, 1st point - likelihood, 2nd point - x, ...)
-    # a missing point should have x=0, y=0, likelihood=0
-    #f = h5py.File("data/demo-sequence.h5", "r")
-    #inputSequence_2D = numpy.array(f.get("20161025_pocasi"))
-    #f.close()
-    
-    # Decomposition of the single matrix into three matrices: x, y, w (=likelihood)
-    X = inputSequence_2D
-    Xx = X[0:X.shape[0], 0:(X.shape[1]):3]
-    Xy = X[0:X.shape[0], 1:(X.shape[1]):3]
-    Xw = X[0:X.shape[0], 2:(X.shape[1]):3]
-
-    # Normalization of the picture (so x and y axis have the same scale)
-    Xx, Xy, mux, muy, sigma = pose2D.normalization(Xx, Xy)
-    # save mean and standard deviation to denormalize results
-    with open('metadata.json', 'r+') as f:
-        data = json.load(f)
-        data['mux'] = mux
-        data['muy'] = muy
-        data['sigma'] = sigma
-        f.seek(0)
-        json.dump(data, f, indent=4)
-        f.truncate()
-
-    # Delete frames in which skeletal models have a lot of missing parts.
-
-    ##### watchThis ?? per què (0, 1, 2, 3, 4, 5, 6, 7) ?
-    Xx, Xy, Xw = pose2D.prune(Xx, Xy, Xw, (0, 1, 2, 3, 4, 5, 6, 7), 0.3, dtype)
-
-    # Initial 3D pose estimation
-    lines0, rootsx0, rootsy0, rootsz0, anglesx0, anglesy0, anglesz0, Yx0, Yy0, Yz0 = pose2Dto3D.initialization(
-        Xx,
-        Xy,
-        Xw,
-        structure,
-        0.001, # weight for adding noise
-        randomNubersGenerator,
-        dtype
-    )
-
-    # Backpropagation-based filtering
-    Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
-        lines0, 
-        rootsx0,
-        rootsy0, 
-        rootsz0,
-        anglesx0,
-        anglesy0,
-        anglesz0,   
-        Xx,   
-        Xy,
-        Xw,
-        structure,
-        "float32",
-    )
-    _save("3D_keypoints.txt", [Yx, Yy, Yz])
-
-    ######## cal implementar-ho
-    lengths = pose3D.get_bone_length(Yx, Yy, Yz)
-
-
 # returns the keypoints in the specified indexes
 def get_joints(kp, idx):
     return kp[:,idx]
@@ -354,25 +284,133 @@ def select_keypoints(kp, idxs):
     return kp_cp
 
 
+def hconcat_feats(neck, arms, hands):
+    assert [len(neck), len(arms)] == [len(hands), len(hands)]
+    feats = []
+    for i in range(len(neck)):  # for each frame, concat the features
+        temp = np.hstack((neck[i], arms[i]))
+        feats.append( np.hstack((temp, hands[i])) )
+    return feats
+
+
+def save_binary(obj, filename):
+    if filename[-4:] != ".pkl":
+        print("Adding .pkl extension as it was not found.")
+        filename = filename + ".pkl"
+    with open(filename, 'wb') as outfile:
+        pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
+
+
+def load_binary(filename):
+    result = None
+    with open(filename, 'rb') as infile:
+        result = pickle.load(infile)
+    return result
+
+
+def _lift_2d_to_3d(inputSequence_2D):
+    dtype = "float32"
+    randNumGen = np.random.RandomState(1234)
+
+    # Getting our structure of skeletal model.
+    structure = skeletalModel.getSkeletalModelStructure()
+
+    # Getting 2D data
+    # The sequence is an N-tuple of
+    #   (1st point - x, 1st point - y, 1st point - likelihood, 2nd point - x, ...)
+    # a missing point should have x=0, y=0, likelihood=0
+    #f = h5py.File("data/demo-sequence.h5", "r")
+    #inputSequence_2D = numpy.array(f.get("20161025_pocasi"))
+    #f.close()
+
+    # Decomposition of the single matrix into three matrices: x, y, w (=likelihood)
+    X = inputSequence_2D
+    Xx = X[0:X.shape[0], 0:(X.shape[1]):3]
+    Xy = X[0:X.shape[0], 1:(X.shape[1]):3]
+    Xw = X[0:X.shape[0], 2:(X.shape[1]):3]
+
+    # Normalization of the picture (so x and y axis have the same scale)
+    Xx, Xy, mux, muy, sigma = pose2D.normalization(Xx, Xy)
+
+    # Delete frames in which skeletal models have a lot of missing parts.
+
+    ##### watchThis ?? per què (0, 1, 2, 3, 4, 5, 6, 7) ?
+    Xx, Xy, Xw = pose2D.prune(Xx, Xy, Xw, (0, 1, 2, 3, 4, 5, 6, 7), 0.3, dtype)
+
+    # Initial 3D pose estimation
+    lines0, rootsx0, rootsy0, rootsz0, anglesx0, anglesy0, anglesz0, Yx0, Yy0, Yz0 = pose2Dto3D.initialization(
+        Xx,
+        Xy,
+        Xw,
+        structure,
+        0.001, # weight for adding noise
+        randNumGen,
+        dtype
+    )
+
+    # Backpropagation-based filtering
+    Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
+        lines0, 
+        rootsx0,
+        rootsy0, 
+        rootsz0,
+        anglesx0,
+        anglesy0,
+        anglesz0,   
+        Xx,   
+        Xy,
+        Xw,
+        structure,
+        "float32",
+        nCycles=10
+    )
+    #_save("3D_keypoints.txt", [Yx, Yy, Yz])
+    
+
+    kp = np.empty((Yx.shape[0], Yx.shape[1] + Yy.shape[1] + Yz.shape[1]), dtype=dtype)
+    kp[:,0::3], kp[:,1::3], kp[:,2::3] = Yx, Yy, Yz
+    return kp
+    ######## cal implementar-ho
+    #lengths = pose3D.get_bone_length(Yx, Yy, Yz)
+    # compute mean length and store it
+    # asdfdsfda
+
+
+# input is a list of arrays, one array per clip
+def lift_2d_to_3d(feats, filename="feats_3d"):
+    feats_3d = []
+    for arr in feats:
+        kp_3d = _lift_2d_to_3d(arr)
+        feats_3d.append(kp_3d)
+    save_binary(feats_3d, filename)
+
+
 if __name__ == "__main__":
     (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_data("./Green Screen RGB clips* (frontal view)")
-    print(len(in_train))
-    print(in_train[0].shape, in_train[1].shape)
+
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    print(neck_train[0].shape)
-    print("*"*50)
     arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-
-    print(arms_train[0].shape)
-    
     hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    print(hands_train[0].shape)
-    
 
-    train = np.hstack((neck_train, arms_train, hands_train))
-    val = np.hstack((neck_val, arms_val, hands_val))
-    test = np.hstack((neck_test, arms_test, hands_test))
+    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+
+    save_binary(feats_train, "xy_train.pkl")
+    save_binary(feats_val, "xy_val.pkl")
+    save_binary(feats_test, "xy_test.pkl")
+
+    lift_2d_to_3d(load_binary("xy_train.pkl"), "xyz_train.pkl")
+    lift_2d_to_3d(load_binary("xy_val.pkl"), "xyz_val.pkl")
+    lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
 
     
+    train_3d = load_binary("xyz_train.pkl")
+    # val_3d = load_binary("xyz_val.pkl")
+    # test_3d = load_binary("xyz_test.pkl")
+    # print(len(train_3d), train_3d[0].shape)
+
+    lengths = pose3D.get_bone_length(train_3d[0], skeletalModel.getSkeletalModelStructure())
+    print(lengths, len(lengths))
     # recover neck and wrist keypoints to reconstruct the model's output, from aa to xyz
     #wrist_train = np.hstack(in_train[:,WRIST[0]], hands_train[:,WRIST[1]])
