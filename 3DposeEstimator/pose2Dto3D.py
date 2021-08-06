@@ -99,7 +99,7 @@ def initialization(Xx, Xy, Xw, structure, sigma, randomNubersGenerator, dtype):
 
   Ls = {}
   for iBone in range(len(structure)):
-    a, b, line = structure[iBone]
+    a, b, line, _ = structure[iBone]
     if not line in Ls:
       Ls[line] = []
     for t in range(T):
@@ -116,7 +116,7 @@ def initialization(Xx, Xy, Xw, structure, sigma, randomNubersGenerator, dtype):
     lines[i] = math.log(perc(Ls[i], 0.5))
   
   for iBone in range(len(structure)):
-    a, b, line = structure[iBone]
+    a, b, line, _ = structure[iBone]
     L = math.exp(lines[line])
     for t in range(T):
       ax = Yx[t, a]

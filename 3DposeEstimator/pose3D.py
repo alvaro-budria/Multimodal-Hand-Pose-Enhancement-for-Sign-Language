@@ -69,7 +69,7 @@ def backpropagationBasedFiltering(
   i = 0
   # for numerical stability of angles normalization
   epsilon = 1e-10
-  for a, b, l in structure:
+  for a, b, l, _ in structure:
     # limb length
     L = tf.exp(lines[l])
     # angle
@@ -118,28 +118,29 @@ def backpropagationBasedFiltering(
  
 
 # retrieves the bone length
-# the length of a bone is calculated as the median across all frames
+# the length of a bone is calculated as the average across all frames and clips
 def get_bone_length(kp_3d, structure, dtype="float32"):
-  Yx = kp_3d[0:kp_3d.shape[0], 0:(kp_3d.shape[1]):3]
-  Yy = kp_3d[0:kp_3d.shape[0], 1:(kp_3d.shape[1]):3]
-  Yz = kp_3d[0:kp_3d.shape[0], 2:(kp_3d.shape[1]):3]
-  T = kp_3d.shape[0]
   lines = numpy.zeros((len(structure), ), dtype=dtype)
   Ls = {}
-  for iBone in range(len(structure)):
-    a, b, _ = structure[iBone]
-    line = iBone
-    if not line in Ls:
-      Ls[line] = []
-    for t in range(T):
-      ax = Yx[t, a]
-      ay = Yy[t, a]
-      az = Yz[t, a]
-      bx = Yx[t, b]
-      by = Yy[t, b]
-      bz = Yz[t, b]
-      L = pose2Dto3D.norm([ax - bx, ay - by, az - bz])
-      Ls[line].append(L)
+  for i in range(len(kp_3d)):
+    Yx = kp_3d[i][0:kp_3d[i].shape[0], 0:(kp_3d[i].shape[1]):3]
+    Yy = kp_3d[i][0:kp_3d[i].shape[0], 1:(kp_3d[i].shape[1]):3]
+    Yz = kp_3d[i][0:kp_3d[i].shape[0], 2:(kp_3d[i].shape[1]):3]
+    T = kp_3d[i].shape[0]
+    for iBone in range(len(structure)):
+      a, b, _, _ = structure[iBone]
+      line = iBone
+      if not line in Ls:
+        Ls[line] = []
+      for t in range(T):
+        ax = Yx[t, a]
+        ay = Yy[t, a]
+        az = Yz[t, a]
+        bx = Yx[t, b]
+        by = Yy[t, b]
+        bz = Yz[t, b]
+        L = pose2Dto3D.norm([ax - bx, ay - by, az - bz])
+        Ls[line].append(L)
   for i in range(len(structure)):
     #lines[i] = pose2Dto3D.perc(Ls[i], 0.5)
     lines[i] = numpy.mean(Ls[i])
