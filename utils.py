@@ -175,6 +175,12 @@ def old_aa_to_xyz(in_aa=None, lengths_in=None, neck_up=None, neck_low=None, out_
     pass
 
 
+## calc temporal deltas within sequences
+def calc_motion(tensor):
+    res = tensor[:,:,:1] - tensor[:,:,:-1]
+    return res
+
+
 # From a vector representing a rotation in axis-angle representation,
 # retrieves the rotation angle and the rotation axis
 def _retrieve_axis_angle(aa):
