@@ -33,13 +33,13 @@ def _mkdir(dir):
 
 
 def viz_clip(clip, clip_idx, structure, frame_rate=27.5):
-    _mkdir("viz")
-    _mkdir(f"viz/{clip_idx}")
+    _mkdir("viz_results")
+    _mkdir(f"viz_results/{clip_idx}")
     files = []
     for frame_idx in range(clip.shape[0]):
         fig, ax = plot_3d_lines(clip[frame_idx,:], structure, show=False)
         
-        filename = "viz/"+str(clip_idx)+"/"+str(frame_idx)+".png"
+        filename = "viz_results/"+str(clip_idx)+"/"+str(frame_idx)+".png"
         files.append(filename)
         plt.savefig(filename, dpi=75)
         plt.close(fig)
@@ -50,16 +50,16 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5):
         new_frame = Image.open(f)
         frames.append(new_frame)
     # Save into a GIF file that loops forever
-    frames[0].save(f"viz/{clip_idx}.gif", format='GIF',
+    frames[0].save(f"viz_results/{clip_idx}.gif", format='GIF',
                 append_images=frames[1:],
                 save_all=True,
                 duration=len(frames)/frame_rate, loop=0)
     
     # delete temporal dir
     import shutil
-    shutil.rmtree(f"viz/{clip_idx}")
+    shutil.rmtree(f"viz_results/{clip_idx}")
 
 
-def viz(xyz, structure):
+def viz(xyz, structure, frame_rate=27.5):
     for clip_idx in range(len(xyz)):
-        viz_clip(xyz[clip_idx], clip_idx, structure, frame_rate=12)
+        viz_clip(xyz[clip_idx], clip_idx, structure, frame_rate=frame_rate)
