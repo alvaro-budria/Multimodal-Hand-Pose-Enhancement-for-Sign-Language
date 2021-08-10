@@ -10,9 +10,9 @@ import utils.modelZoo as modelZoo
 from utils.load_utils import *
 
 DATA_PATHS = {
-        "video_data/aa_train.pkl":1
-        "video_data/aa_val.pkl":2
-        "video_data/aa_test.pkl":3
+        "train": "video_data/r6d_train.pkl"
+        "val": "video_data/r6d_val.pkl"
+        "test": "video_data/r6d_test.pkl"
         }
 
 
@@ -38,7 +38,7 @@ def main(args):
     ## set up generator model
     args.model = 'regressor_fcn_bn_32'
     generator = getattr(modelZoo, args.model)()
-    generator.build_net(feature_in_dim, feature_out_dim, require_image=args.require_image)
+    generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
     generator.cuda()
     reg_criterion = nn.L1Loss()
     g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=1e-5)
@@ -57,7 +57,7 @@ def main(args):
 
     ## load data from saved files
     data_tuple = load_data(args, rng)
-    if args.require_image:
+    if args.require_text:
         train_X, train_Y, test_X, test_Y, train_ims, test_ims = data_tuple
     else:
         train_X, train_Y, test_X, test_Y = data_tuple
@@ -90,76 +90,56 @@ def main(args):
 
 ## function to load data from external files
 def load_data(args, rng):
-    gt_windows = None
-    quant_windows = None
-    p0_paths = None
-    hand_ims = None
 
-    ## load from external files
-    for key, value in DATA_PATHS.items():
-        key = os.path.join(args.base_path, key)
-        curr_p0, curr_p1, curr_paths, _ = load_windows(key, args.pipeline, require_image=args.require_image)
-        if gt_windows is None:
-            if args.require_image:
-                hand_ims = curr_p0[1]
-                curr_p0 = curr_p0[0]
+    def fetch_data(set="train"):
+        ## load from external files
+        path = DATA_PATHS["train"]
+        data_path = os.path.join(args.base_path, path)
+        curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text)
+        if args.require_text:
+            text = curr_p0[1]
+            curr_p0 = curr_p0[0]
+            return curr_p0, curr_p1, text
+        return curr_p0, curr_p1, None
+    
+    train_X, train_Y, train_text = fetch_data("train")
+    val_X, val_Y, val_text = fetch_data("val")
 
-            gt_windows = curr_p0
-            quant_windows = curr_p1
-            p0_paths = curr_paths
-        else:
-            if args.require_image:
-                hand_ims = np.concatenate((hand_ims, curr_p0[1]), axis=0)
-                curr_p0 = curr_p0[0]
-            gt_windows = np.concatenate((gt_windows, curr_p0), axis=0)
-            quant_windows = np.concatenate((quant_windows, curr_p1), axis=0)
-            p0_paths = np.concatenate((p0_paths, curr_paths), axis=0)
-
-    print('===> in/out', gt_windows.shape, quant_windows.shape)
-    if args.require_image:
-        print("===> hand_ims", hand_ims.shape)
+    print("-"*20 + "train" + "-"*20)
+    print('===> in/out', train_X.shape, train_Y.shape)
+    print()
+    print("-"*20 + "val" + "-"*20)
+    print('===> in/out', val_X.shape, val_Y.shape)
+    if args.require_text:
+        print("===> text", text.shape)
     ## DONE load from external files
 
-
-    ## shuffle and set train/validation
-    N = gt_windows.shape[0]
-    train_N = int(N * 0.7)
-    idx = np.random.permutation(N)
-    train_idx, test_idx = idx[:train_N], idx[train_N:]
-    train_X, test_X = gt_windows[train_idx, :, :], gt_windows[test_idx, :, :]
-    train_Y, test_Y = quant_windows[train_idx, :, :], quant_windows[test_idx, :, :]
-    if args.require_image:
-        train_ims, test_ims = hand_ims[train_idx,:,:], hand_ims[test_idx,:,:]
-        train_ims = train_ims.astype(np.float32)
-        test_ims = test_ims.astype(np.float32)
-    print("====> train/test", train_X.shape, test_X.shape)
-
-    train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
-    train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
-    test_X = np.swapaxes(test_X, 1, 2).astype(np.float32)
-    test_Y = np.swapaxes(test_Y, 1, 2).astype(np.float32)
+    ## In B2H, they do this, per què?¿
+    # train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
+    # train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
+    # test_X = np.swapaxes(test_X, 1, 2).astype(np.float32)
+    # test_Y = np.swapaxes(test_Y, 1, 2).astype(np.float32)
 
     body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
     np.savez_compressed(args.model_path + '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline), 
-            body_mean_X=body_mean_X, body_std_X=body_std_X,
-            body_mean_Y=body_mean_Y, body_std_Y=body_std_Y) 
+                        body_mean_X=body_mean_X, body_std_X=body_std_X,
+                        body_mean_Y=body_mean_Y, body_std_Y=body_std_Y) 
 
     train_X = (train_X - body_mean_X) / body_std_X
     test_X = (test_X - body_mean_X) / body_std_X
     train_Y = (train_Y - body_mean_Y) / body_std_Y
     test_Y = (test_Y - body_mean_Y) / body_std_Y
-    print("=====> standardization done")
+    print("===> standardization done")
 
     # Data shuffle
     I = np.arange(len(train_X))
     rng.shuffle(I)
     train_X = train_X[I]
     train_Y = train_Y[I]
-    if args.require_image:
-        train_ims = train_ims[I]
-        return (train_X, train_Y, test_X, test_Y, train_ims, test_ims)
+    if args.require_text:
+        train_ims = train_text[I]
+        return (train_X, train_Y, test_X, test_Y, train_text, test_text)
     ## DONE shuffle and set train/validation
-
     return (train_X, train_Y, test_X, test_Y)
 
 
@@ -169,7 +149,7 @@ def calc_motion(tensor):
     return res
 
 
-## training discriminator functin
+## training discriminator function
 def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_ims=None):
     generator.eval()
     discriminator.train()
@@ -186,13 +166,13 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
 
         imsData = None
-        if args.require_image:
+        if args.require_text:
             imsData_np = train_ims[idxStart:(idxStart + args.batch_size), :, :]
             imsData = Variable(torch.from_numpy(imsData_np)).cuda()
         ## DONE setting batch data
 
         with torch.no_grad():
-            fake_data = generator(inputData, image_=imsData).detach()
+            fake_data = generator(inputData, text_=imsData).detach()
 
         fake_motion = calc_motion(fake_data)
         real_motion = calc_motion(outputGT)
@@ -223,12 +203,12 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
 
         imsData = None
-        if args.require_image:
+        if args.require_text:
             imsData_np = train_ims[idxStart:(idxStart + args.batch_size), :, :]
             imsData = Variable(torch.from_numpy(imsData_np)).cuda()
         ## DONE setting batch data
 
-        output = generator(inputData, image_=imsData)
+        output = generator(inputData, text_=imsData)
         fake_motion = calc_motion(output)
         with torch.no_grad():
             fake_score = discriminator(fake_motion)
@@ -263,12 +243,12 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, te
         outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
 
         imsData = None
-        if args.require_image:
+        if args.require_text:
             imsData_np = test_ims[idxStart:(idxStart + args.batch_size), :, :]
             imsData = Variable(torch.from_numpy(imsData_np)).cuda()
         ## DONE setting batch data
         
-        output = generator(inputData, image_=imsData)
+        output = generator(inputData, text_=imsData)
         g_loss = reg_criterion(output, outputGT)
         testLoss += g_loss.item() * args.batch_size
 
@@ -297,7 +277,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
-    parser.add_argument('--require_image', action='store_true', help='use additional image feature or not')
+    parser.add_argument('--require_text', action='store_true', help='use additional text feature or not')
     parser.add_argument('--model_path', type=str, required=True , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=100, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')

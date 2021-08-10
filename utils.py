@@ -21,6 +21,10 @@ DATA_PATHS = {
     "test": "test_2D_keypoints/openpose_output/json"
 }
 
+FEATURE_MAP = {
+    'arm2wh':((6*6), 42*6),
+}
+
 NECK = [0, 1]  # neck in Open Pose 25
 WRIST = [[4, 7], [0, 21]]  # wrist in arms, wrist in hand
 ARMS = [2, 3, 4, 5, 6, 7]  # arms in Open Pose 25
@@ -334,140 +338,6 @@ def xyz_to_aa(xyz, structure, root_filename=None):
     return aa
 
 
-# Normalize skeleton (given as collection of 3D keypoints)
-def normalize():
-    pass
-
-
-# mirar què diuen l'Amanda Duarte i la literatura
-def scale():
-    pass
-
-
-# given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
-# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=False
-
-## @jit ?¿?
-def retrieve_coords(keypoints, keep_confidence=False):
-    coords = []
-    for i in range(0, len(keypoints), 3):
-        #coords.append([keypoints[i], keypoints[i+1]])
-        coords.append(keypoints[i])
-        coords.append(keypoints[i+1])
-        if keep_confidence:
-            coords.append(keypoints[i+2])
-    return coords # [elem for singleList in coords for elem in singleList]
-
-
-def load_clip(clip_path, pipeline):
-    feats = pipeline.split('2')
-    in_feat, out_feat = feats[0], feats[1]
-    in_kp, out_kp = np.array([]), np.array([])
-    for frame in sorted(os.listdir(clip_path))[0:500]:  # for each frame, there is an associated .json file
-        if os.path.isfile(os.path.join(clip_path, frame)):
-            f = open(os.path.join(clip_path, frame))
-            data = json.load(f)
-            f.close()
-            if in_feat == "arm":  
-                if in_kp.shape != (0,):
-                    in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)], axis=0)
-                else:
-                    in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)])
-            if out_feat == "wh": 
-                temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=True),
-                        retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=True)]
-                temp = [elem for singleList in temp for elem in singleList]
-                if out_kp.shape != (0,):
-                    out_kp = np.append(out_kp, [temp], axis=0)
-                else:
-                    out_kp = np.array([temp])
-    return in_kp, out_kp
-
-
-def _load_H2S_dataset(dir, pipeline):
-    in_features, out_features = [], []
-    i = 1
-    for clip in os.listdir(dir)[0:150]:  # each clip is stored in a separate folder
-        print(i)
-        i += 1
-        clip_path = os.path.join(dir, clip)
-        in_kp, out_kp = load_clip(clip_path, pipeline)
-        in_features.append(in_kp)
-        out_features.append(out_kp)
-    #in_features = np.array([ elem for singleList in in_features for elem in singleList])
-    return in_features, out_features
-
-
-def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_image=False, require_audio=False):
-    train_path = os.path.join(data_dir, DATA_PATHS["train"])
-    val_path = os.path.join(data_dir, DATA_PATHS["val"])
-    test_path = os.path.join(data_dir, DATA_PATHS["test"])
-    # load data
-    in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None,
-    if os.path.exists(train_path):
-        in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline)
-    if os.path.exists(val_path):
-        in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline)
-    if os.path.exists(test_path):
-        in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline)
-    return (in_train, out_train), (in_val, out_val), (in_test, out_test)
-
-
-def _save(fname, lst):
-    T, dim = lst[0].shape
-    f = open(fname, "w")
-    for t in range(T):
-        for i in range(dim):
-            for j in range(len(lst)):
-                f.write("%e\t" % lst[j][t, i])
-        f.write("\n")
-    f.close()
-
-
-# returns the keypoints in the specified indexes
-def get_joints(kp, idx):
-    return kp[:,idx]
-
-
-# selects the useful keypoints indicated by the indexes. Input is a list, each element containing the keypoints of a (video) clip
-def select_keypoints(kp, idxs):
-    kp_cp = kp.copy()
-    for i in range(len(kp)):
-        new_kp_i = np.array([])
-        for idx in idxs:
-            new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+3])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+3]
-        kp_cp[i] = new_kp_i
-    return kp_cp
-
-
-def hconcat_feats(neck, arms, hands):
-    assert [len(neck), len(arms)] == [len(hands), len(hands)]
-    feats = []
-    for i in range(len(neck)):  # for each frame, concat the features
-        temp = np.hstack((neck[i], arms[i]))
-        feats.append( np.hstack((temp, hands[i])) )
-    return feats
-
-
-def save_binary(obj, filename):
-    if filename[-4:] != ".pkl":
-        print("Adding .pkl extension as it was not found.")
-        filename = filename + ".pkl"
-    with open(filename, 'wb') as outfile:
-        pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
-
-
-def load_binary(filename):
-    result = None
-    with open(filename, 'rb') as infile:
-        result = pickle.load(infile)
-    return result
-
-
-def load_data():
-
-
-
 def _lift_2d_to_3d(inputSequence_2D):
     dtype = "float32"
     randNumGen = np.random.RandomState(1234)
@@ -559,6 +429,183 @@ def lift_2d_to_3d(feats, filename="feats_3d"):
     save_binary(feats_3d, filename)
 
 
+## helper for calculating mean and standard dev
+def mean_std(feat, data, rot_idx):
+    if feat == 'wh':
+       mean = data.mean(axis=2).mean(axis=0)[np.newaxis,:, np.newaxis]
+       std =  data.std(axis=2).std(axis=0)[np.newaxis,:, np.newaxis]
+       std += EPSILON
+    else:
+        mean = data.mean(axis=2).mean(axis=0)[np.newaxis,:, np.newaxis]
+        std = np.array([[[data.std()]]]).repeat(data.shape[1], axis=1)
+    return mean, std
+
+
+## helper for calculating standardization stats
+def calc_standard(train_X, train_Y, pipeline):
+    rot_idx = -6
+    feats = pipeline.split('2')
+    in_feat, out_feat = feats[0], feats[1]
+    body_mean_X, body_std_X = mean_std(in_feat, train_X, rot_idx)
+    if in_feat == out_feat:
+        body_mean_Y = body_mean_X
+        body_std_Y = body_std_X
+    else:
+        body_mean_Y, body_std_Y = mean_std(out_feat, train_Y, rot_idx)
+    return body_mean_X, body_std_X, body_mean_Y, body_std_Y
+
+
+# given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
+# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=False
+
+## @jit ?¿?
+def retrieve_coords(keypoints, keep_confidence=False):
+    coords = []
+    for i in range(0, len(keypoints), 3):
+        #coords.append([keypoints[i], keypoints[i+1]])
+        coords.append(keypoints[i])
+        coords.append(keypoints[i+1])
+        if keep_confidence:
+            coords.append(keypoints[i+2])
+    return coords # [elem for singleList in coords for elem in singleList]
+
+
+def load_clip(clip_path, pipeline):
+    feats = pipeline.split('2')
+    in_feat, out_feat = feats[0], feats[1]
+    in_kp, out_kp = np.array([]), np.array([])
+    for frame in sorted(os.listdir(clip_path))[0:500]:  # for each frame, there is an associated .json file
+        if os.path.isfile(os.path.join(clip_path, frame)):
+            f = open(os.path.join(clip_path, frame))
+            data = json.load(f)
+            f.close()
+            if in_feat == "arm":  
+                if in_kp.shape != (0,):
+                    in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)], axis=0)
+                else:
+                    in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)])
+            if out_feat == "wh": 
+                temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=True),
+                        retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=True)]
+                temp = [elem for singleList in temp for elem in singleList]
+                if out_kp.shape != (0,):
+                    out_kp = np.append(out_kp, [temp], axis=0)
+                else:
+                    out_kp = np.array([temp])
+    return in_kp, out_kp
+
+
+def _load_H2S_dataset(dir, pipeline):
+    in_features, out_features = [], []
+    i = 1
+    for clip in os.listdir(dir)[0:150]:  # each clip is stored in a separate folder
+        print(i)
+        i += 1
+        clip_path = os.path.join(dir, clip)
+        in_kp, out_kp = load_clip(clip_path, pipeline)
+        in_features.append(in_kp)
+        out_features.append(out_kp)
+    #in_features = np.array([ elem for singleList in in_features for elem in singleList])
+    return in_features, out_features
+
+
+def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False):
+    train_path = os.path.join(data_dir, DATA_PATHS["train"])
+    val_path = os.path.join(data_dir, DATA_PATHS["val"])
+    test_path = os.path.join(data_dir, DATA_PATHS["test"])
+    # load data
+    in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None,
+    if os.path.exists(train_path):
+        in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline)
+    if os.path.exists(val_path):
+        in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline)
+    if os.path.exists(test_path):
+        in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline)
+    return (in_train, out_train), (in_val, out_val), (in_test, out_test)
+
+
+def _save(fname, lst):
+    T, dim = lst[0].shape
+    f = open(fname, "w")
+    for t in range(T):
+        for i in range(dim):
+            for j in range(len(lst)):
+                f.write("%e\t" % lst[j][t, i])
+        f.write("\n")
+    f.close()
+
+
+# returns the keypoints in the specified indexes
+def get_joints(kp, idx):
+    return kp[:,idx]
+
+
+# selects the useful keypoints indicated by the indexes. Input is a list, each element containing the keypoints of a (video) clip
+def select_keypoints(kp, idxs):
+    kp_cp = kp.copy()
+    for i in range(len(kp)):
+        new_kp_i = np.array([])
+        for idx in idxs:
+            new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+3])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+3]
+        kp_cp[i] = new_kp_i
+    return kp_cp
+
+
+def hconcat_feats(neck, arms, hands):
+    assert [len(neck), len(arms)] == [len(hands), len(hands)]
+    feats = []
+    for i in range(len(neck)):  # for each frame, concat the features
+        temp = np.hstack((neck[i], arms[i]))
+        feats.append( np.hstack((temp, hands[i])) )
+    return feats
+
+
+def save_binary(obj, filename):
+    if filename[-4:] != ".pkl":
+        print("Adding .pkl extension as it was not found.")
+        filename = filename + ".pkl"
+    with open(filename, 'wb') as outfile:
+        pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
+
+
+def load_binary(filename):
+    result = None
+    with open(filename, 'rb') as infile:
+        result = pickle.load(infile)
+    return result
+
+
+# given a list of arrays (corresponding to a clip) with varying lengths,
+# makes all of them have equal length. The result is a single array
+def make_equal_len(data, method="padding"):
+    if method=="padding":
+
+    
+    if method=="cutting":
+        # get shortest length, cut the rest
+
+
+    if method=="loop":
+
+
+def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require_text=False, require_audio=False,
+                 hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
+    feats = pipeline.split('2')
+    in_feat, out_feat = feats[0], feats[1]
+    p0_size, p1_size = FEATURE_MAP[pipeline]
+    if os.path.exists(data_path):
+        print('using super quick load', data_path)
+        data = load_binary(data_path)
+        data = make_equal_len(data, method="loop")
+        if pipeline=="arm2wh":
+            p0_windows = data[:,:,FEATURE_MAP[pipeline][0]]
+            p1_windows = data[:,:,FEATURE_MAP[pipeline][1]]
+            B,T = p0_windows.shape[0], p0_windows.shape[1]
+        # if require_text:
+        #   text_windows = ...
+        #    p0_windows = (p0_windows, text_windows)
+        return p0_windows, p1_windows
+
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     structure = skeletalModel.getSkeletalModelStructure()
 
@@ -597,11 +644,11 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
             #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
     train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
-    save_binary(train_aa, "aa_train.pkl")
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_train_root.pkl")
-    save_binary(val_aa, "aa_val.pkl")
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="xyz_train_root.pkl")
-    save_binary(test_aa, "aa_test.pkl")
+    save_binary(aa_to_rot6d(train_aa), "r6d_train.pkl")
+    val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_val_root.pkl")
+    save_binary(aa_to_rot6d(val_aa), "r6d_val.pkl")
+    test_aa = xyz_to_aa(test_3d, structure, root_filename="xyz_test_root.pkl")
+    save_binary(aa_to_rot6d(test_aa), "r6d_test.pkl")
 
     print(f"processed all H2S data in {dir}")
 
