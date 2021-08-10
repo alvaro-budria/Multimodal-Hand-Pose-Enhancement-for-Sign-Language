@@ -5,7 +5,6 @@ import os
 import torch
 from torch import nn
 from torch.autograd import Variable
-import torchvision
 
 import utils.modelZoo as modelZoo
 from utils.load_utils import *
