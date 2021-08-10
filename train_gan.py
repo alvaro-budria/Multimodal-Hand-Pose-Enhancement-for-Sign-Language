@@ -10,10 +10,9 @@ import utils.modelZoo as modelZoo
 from utils.load_utils import *
 
 DATA_PATHS = {
-        #'video_data/Oliver/train/':1,
-        'video_data/Chemistry/train/':2,
-        'video_data/Seth/train/':5,
-        'video_data/Conan/train/':6,
+        "video_data/aa_train.pkl":1
+        "video_data/aa_val.pkl":2
+        "video_data/aa_test.pkl":3
         }
 
 

@@ -384,7 +384,7 @@ def load_clip(clip_path, pipeline):
     return in_kp, out_kp
 
 
-def _load_dataset(dir, pipeline):
+def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
     for clip in os.listdir(dir)[0:150]:  # each clip is stored in a separate folder
@@ -398,18 +398,18 @@ def _load_dataset(dir, pipeline):
     return in_features, out_features
 
 
-def load_data(data_dir, pipeline="arm2wh", num_samples=None, require_image=False, require_audio=False):
+def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_image=False, require_audio=False):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
     val_path = os.path.join(data_dir, DATA_PATHS["val"])
     test_path = os.path.join(data_dir, DATA_PATHS["test"])
     # load data
     in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None,
     if os.path.exists(train_path):
-        in_train, out_train = _load_dataset(train_path, pipeline=pipeline)
+        in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline)
     if os.path.exists(val_path):
-        in_val, out_val = _load_dataset(val_path, pipeline=pipeline)
+        in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline)
     if os.path.exists(test_path):
-        in_test, out_test = _load_dataset(val_path, pipeline=pipeline)
+        in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline)
     return (in_train, out_train), (in_val, out_val), (in_test, out_test)
 
 
@@ -462,6 +462,10 @@ def load_binary(filename):
     with open(filename, 'rb') as infile:
         result = pickle.load(infile)
     return result
+
+
+def load_data():
+
 
 
 def _lift_2d_to_3d(inputSequence_2D):
@@ -555,10 +559,57 @@ def lift_2d_to_3d(feats, filename="feats_3d"):
     save_binary(feats_3d, filename)
 
 
+def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
+    structure = skeletalModel.getSkeletalModelStructure()
+
+    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir)
+
+    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+
+    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+
+    save_binary(feats_train, "xy_train.pkl")
+    save_binary(feats_val, "xy_val.pkl")
+    save_binary(feats_test, "xy_test.pkl")
+
+    print()
+    print("saved xy original")
+    print()
+
+    lift_2d_to_3d(load_binary("xy_train.pkl"), "xyz_train.pkl")
+    lift_2d_to_3d(load_binary("xy_val.pkl"), "xyz_val.pkl")
+    lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
+
+    print()
+    print("saved lifted xyz")
+    print()
+
+    train_3d = load_binary("xyz_train.pkl")
+    val_3d = load_binary("xyz_val.pkl")
+    test_3d = load_binary("xyz_test.pkl")
+
+    lengths = pose3D.get_bone_length(train_3d, structure)
+    save_binary(lengths, "lengths_train.pkl")
+
+            #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
+    train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
+    save_binary(train_aa, "aa_train.pkl")
+    val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_train_root.pkl")
+    save_binary(val_aa, "aa_val.pkl")
+    test_aa = xyz_to_aa(test_3d, structure, root_filename="xyz_train_root.pkl")
+    save_binary(test_aa, "aa_test.pkl")
+
+    print(f"processed all H2S data in {dir}")
+
+
 if __name__ == "__main__":
     structure = skeletalModel.getSkeletalModelStructure()
 
-    # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_data("./Green Screen RGB clips* (frontal view)")
+    # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset("./Green Screen RGB clips* (frontal view)")
 
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
@@ -593,6 +644,7 @@ if __name__ == "__main__":
 
              # xyz_to_aa() also saves the root bone (first one in the skeletal structure)
     # train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
+    # save_binary(train_aa, "aa_train.pkl")
     # print(len(train_aa), train_aa[0].shape)
 
     # root = get_root_bone(train_3d, structure)
