@@ -1,14 +1,10 @@
 * implement dataloading for H2S - DONE
 
 * implement 2D to 3D
+    
+    * constraint: angles between hand bones cannot be greater than pi (otherwise the joint would be "broken")
 
-3* test xyz to aa
-    * arms
-    * hands
-4* test aa to xyz
-    * arms
-    * hands
 
-For 3 and 4, if going from 3to4 and back to 3 gives the same starting point, then yay!
+* monitor results and optimization evolution (with TensorBoard?)
 
 

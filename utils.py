@@ -4,13 +4,15 @@ import pickle
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 import sys
-sys.path.append('./3DposeEstimator')
 
+sys.path.append('./3DposeEstimator')
 # 2D to 3D lifting
 import skeletalModel
 import pose2D
 import pose2Dto3D
 import pose3D
+
+import viz_3d
 
 
 DATA_PATHS = {
@@ -361,7 +363,7 @@ def load_clip(clip_path, pipeline):
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
     in_kp, out_kp = np.array([]), np.array([])
-    for frame in sorted(os.listdir(clip_path))[0:105]:  # for each frame, there is an associated .json file
+    for frame in sorted(os.listdir(clip_path))[0:500]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
             f = open(os.path.join(clip_path, frame))
             data = json.load(f)
@@ -385,7 +387,7 @@ def load_clip(clip_path, pipeline):
 def _load_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:2]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:150]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -501,9 +503,9 @@ def _lift_2d_to_3d(inputSequence_2D):
         randNumGen,
         dtype
     )
-
+    
     # Backpropagation-based filtering
-    Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
+    Yx, Yy, Yz = pose3D.backpropagationBasedFiltering_v2(
         lines0, 
         rootsx0,
         rootsy0, 
@@ -516,23 +518,37 @@ def _lift_2d_to_3d(inputSequence_2D):
         Xw,
         structure,
         "float32",
-        nCycles=10
+        learningRate=25,
+        nCycles=1600
     )
+    # # Backpropagation-based filtering
+    # Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
+    #     lines0, 
+    #     rootsx0,
+    #     rootsy0, 
+    #     rootsz0,
+    #     anglesx0,
+    #     anglesy0,
+    #     anglesz0,   
+    #     Xx,   
+    #     Xy,
+    #     Xw,
+    #     structure,
+    #     "float32",
+    #     learningRate=0.25,
+    #     nCycles=900
+    # )
     #_save("3D_keypoints.txt", [Yx, Yy, Yz])
     
-
     kp = np.empty((Yx.shape[0], Yx.shape[1] + Yy.shape[1] + Yz.shape[1]), dtype=dtype)
     kp[:,0::3], kp[:,1::3], kp[:,2::3] = Yx, Yy, Yz
     return kp
-    ######## cal implementar-ho
-    #lengths = pose3D.get_bone_length(Yx, Yy, Yz)
-    # compute mean length and store it
-    # asdfdsfda
 
 
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d"):
     feats_3d = []
+    
     for arr in feats:
         kp_3d = _lift_2d_to_3d(arr)
         feats_3d.append(kp_3d)
@@ -556,28 +572,34 @@ if __name__ == "__main__":
     # save_binary(feats_val, "xy_val.pkl")
     # save_binary(feats_test, "xy_test.pkl")
 
+    # print()
+    # print("saved xyz original")
+    # print()
+
     # lift_2d_to_3d(load_binary("xy_train.pkl"), "xyz_train.pkl")
     # lift_2d_to_3d(load_binary("xy_val.pkl"), "xyz_val.pkl")
     # lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
 
 
     train_3d = load_binary("xyz_train.pkl")
+    viz_3d.viz(train_3d, structure)
     # val_3d = load_binary("xyz_val.pkl")
     # test_3d = load_binary("xyz_test.pkl")
-    print(len(train_3d), train_3d[0].shape)
+    # print(len(train_3d), train_3d[0].shape)
 
     # lengths = pose3D.get_bone_length(train_3d, structure)
-    # print(lengths)
+    # # print(lengths)
     # save_binary(lengths, "lengths_train.pkl")
 
              # xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
-    print(len(train_aa), train_aa[0].shape)
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
+    # print(len(train_aa), train_aa[0].shape)
 
-    root = get_root_bone(train_3d, structure)
-    bone_len = load_binary("lengths_train.pkl")
-    train_3d_from_aa = aa_to_xyz(train_aa, root, bone_len)
-    print(len(train_3d_from_aa), train_3d_from_aa[0].shape)
+    # root = get_root_bone(train_3d, structure)
+    # bone_len = load_binary("lengths_train.pkl")
+    # train_3d_from_aa = aa_to_xyz(train_aa, root, bone_len)
+    # print(len(train_3d_from_aa), train_3d_from_aa[0].shape)
+    # viz_3d.viz(train_3d_from_aa, structure)
     #print(train_3d[1]-train_3d_aa[1])
 
     # train_rd6 = aa_to_rot6d(train_aa)
