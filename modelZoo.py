@@ -10,22 +10,22 @@ class regressor_fcn_bn_32(nn.Module):
 	def __init__(self):
 		super(regressor_fcn_bn_32, self).__init__()
 
-	def build_net(self, feature_in_dim, feature_out_dim, require_image=False, default_size=256):
-		self.require_image = require_image
+	def build_net(self, feature_in_dim, feature_out_dim, require_text=False, default_size=256):
+		self.require_text = require_text
 		self.default_size = default_size
 		self.use_resnet = True
 			
 		embed_size = default_size
-		if self.require_image:
+		if self.require_text:
 			embed_size += default_size
 			if self.use_resnet:
-				self.image_resnet_postprocess = nn.Sequential(
+				self.text_resnet_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
 					nn.Linear(512*2, default_size),
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
-				self.image_reduce = nn.Sequential(
+				self.text_reduce = nn.Sequential(
 					nn.MaxPool1d(kernel_size=2, stride=2),
 				)
 
@@ -121,14 +121,14 @@ class regressor_fcn_bn_32(nn.Module):
 		)
 
 
-	## create image embedding
-	def process_image(self, image_):
-		B, T, _ = image_.shape 
-		image_ = image_.view(-1, 512*2)
-		feat = self.image_resnet_postprocess(image_)
+	## create text embedding
+	def process_text(self, text_):
+		B, T, _ = text_.shape 
+		text_ = text_.view(-1, 512*2)
+		feat = self.text_resnet_postprocess(text_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
-		feat = self.image_reduce(feat)
+		feat = self.text_reduce(feat)
 		return feat
 
 
@@ -138,12 +138,11 @@ class regressor_fcn_bn_32(nn.Module):
 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, image_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
 		B, T = input_.shape[0], input_.shape[2]
-
 		fourth_block = self.encoder(input_)
-		if self.require_image:
-			feat = self.process_image(image_)
+		if self.require_text:
+			feat = self.process_text(text_)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)

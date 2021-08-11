@@ -12,7 +12,7 @@ import pose2D
 import pose2Dto3D
 import pose3D
 
-import viz_3d
+import viz.viz_3d as viz
 
 
 DATA_PATHS = {
@@ -24,6 +24,8 @@ DATA_PATHS = {
 FEATURE_MAP = {
     'arm2wh':((6*6), 42*6),
 }
+
+EPSILON = 1e-10
 
 NECK = [0, 1]  # neck in Open Pose 25
 WRIST = [[4, 7], [0, 21]]  # wrist in arms, wrist in hand
@@ -498,7 +500,7 @@ def load_clip(clip_path, pipeline):
 def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:150]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:3]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -522,17 +524,6 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     if os.path.exists(test_path):
         in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline)
     return (in_train, out_train), (in_val, out_val), (in_test, out_test)
-
-
-def _save(fname, lst):
-    T, dim = lst[0].shape
-    f = open(fname, "w")
-    for t in range(T):
-        for i in range(dim):
-            for j in range(len(lst)):
-                f.write("%e\t" % lst[j][t, i])
-        f.write("\n")
-    f.close()
 
 
 # returns the keypoints in the specified indexes
@@ -575,17 +566,32 @@ def load_binary(filename):
     return result
 
 
+def mkdir(dir):
+    os.chdir(".")
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+
+
 # given a list of arrays (corresponding to a clip) with varying lengths,
 # makes all of them have equal length. The result is a single array
-def make_equal_len(data, method="padding"):
-    if method=="padding":
+def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=256):
+    if method=="0pad":
+        sizes = [arr.shape[0] for arr in data]
+        maxpad = np.amax(sizes) if maxpad=="maxlen" else maxpad
+        res = [np.vstack((arr, np.zeros((maxpad-arr.shape[0],arr.shape[1]),int))) for arr in data]
+        res = np.stack(res)        
 
-    
-    if method=="cutting":
+    elif method=="cutting":
         # get shortest length, cut the rest
+        min_T = np.amin([arr.shape[0] for arr in data])
+        res = np.array([arr[:min_T,:] for arr in data])
 
-
-    if method=="loop":
+    else: # method=="wrap" or method=="reflect"
+        sizes = [arr.shape[0] for arr in data]
+        max_T = np.amax(sizes)
+        res = [np.pad(arr, ((0,0), (0, max_T-arr.shape[0])), method) for arr in data]
+    
+    return res
 
 
 def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require_text=False, require_audio=False,
@@ -596,18 +602,20 @@ def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require
     if os.path.exists(data_path):
         print('using super quick load', data_path)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="loop")
+        data = make_equal_len(data, method="0pad")
         if pipeline=="arm2wh":
-            p0_windows = data[:,:,FEATURE_MAP[pipeline][0]]
-            p1_windows = data[:,:,FEATURE_MAP[pipeline][1]]
+            p0_windows = data[:,:,:p0_size]
+            p1_windows = data[:,:,p0_size:p0_size+p1_size]
             B,T = p0_windows.shape[0], p0_windows.shape[1]
         # if require_text:
         #   text_windows = ...
         #    p0_windows = (p0_windows, text_windows)
         return p0_windows, p1_windows
 
+
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     structure = skeletalModel.getSkeletalModelStructure()
+    mkdir("video_data")
 
     (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir)
 
@@ -618,7 +626,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     feats_train = hconcat_feats(neck_train, arms_train, hands_train)
     feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     feats_test = hconcat_feats(neck_test, arms_test, hands_test)
-
+    
     save_binary(feats_train, "xy_train.pkl")
     save_binary(feats_val, "xy_val.pkl")
     save_binary(feats_test, "xy_test.pkl")
@@ -635,15 +643,16 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     print("saved lifted xyz")
     print()
 
-    train_3d = load_binary("xyz_train.pkl")
-    val_3d = load_binary("xyz_val.pkl")
-    test_3d = load_binary("xyz_test.pkl")
+    train_3d = load_binary("video_data/xyz_train.pkl")
+    val_3d = load_binary("video_data/xyz_val.pkl")
+    test_3d = load_binary("video_data/xyz_test.pkl")
 
     lengths = pose3D.get_bone_length(train_3d, structure)
     save_binary(lengths, "lengths_train.pkl")
 
             #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
+    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    print(aa_to_rot6d(train_aa)[0].shape)
     save_binary(aa_to_rot6d(train_aa), "r6d_train.pkl")
     val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_val_root.pkl")
     save_binary(aa_to_rot6d(val_aa), "r6d_val.pkl")
@@ -654,7 +663,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
 
 if __name__ == "__main__":
-    structure = skeletalModel.getSkeletalModelStructure()
+    process_H2S_dataset()
+    
+    #structure = skeletalModel.getSkeletalModelStructure()
 
     # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset("./Green Screen RGB clips* (frontal view)")
 
@@ -679,8 +690,8 @@ if __name__ == "__main__":
     # lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
 
 
-    train_3d = load_binary("xyz_train.pkl")
-    viz_3d.viz(train_3d, structure)
+    #train_3d = load_binary("xyz_train.pkl")
+    #viz_3d.viz(train_3d, structure)
     # val_3d = load_binary("xyz_val.pkl")
     # test_3d = load_binary("xyz_test.pkl")
     # print(len(train_3d), train_3d[0].shape)

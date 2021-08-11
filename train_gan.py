@@ -1,19 +1,24 @@
-# Copyright (c) Facebook, Inc. and its affiliates.
-import argparse
-import numpy as np
 import os
+import sys
+import argparse
+
+import numpy as np
 import torch
 from torch import nn
 from torch.autograd import Variable
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-import utils.modelZoo as modelZoo
-from utils.load_utils import *
+import modelZoo
+from utils import *
+
 
 DATA_PATHS = {
-        "train": "video_data/r6d_train.pkl"
-        "val": "video_data/r6d_val.pkl"
+        "train": "video_data/r6d_train.pkl",
+        "val": "video_data/r6d_val.pkl",
         "test": "video_data/r6d_test.pkl"
         }
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 #######################################################
@@ -23,8 +28,7 @@ def main(args):
     ## variables
     learning_rate = args.learning_rate
     pipeline = args.pipeline
-    
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
     feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
@@ -39,18 +43,20 @@ def main(args):
     args.model = 'regressor_fcn_bn_32'
     generator = getattr(modelZoo, args.model)()
     generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
-    generator.cuda()
+    generator.to(device)
     reg_criterion = nn.L1Loss()
     g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=1e-5)
+    g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-8)
     generator.train()
 
     ## set up discriminator model
     args.model = 'regressor_fcn_bn_discriminator'
     discriminator = getattr(modelZoo, args.model)()
     discriminator.build_net(feature_out_dim)
-    discriminator.cuda()
+    discriminator.to(device)
     gan_criterion = nn.MSELoss()
     d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=1e-5)
+    d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-8)
     discriminator.train()
     ## DONE model
 
@@ -58,30 +64,30 @@ def main(args):
     ## load data from saved files
     data_tuple = load_data(args, rng)
     if args.require_text:
-        train_X, train_Y, test_X, test_Y, train_ims, test_ims = data_tuple
+        train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
     else:
-        train_X, train_Y, test_X, test_Y = data_tuple
-        train_ims, test_ims = None, None
+        train_X, train_Y, val_X, val_Y = data_tuple
+        train_text, val_text = None, None
     ## DONE: load data from saved files
 
+    mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
 
     ## training job
     kld_weight = 0.05
     prev_save_epoch = 0
-    patience = 20
+    patience = args.patience
     for epoch in range(args.num_epochs):
         args.epoch = epoch
         ## train discriminator
-        if epoch > 100 and (epoch - prev_save_epoch) > patience:
-            print('early stopping at:', epoch-1)
-            break
+        # if epoch > 100 and (epoch - prev_save_epoch) > patience:
+        #     print('early stopping at:', epoch-1)
+        #     break
 
         if epoch > 0 and epoch % 3 == 0:
-            train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_ims=train_ims)
+            train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=train_text)
         else:
-            train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_ims=train_ims)
-            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, test_X, test_Y, currBestLoss, prev_save_epoch, test_ims=test_ims)
-
+            train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_text=train_text)
+            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, val_text=val_text)
 
 
 #######################################################
@@ -93,7 +99,7 @@ def load_data(args, rng):
 
     def fetch_data(set="train"):
         ## load from external files
-        path = DATA_PATHS["train"]
+        path = DATA_PATHS[set]
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text)
         if args.require_text:
@@ -101,7 +107,7 @@ def load_data(args, rng):
             curr_p0 = curr_p0[0]
             return curr_p0, curr_p1, text
         return curr_p0, curr_p1, None
-    
+
     train_X, train_Y, train_text = fetch_data("train")
     val_X, val_Y, val_text = fetch_data("val")
 
@@ -114,21 +120,22 @@ def load_data(args, rng):
         print("===> text", text.shape)
     ## DONE load from external files
 
-    ## In B2H, they do this, per què?¿
-    # train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
-    # train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
-    # test_X = np.swapaxes(test_X, 1, 2).astype(np.float32)
-    # test_Y = np.swapaxes(test_Y, 1, 2).astype(np.float32)
-
+    train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
+    train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
+    val_X = np.swapaxes(val_X, 1, 2).astype(np.float32)
+    val_Y = np.swapaxes(val_Y, 1, 2).astype(np.float32)
     body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
-    np.savez_compressed(args.model_path + '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline), 
+    np.savez_compressed(os.path.join(args.model_path + '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
                         body_mean_X=body_mean_X, body_std_X=body_std_X,
-                        body_mean_Y=body_mean_Y, body_std_Y=body_std_Y) 
+                        body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
+    print(f"train_X: {train_X.shape}; val_X: {val_X.shape}")
+    print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}")
+    
     train_X = (train_X - body_mean_X) / body_std_X
-    test_X = (test_X - body_mean_X) / body_std_X
+    val_X = (val_X - body_mean_X) / body_std_X
     train_Y = (train_Y - body_mean_Y) / body_std_Y
-    test_Y = (test_Y - body_mean_Y) / body_std_Y
+    val_Y = (val_Y - body_mean_Y) / body_std_Y
     print("===> standardization done")
 
     # Data shuffle
@@ -137,10 +144,10 @@ def load_data(args, rng):
     train_X = train_X[I]
     train_Y = train_Y[I]
     if args.require_text:
-        train_ims = train_text[I]
-        return (train_X, train_Y, test_X, test_Y, train_text, test_text)
+        train_text = train_text[I]
+        return (train_X, train_Y, val_X, val_Y, train_text, val_text)
     ## DONE shuffle and set train/validation
-    return (train_X, train_Y, test_X, test_Y)
+    return (train_X, train_Y, val_X, val_Y)
 
 
 ## calc temporal deltas within sequences
@@ -150,7 +157,7 @@ def calc_motion(tensor):
 
 
 ## training discriminator function
-def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_ims=None):
+def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=None):
     generator.eval()
     discriminator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size)
@@ -162,17 +169,17 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         idxStart = bi * args.batch_size
         inputData_np = train_X[idxStart:(idxStart + args.batch_size), :, :]
         outputData_np = train_Y[idxStart:(idxStart + args.batch_size), :, :]
-        inputData = Variable(torch.from_numpy(inputData_np)).cuda()
-        outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
+        inputData = Variable(torch.from_numpy(inputData_np)).to(device)
+        outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        imsData = None
+        textData = None
         if args.require_text:
-            imsData_np = train_ims[idxStart:(idxStart + args.batch_size), :, :]
-            imsData = Variable(torch.from_numpy(imsData_np)).cuda()
+            textData_np = train_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
         with torch.no_grad():
-            fake_data = generator(inputData, text_=imsData).detach()
+            fake_data = generator(inputData, text_=textData).detach()
 
         fake_motion = calc_motion(fake_data)
         real_motion = calc_motion(outputGT)
@@ -186,10 +193,10 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
 
 ## training generator function
-def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_ims=None):
+def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_text=None):
     discriminator.eval()
     generator.train()
-    batchinds = np.arange(train_X.shape[0] // args.batch_size)
+    batchinds = np.arange(train_X.shape[0] // args.batch_size + 1)
     totalSteps = len(batchinds)
     rng.shuffle(batchinds)
     avgLoss = 0.
@@ -199,16 +206,16 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         idxStart = bi * args.batch_size
         inputData_np = train_X[idxStart:(idxStart + args.batch_size), :, :]
         outputData_np = train_Y[idxStart:(idxStart + args.batch_size), :, :]
-        inputData = Variable(torch.from_numpy(inputData_np)).cuda()
-        outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
+        inputData = Variable(torch.from_numpy(inputData_np)).to(device)
+        outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        imsData = None
+        textData = None
         if args.require_text:
-            imsData_np = train_ims[idxStart:(idxStart + args.batch_size), :, :]
-            imsData = Variable(torch.from_numpy(imsData_np)).cuda()
+            textData_np = train_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
-        output = generator(inputData, text_=imsData)
+        output = generator(inputData, text_=textData)
         fake_motion = calc_motion(output)
         with torch.no_grad():
             fake_score = discriminator(fake_motion)
@@ -221,42 +228,45 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
         avgLoss += g_loss.item() * args.batch_size
         if bii % args.log_step == 0:
-            print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii, totalSteps,
-                                                                                          avgLoss / (totalSteps * args.batch_size), 
-                                                                                          np.exp(avgLoss / (totalSteps * args.batch_size))))
+            print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
+                                                                                                  avgLoss / (totalSteps * args.batch_size), 
+                                                                                                  np.exp(avgLoss / (totalSteps * args.batch_size))))
 
 
 ## validating generator function
-def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, test_X, test_Y, currBestLoss, prev_save_epoch, test_ims=None):
+def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, val_text=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
-    batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
+    batchinds = np.arange(val_X.shape[0] // args.batch_size + 1)
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
         ## setting batch data
         idxStart = bi * args.batch_size
-        inputData_np = test_X[idxStart:(idxStart + args.batch_size), :, :]
-        outputData_np = test_Y[idxStart:(idxStart + args.batch_size), :, :]
-        inputData = Variable(torch.from_numpy(inputData_np)).cuda()
-        outputGT = Variable(torch.from_numpy(outputData_np)).cuda()
+        inputData_np = val_X[idxStart:(idxStart + args.batch_size), :, :]
+        outputData_np = val_Y[idxStart:(idxStart + args.batch_size), :, :]
+        inputData = Variable(torch.from_numpy(inputData_np)).to(device)
+        outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        imsData = None
+        textData = None
         if args.require_text:
-            imsData_np = test_ims[idxStart:(idxStart + args.batch_size), :, :]
-            imsData = Variable(torch.from_numpy(imsData_np)).cuda()
+            textData_np = test_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
         
-        output = generator(inputData, text_=imsData)
+        output = generator(inputData, text_=textData)
         g_loss = reg_criterion(output, outputGT)
         testLoss += g_loss.item() * args.batch_size
 
     testLoss /= totalSteps * args.batch_size
-    print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
-                                                                                          testLoss, 
-                                                                                          np.exp(testLoss)))
+    print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
+                                                                                                      testLoss, 
+                                                                                                      np.exp(testLoss),
+                                                                                                      g_optimizer.param_groups[0]["lr"]))
     print('----------------------------------')
+    g_scheduler.step(testLoss)
+    d_scheduler.step(testLoss)
     if testLoss < currBestLoss:
         prev_save_epoch = args.epoch
         checkpoint = {'epoch': args.epoch,
@@ -266,21 +276,26 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, te
         torch.save(checkpoint, fileName)
         currBestLoss = testLoss
 
+        for f in os.listdir(args.model_path):  # remove past checkpoints to avod blowing up disk memory
+            if f != fileName:
+                os.remove(os.path.join(args.model_path, f))
+
     return currBestLoss, prev_save_epoch
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--base_path', type=str, required=True, help='path to the directory where the data files are stored')
+    parser.add_argument('--base_path', type=str, default="./", help='path to the directory where the data files are stored')
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
-    parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for training G and D')
     parser.add_argument('--require_text', action='store_true', help='use additional text feature or not')
     parser.add_argument('--model_path', type=str, required=True , help='path for saving trained models')
-    parser.add_argument('--log_step', type=int , default=100, help='step size for prining log info')
+    parser.add_argument('--log_step', type=int , default=10, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
+    parser.add_argument('--patience', type=int, default=200, help='prefix for naming purposes')
 
     args = parser.parse_args()
     print(args)

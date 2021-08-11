@@ -1,8 +1,14 @@
 import os
 import os.path
+import sys
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
+
+sys.path.append("../")
+import utils
+import shutil
+
 
 # plots the
 # "frame" is a Numpy array containing the keypoints for a single frame
@@ -26,15 +32,9 @@ def plot_3d_lines(frame, structure, show=False):
         return fig, ax
 
 
-def _mkdir(dir):
-    os.chdir(".")
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-
-
 def viz_clip(clip, clip_idx, structure, frame_rate=27.5):
-    _mkdir("viz_results")
-    _mkdir(f"viz_results/{clip_idx}")
+    utils._mkdir("viz_results")
+    utils._mkdir(f"viz_results/{clip_idx}")
     files = []
     for frame_idx in range(clip.shape[0]):
         fig, ax = plot_3d_lines(clip[frame_idx,:], structure, show=False)
@@ -51,12 +51,11 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5):
         frames.append(new_frame)
     # Save into a GIF file that loops forever
     frames[0].save(f"viz_results/{clip_idx}.gif", format='GIF',
-                append_images=frames[1:],
-                save_all=True,
-                duration=len(frames)/frame_rate, loop=0)
+                   append_images=frames[1:],
+                   save_all=True,
+                   duration=len(frames)/frame_rate, loop=0)
     
     # delete temporal dir
-    import shutil
     shutil.rmtree(f"viz_results/{clip_idx}")
 
 
