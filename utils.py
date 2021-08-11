@@ -395,7 +395,7 @@ def _lift_2d_to_3d(inputSequence_2D):
         structure,
         "float32",
         learningRate=25,
-        nCycles=1600
+        nCycles=1000
     )
     # # Backpropagation-based filtering
     # Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
@@ -500,7 +500,7 @@ def load_clip(clip_path, pipeline):
 def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:3]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:15]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -652,7 +652,6 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
             #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
     train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    print(aa_to_rot6d(train_aa)[0].shape)
     save_binary(aa_to_rot6d(train_aa), "r6d_train.pkl")
     val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_val_root.pkl")
     save_binary(aa_to_rot6d(val_aa), "r6d_val.pkl")
