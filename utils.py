@@ -324,6 +324,7 @@ def get_root_bone(xyz, structure):
 
 
 def xyz_to_aa(xyz, structure, root_filename=None):
+    save_binary(get_root_bone(xyz, structure), root_filename)
     aa = []
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
