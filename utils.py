@@ -184,6 +184,12 @@ HANDS = list(range(21*2))  # hands in Open Pose
 
 
 
+def _array_to_list(input):
+    if type(input) != type(list()):  # convert 3D array to list of 2D arrays
+        input = list(input)
+    return input
+
+
 def np_mat_to_rot6d(np_mat):
     """ Get 6D rotation representation for rotation matrix.
         Implementation base on
@@ -221,6 +227,7 @@ def _rot6d_to_aa(r6ds):
 
 
 def rot6d_to_aa(r6d):
+    r6d = _array_to_list(r6d)
     aa = []
     for clip in range(len(r6d)):
         r6d_clip = r6d[clip]
@@ -245,6 +252,7 @@ def _aa_to_rot6d(vecs):
 
 # convert from axis angle to r6d space
 def aa_to_rot6d(aa):
+    aa = _array_to_list(aa)
     r6d = []
     for clip in range(len(aa)):
         aa_clip = aa[clip]
@@ -291,18 +299,26 @@ def _retrieve_axis_angle(aa):
 
 
 def aa_to_xyz(aa, root, bone_len, structure):
+    aa = _array_to_list(aa)
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
+        print(f"aa_clip.shape: {aa_clip.shape}")
         xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")
         xyz_clip[:,0:6] = root
+        print(f"xyz_clip.shape: {xyz_clip.shape}")
         for iBone in range(1,len(structure)):
+            print(i, iBone)
             id_p_J, id_p_E, _, id_p_B = structure[iBone]
             p_J, p_B = xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_B*3:id_p_B*3+3]
             u = p_J - p_B
             u = u / np.linalg.norm(u, axis=1)[:, np.newaxis]
+            if iBone==13:
+                print(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3], aa_clip[:,(iBone-1)*3:(iBone-1)*3+3].shape)
+                print((iBone-1)*3,(iBone-1)*3+3)
             a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
             # Rodrigues' rotation formula
+            print(f"a.shape: {a.shape}, u.shape: {u.shape}")
             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
                 + np.multiply(np.multiply(a, np.einsum('ij,ij->i', a, u)[:, np.newaxis]), (1-np.cos(th))[:, np.newaxis])
@@ -314,6 +330,7 @@ def aa_to_xyz(aa, root, bone_len, structure):
 
 
 def get_root_bone(xyz, structure):
+    xyz = _array_to_list(xyz)
     root = np.array([])
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
@@ -324,6 +341,7 @@ def get_root_bone(xyz, structure):
 
 
 def xyz_to_aa(xyz, structure, root_filename=None):
+    xyz = _array_to_list(xyz)
     save_binary(get_root_bone(xyz, structure), root_filename)
     aa = []
     for i in range(len(xyz)):
@@ -546,7 +564,7 @@ def select_keypoints(kp, idxs):
 def hconcat_feats(neck, arms, hands):
     assert [len(neck), len(arms)] == [len(hands), len(hands)]
     feats = []
-    for i in range(len(neck)):  # for each frame, concat the features
+    for i in range(len(neck)):  # for each frame, concatenate the features
         temp = np.hstack((neck[i], arms[i]))
         feats.append( np.hstack((temp, hands[i])) )
     return feats
@@ -574,36 +592,40 @@ def mkdir(dir):
 
 
 # given a list of arrays (corresponding to a clip) with varying lengths,
-# makes all of them have equal length. The result is a single array
+# makes all of them have equal (pair) length. The result is a single array
 def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=256):
+    sizes = [arr.shape[0] for arr in data]
     if method=="0pad":
-        sizes = [arr.shape[0] for arr in data]
         maxpad = np.amax(sizes) if maxpad=="maxlen" else maxpad
+        maxpad = maxpad + 1 if maxpad % 2 == 1 else maxpad
         res = [np.vstack((arr, np.zeros((maxpad-arr.shape[0],arr.shape[1]),int))) for arr in data]
-        res = np.stack(res)        
+        res = np.stack(res)
 
     elif method=="cutting":
         # get shortest length, cut the rest
         min_T = np.amin([arr.shape[0] for arr in data])
+        min_T = min_T - 1 if sizes % 2 == 1 else min_T
         res = np.array([arr[:min_T,:] for arr in data])
 
     else: # method=="wrap" or method=="reflect"
-        sizes = [arr.shape[0] for arr in data]
-        max_T = np.amax(sizes)
-        res = [np.pad(arr, ((0,0), (0, max_T-arr.shape[0])), method) for arr in data]
-    
+        max_T = np.amax(sizes) + 1 if np.amax(sizes) % 2 == 1 else np.amax(sizes)
+        res = [np.pad(arr, ((0, max_T-arr.shape[0]), (0,0)), method) for arr in data]
+        res = np.stack(res)
+
     return res
 
 
 def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require_text=False, require_audio=False,
                  hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
     feats = pipeline.split('2')
-    in_feat, out_feat = feats[0], feats[1]
     p0_size, p1_size = FEATURE_MAP[pipeline]
+    print(f"p0_size: {p0_size}, p1_size: {p1_size}")
     if os.path.exists(data_path):
         print('using super quick load', data_path)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="0pad")
+        print(type(data))
+        data = make_equal_len(data, method="reflect")
+        print(f"data.shape: {data.shape}")
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
@@ -612,6 +634,32 @@ def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require
         #   text_windows = ...
         #    p0_windows = (p0_windows, text_windows)
         return p0_windows, p1_windows
+
+
+## utility to save results
+def save_results(input, output, pipeline, base_path, tag=''):
+    feats = pipeline.split('2')
+    out_feat = feats[1]
+    mkdir(os.path.join(base_path, 'results/'))
+    if out_feat == 'wh':
+        filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
+        print(input.shape, output.shape)
+        save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
+
+        filename = os.path.join(base_path, f"results/{tag}_inference_aa")
+        input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
+        save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
+
+        root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training 
+        bone_len = load_binary("video_data/lengths_train.pkl")
+        structure = skeletalModel.getSkeletalModelStructure()
+        print("after structure:", input_aa.shape, root.shape, len(bone_len), len(structure))
+
+        input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
+        input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
+        
+        filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
+        save_binary(input_output_xyz, filename)  # save in xyz format
 
 
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):

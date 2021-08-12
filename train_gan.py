@@ -134,7 +134,7 @@ def load_data(args, rng):
     val_X = np.swapaxes(val_X, 1, 2).astype(np.float32)
     val_Y = np.swapaxes(val_Y, 1, 2).astype(np.float32)
     body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
-    np.savez_compressed(os.path.join(args.model_path + '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
+    np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
                         body_mean_X=body_mean_X, body_std_X=body_std_X,
                         body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
@@ -289,9 +289,9 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
         torch.save(checkpoint, fileName)
         currBestLoss = testLoss
 
-        for f in os.listdir(args.model_path):  # remove past checkpoints to avod blowing up disk memory
-            if f != fileName:
-                os.remove(os.path.join(args.model_path, f))
+        # for f in os.listdir(args.model_path):  # remove past checkpoints to avod blowing up disk memory
+        #     if f != fileName:
+        #         os.remove(os.path.join(args.model_path, f))
 
     return currBestLoss, prev_save_epoch
 
@@ -303,8 +303,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for training G and D')
-    parser.add_argument('--require_text', action='store_true', help='use additional text feature or not')
-    parser.add_argument('--model_path', type=str, required=True , help='path for saving trained models')
+    parser.add_argument('--require_text', action="store_true", help="use additional text feature or not")
+    parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=10, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
     parser.add_argument('--patience', type=int, default=200, help='prefix for naming purposes')
