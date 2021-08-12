@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.utils.tensorboard import SummaryWriter
 
 import modelZoo
 from utils import *
@@ -38,7 +39,6 @@ def main(args):
     torch.cuda.manual_seed(23456)
     ## DONE variables
 
-
     ## set up generator model
     args.model = 'regressor_fcn_bn_32'
     generator = getattr(modelZoo, args.model)()
@@ -60,7 +60,6 @@ def main(args):
     discriminator.train()
     ## DONE model
 
-
     ## load data from saved files
     data_tuple = load_data(args, rng)
     if args.require_text:
@@ -70,7 +69,14 @@ def main(args):
         train_text, val_text = None, None
     ## DONE: load data from saved files
 
+    ## setup results logger
+    mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
+    train_log_dir = 'logs/train/' + args.tag
+    val_log_dir   = 'logs/val/' + args.tag
+    train_summary_writer = SummaryWriter(train_log_dir)
+    val_summary_writer   = SummaryWriter(val_log_dir)
     mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
+    ## DONE setup logger 
 
     ## training job
     kld_weight = 0.05
@@ -78,16 +84,19 @@ def main(args):
     patience = args.patience
     for epoch in range(args.num_epochs):
         args.epoch = epoch
-        ## train discriminator
-        # if epoch > 100 and (epoch - prev_save_epoch) > patience:
-        #     print('early stopping at:', epoch-1)
-        #     break
+        # train discriminator
+        if epoch > 100 and (epoch - prev_save_epoch) > patience:
+            print('early stopping at:', epoch-1)
+            break
 
         if epoch > 0 and epoch % 3 == 0:
             train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=train_text)
         else:
-            train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_text=train_text)
-            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, val_text=val_text)
+            train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
+            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
+    
+    train_summary_writer.flush()
+    val_summary_writer.flush()
 
 
 #######################################################
@@ -117,7 +126,7 @@ def load_data(args, rng):
     print("-"*20 + "val" + "-"*20)
     print('===> in/out', val_X.shape, val_Y.shape)
     if args.require_text:
-        print("===> text", text.shape)
+        print("===> text", train_text.shape)
     ## DONE load from external files
 
     train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
@@ -193,7 +202,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
 
 ## training generator function
-def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, train_text=None):
+def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=None):
     discriminator.eval()
     generator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size + 1)
@@ -231,10 +240,12 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
                                                                                                   np.exp(avgLoss / (totalSteps * args.batch_size))))
+    # Save data to tensorboard                             
+    train_summary_writer.add_scalar('Tr. loss', avgLoss / (totalSteps * args.batch_size), epoch)
 
 
 ## validating generator function
-def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, val_text=None):
+def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
@@ -251,7 +262,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
 
         textData = None
         if args.require_text:
-            textData_np = test_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData_np = val_text[idxStart:(idxStart + args.batch_size), :, :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
         
@@ -264,6 +275,8 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
                                                                                                       g_optimizer.param_groups[0]["lr"]))
+    # Save data to tensorboard                             
+    val_summary_writer.add_scalar('Val. loss', testLoss, epoch)
     print('----------------------------------')
     g_scheduler.step(testLoss)
     d_scheduler.step(testLoss)
@@ -281,7 +294,6 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
                 os.remove(os.path.join(args.model_path, f))
 
     return currBestLoss, prev_save_epoch
-
 
 
 if __name__ == '__main__':

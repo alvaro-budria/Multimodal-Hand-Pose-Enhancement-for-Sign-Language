@@ -290,7 +290,7 @@ def _retrieve_axis_angle(aa):
     return a, th
 
 
-def aa_to_xyz(aa, root, bone_len):
+def aa_to_xyz(aa, root, bone_len, structure):
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
@@ -500,7 +500,7 @@ def load_clip(clip_path, pipeline):
 def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:15]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:1]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -627,17 +627,17 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     feats_test = hconcat_feats(neck_test, arms_test, hands_test)
     
-    save_binary(feats_train, "xy_train.pkl")
-    save_binary(feats_val, "xy_val.pkl")
-    save_binary(feats_test, "xy_test.pkl")
+    save_binary(feats_train, "video_data/xy_train.pkl")
+    save_binary(feats_val, "video_data/xy_val.pkl")
+    save_binary(feats_test, "video_data/xy_test.pkl")
 
     print()
     print("saved xy original")
     print()
 
-    lift_2d_to_3d(load_binary("xy_train.pkl"), "xyz_train.pkl")
-    lift_2d_to_3d(load_binary("xy_val.pkl"), "xyz_val.pkl")
-    lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
+    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
 
     print()
     print("saved lifted xyz")
@@ -648,15 +648,15 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     test_3d = load_binary("video_data/xyz_test.pkl")
 
     lengths = pose3D.get_bone_length(train_3d, structure)
-    save_binary(lengths, "lengths_train.pkl")
+    save_binary(lengths, "video_data/lengths_train.pkl")
 
             #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
     train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    save_binary(aa_to_rot6d(train_aa), "r6d_train.pkl")
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "r6d_val.pkl")
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "r6d_test.pkl")
+    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
 
     print(f"processed all H2S data in {dir}")
 
@@ -706,7 +706,7 @@ if __name__ == "__main__":
 
     # root = get_root_bone(train_3d, structure)
     # bone_len = load_binary("lengths_train.pkl")
-    # train_3d_from_aa = aa_to_xyz(train_aa, root, bone_len)
+    # train_3d_from_aa = aa_to_xyz(train_aa, root, bone_len, structure)
     # print(len(train_3d_from_aa), train_3d_from_aa[0].shape)
     # viz_3d.viz(train_3d_from_aa, structure)
     #print(train_3d[1]-train_3d_aa[1])
