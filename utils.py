@@ -1,9 +1,11 @@
 import os
+import sys
 import json
 import pickle
+import argparse
+
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-import sys
 
 sys.path.append('./3DposeEstimator')
 # 2D to 3D lifting
@@ -699,8 +701,10 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
 
 if __name__ == "__main__":
-    process_H2S_dataset()
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset_path', type=str, default="./Green Screen RGB clips* (frontal view)", help="path to the directory where the dataset is located")
+    args = parser.parse_args()
+    process_H2S_dataset(args.dataset_path)
     
     structure = skeletalModel.getSkeletalModelStructure()
 
