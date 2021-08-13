@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import argparse
 
@@ -20,7 +21,7 @@ DATA_PATHS = {
         }
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+lastCheckpoint = ""
 
 #######################################################
 ## main training function
@@ -95,6 +96,8 @@ def main(args):
             train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
             currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
     
+    shutil.copyfile(lastCheckpoint, args.model_path + "/lastCheckpoint.pth")  #  name last checkpoint as "lastCheckpoint.pth"
+
     train_summary_writer.flush()
     val_summary_writer.flush()
 
@@ -290,6 +293,8 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
         fileName = args.model_path + '/{}{}_checkpoint_e{}_loss{:.4f}.pth'.format(args.tag, args.pipeline, args.epoch, testLoss)
         torch.save(checkpoint, fileName)
         currBestLoss = testLoss
+        global lastCheckpoint
+        lastCheckpoint = fileName
 
         # for f in os.listdir(args.model_path):  # remove past checkpoints to avod blowing up disk memory
         #     if f != fileName:
