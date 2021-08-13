@@ -139,45 +139,32 @@ class regressor_fcn_bn_32(nn.Module):
 
 	## forward pass through generator
 	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
-		print(f"input_.shape: {input_.shape}")
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
-		print(f"fourth_block.shape: {fourth_block.shape}")
 		if self.require_text:
 			feat = self.process_text(text_)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
-		print(f"fifth_block.shape: {fifth_block.shape}")
 		sixth_block = self.conv6(fifth_block)
-		print(f"sixth_block.shape: {sixth_block.shape}")
 		seventh_block = self.conv7(sixth_block)
-		print(f"seventh_block.shape: {seventh_block.shape}")
 		eighth_block = self.conv8(seventh_block)
-		print(f"eighth_block.shape: {eighth_block.shape}")
 		ninth_block = self.conv9(eighth_block)
-		print(f"ninth_block.shape: {ninth_block.shape}")
 		tenth_block = self.conv10(ninth_block)
-		print(f"tenth_block.shape: {tenth_block.shape}")
 
 		ninth_block = tenth_block + ninth_block
 		ninth_block = self.skip1(ninth_block)
-		print(f"ninth_block.shape: {ninth_block.shape}")
 
 		eighth_block = ninth_block + eighth_block
 		eighth_block = self.skip2(eighth_block)
-		print(f"eighth_block.shape: {eighth_block.shape}")
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
 		sixth_block = self.skip4(sixth_block)
-		print(f"sixth_block.shape: {sixth_block.shape}")
 
 		fifth_block = sixth_block + fifth_block
 		fifth_block = self.skip5(fifth_block)
-		print(f"fifth_block.shape: {fifth_block.shape}")
 
 		output = self.decoder(fifth_block)
-		print(f"output.shape: {output.shape}")
 		return output 
 
 
