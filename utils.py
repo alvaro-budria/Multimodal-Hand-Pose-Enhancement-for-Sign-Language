@@ -490,7 +490,7 @@ def load_clip(clip_path, pipeline):
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
     in_kp, out_kp = np.array([]), np.array([])
-    for frame in sorted(os.listdir(clip_path))[0:500]:  # for each frame, there is an associated .json file
+    for frame in sorted(os.listdir(clip_path))[0:]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
             f = open(os.path.join(clip_path, frame))
             data = json.load(f)
@@ -514,7 +514,7 @@ def load_clip(clip_path, pipeline):
 def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:8]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
