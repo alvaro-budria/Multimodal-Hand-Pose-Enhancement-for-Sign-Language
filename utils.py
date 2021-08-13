@@ -18,10 +18,10 @@ import viz.viz_3d as viz
 
 
 DATA_PATHS = {
-    "train": "train_2D_keypoints/openpose_output/json",
-    "val": "val_2D_keypoints/openpose_output/json",
-    "test": "test_2D_keypoints/openpose_output/json"
-}
+        "train": "train/rgb_front/features/openpose_output/json",
+        "val": "val/rgb_front/features/openpose_output/json",
+        "test": "test/rgb_front/features/openpose_output/json"
+    }
 
 FEATURE_MAP = {
     'arm2wh':((6*6), 42*6),
@@ -702,11 +702,19 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_path', type=str, default="./Green Screen RGB clips* (frontal view)", help="path to the directory where the dataset is located")
+    parser.add_argument('--dataset_path', type=str, default="/mnt/gpid07/datasets/How2Sign/How2Sign/utterance_level/", help="path to the directory where the dataset is located")
     args = parser.parse_args()
+    if args.dataset_path=="Green Screen RGB clips* (frontal view)":
+        DATA_PATHS = {
+        "train": "train_2D_keypoints/openpose_output/json",
+        "val": "val_2D_keypoints/openpose_output/json",
+        "test": "test_2D_keypoints/openpose_output/json"
+    }
+
     process_H2S_dataset(args.dataset_path)
-    
+
     structure = skeletalModel.getSkeletalModelStructure()
+    
 
     # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset("./Green Screen RGB clips* (frontal view)")
 
