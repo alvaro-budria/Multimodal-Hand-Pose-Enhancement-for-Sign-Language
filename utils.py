@@ -303,22 +303,15 @@ def aa_to_xyz(aa, root, bone_len, structure):
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
-        print(f"aa_clip.shape: {aa_clip.shape}")
         xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")
         xyz_clip[:,0:6] = root
-        print(f"xyz_clip.shape: {xyz_clip.shape}")
         for iBone in range(1,len(structure)):
-            print(i, iBone)
             id_p_J, id_p_E, _, id_p_B = structure[iBone]
             p_J, p_B = xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_B*3:id_p_B*3+3]
             u = p_J - p_B
             u = u / np.linalg.norm(u, axis=1)[:, np.newaxis]
-            if iBone==13:
-                print(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3], aa_clip[:,(iBone-1)*3:(iBone-1)*3+3].shape)
-                print((iBone-1)*3,(iBone-1)*3+3)
             a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
             # Rodrigues' rotation formula
-            print(f"a.shape: {a.shape}, u.shape: {u.shape}")
             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
                 + np.multiply(np.multiply(a, np.einsum('ij,ij->i', a, u)[:, np.newaxis]), (1-np.cos(th))[:, np.newaxis])
@@ -413,8 +406,8 @@ def _lift_2d_to_3d(inputSequence_2D):
         Xw,
         structure,
         "float32",
-        learningRate=25,
-        nCycles=1000
+        learningRate=30,
+        nCycles=800
     )
     # # Backpropagation-based filtering
     # Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
@@ -519,7 +512,7 @@ def load_clip(clip_path, pipeline):
 def _load_H2S_dataset(dir, pipeline):
     in_features, out_features = [], []
     i = 1
-    for clip in os.listdir(dir)[0:1]:  # each clip is stored in a separate folder
+    for clip in os.listdir(dir)[0:8]:  # each clip is stored in a separate folder
         print(i)
         i += 1
         clip_path = os.path.join(dir, clip)
@@ -619,13 +612,10 @@ def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require
                  hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
     feats = pipeline.split('2')
     p0_size, p1_size = FEATURE_MAP[pipeline]
-    print(f"p0_size: {p0_size}, p1_size: {p1_size}")
     if os.path.exists(data_path):
         print('using super quick load', data_path)
         data = load_binary(data_path)
-        print(type(data))
         data = make_equal_len(data, method="reflect")
-        print(f"data.shape: {data.shape}")
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
@@ -643,7 +633,6 @@ def save_results(input, output, pipeline, base_path, tag=''):
     mkdir(os.path.join(base_path, 'results/'))
     if out_feat == 'wh':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
-        print(input.shape, output.shape)
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
 
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
@@ -653,7 +642,6 @@ def save_results(input, output, pipeline, base_path, tag=''):
         root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training 
         bone_len = load_binary("video_data/lengths_train.pkl")
         structure = skeletalModel.getSkeletalModelStructure()
-        print("after structure:", input_aa.shape, root.shape, len(bone_len), len(structure))
 
         input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
@@ -713,7 +701,8 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 if __name__ == "__main__":
     process_H2S_dataset()
     
-    #structure = skeletalModel.getSkeletalModelStructure()
+    
+    structure = skeletalModel.getSkeletalModelStructure()
 
     # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset("./Green Screen RGB clips* (frontal view)")
 
@@ -770,3 +759,8 @@ if __name__ == "__main__":
     #print(train_aa[0])
     # recover neck and wrist keypoints to reconstruct the model's output from aa to xyz
     #wrist_train = np.hstack(in_train[:,WRIST[0]], hands_train[:,WRIST[1]])
+
+
+    # Visualize inference results
+    # _inference_xyz = load_binary("results/_inference_xyz.pkl")
+    # viz.viz(_inference_xyz, structure, frame_rate=1, results_dir="viz_results")
