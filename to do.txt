@@ -8,3 +8,9 @@
 * monitor results and optimization evolution (with TensorBoard?)
 
 
+
+NOTES:
+
+* A "H2S RGB front" hi ha 31047 exemples d'entrenament. No és factible preprocessar totes aquestes dades amb un compte d'estudiant a CALCULA, a banda que potser el preprocessat de 14/08 potser és millorat. Per això de moment faig proves amb un 10% de les dades.
+
+
