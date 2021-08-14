@@ -113,7 +113,7 @@ def initialization(Xx, Xy, Xw, structure, sigma, randomNubersGenerator, dtype):
       L = norm([ax - bx, ay - by])
       Ls[line].append(L)
   for i in range(len(lines)):
-    lines[i] = math.log(perc(Ls[i], 0.5))
+    lines[i] = math.log(perc(Ls[i], 0.5) + 1e-9)  # add small constant to avoid math error
   
   for iBone in range(len(structure)):
     a, b, line, _ = structure[iBone]
