@@ -439,7 +439,7 @@ from concurrent.futures import ProcessPoolExecutor
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=5):
     feats_3d = []
-    with ProcessPoolExecutor(max_workers=3) as executor:  # parallelize to make it faster
+    with ProcessPoolExecutor() as executor:  # parallelize to make it faster
         for r in executor.map(_lift_2d_to_3d, feats):
             feats_3d.append(r)
     save_binary(feats_3d, filename)
