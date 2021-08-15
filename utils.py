@@ -561,12 +561,16 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     test_path = os.path.join(data_dir, DATA_PATHS["test"])
     # load data
     in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None
-    if os.path.exists(train_path):
-        in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline, subset=subset)
-    if os.path.exists(val_path):
-        in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
     if os.path.exists(test_path):
         in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
+        print("LOADED RAW TEST DATA", flush=True)
+    if os.path.exists(val_path):
+        in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
+        print("LOADED RAW VAL DATA", flush=True)
+    if os.path.exists(train_path):
+        in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline, subset=subset)
+        print("LOADED RAW TRAIN DATA", flush=True)
+    
     return (in_train, out_train), (in_val, out_val), (in_test, out_test)
 
 

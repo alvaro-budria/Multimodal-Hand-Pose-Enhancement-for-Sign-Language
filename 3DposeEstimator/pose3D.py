@@ -112,7 +112,8 @@ def backpropagationBasedFiltering(
   sess.run(init)
   for iCycle in range(nCycles):
     sess.run(train, {tarx: tarx_values, tary: tary_values, w: w_values})
-    print("iCycle = %3d, loss = %e" % (iCycle, sess.run([loss], {tarx: tarx_values, tary: tary_values, w: w_values})[0]))
+    if (iCycle+1) == nCycles:
+      print("iCycle = %3d, loss = %e" % (iCycle, sess.run([loss], {tarx: tarx_values, tary: tary_values, w: w_values})[0]))
 
   # returning final coordinates
   return sess.run([x, y, z], {})
@@ -213,7 +214,8 @@ def backpropagationBasedFiltering_v2(
   opt = tf.keras.optimizers.SGD(learning_rate=learningRate)
   for iCycle in range(nCycles):
     opt.minimize(loss, var_list=[x, y, z])
-    print("iCycle = %3d, loss = %e" % (iCycle, loss()))
+    if (iCycle+1) == nCycles:
+      print("iCycle = %3d, loss = %e" % (iCycle, loss()), flush=True)
 
   # returning final coordinates
   return x.numpy(), y.numpy(), z.numpy()
