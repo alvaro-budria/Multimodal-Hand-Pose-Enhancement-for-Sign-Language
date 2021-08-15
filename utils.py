@@ -442,11 +442,11 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
     feats_3d = []
     idx = int(len(feats) / nPartitions)
     for i in range(nPartitions):
-        print("*"*50)
-        print(f"PARTITION {i}")
-        print()
-        print(f"LIFTED {int(i / nPartitions *100)}%")
-        print("*"*50)
+        print("*"*50, flush=True)
+        print(f"PARTITION {i}", flush=True)
+        print(flush=True)
+        print(f"LIFTED {int(i / nPartitions *100)}%", flush=True)
+        print("*"*50, flush=True)
         feats_3d_sub = []
         with ProcessPoolExecutor() as executor:  # parallelize to make it faster
             for r in executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)]):
@@ -536,7 +536,7 @@ def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a cer
     idx_max = int(len(dir_list)*subset)
     with ProcessPoolExecutor() as executor:  # parallelize to make it faster
         for in_kp, out_kp in executor.map(_load, dir_list[0:idx_max], repeat(dir), repeat(pipeline)):
-            print("holaa!!!!!!11one11!!!")
+            print("holaa!!!!!!11one11!!!", flush=True)
             in_features.append(in_kp)
             out_features.append(out_kp)
 
@@ -593,7 +593,7 @@ def hconcat_feats(neck, arms, hands):
 
 def save_binary(obj, filename):
     if filename[-4:] != ".pkl":
-        print("Adding .pkl extension as it was not found.")
+        print("Adding .pkl extension as it was not found.", flush=True)
         filename = filename + ".pkl"
     with open(filename, 'wb') as outfile:
         pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
@@ -641,7 +641,7 @@ def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require
     feats = pipeline.split('2')
     p0_size, p1_size = FEATURE_MAP[pipeline]
     if os.path.exists(data_path):
-        print('using super quick load', data_path)
+        print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
         data = make_equal_len(data, method="reflect")
         if pipeline=="arm2wh":
@@ -696,7 +696,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     save_binary(feats_test, "video_data/xy_test.pkl")
 
     print()
-    print("saved xy original")
+    print("saved xy original", flush=True)
     print()
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
