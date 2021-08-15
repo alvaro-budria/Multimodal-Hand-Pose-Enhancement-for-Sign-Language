@@ -9,6 +9,7 @@ from torch import nn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
+import wandb
 
 import modelZoo
 from utils import *
@@ -77,7 +78,11 @@ def main(args):
     train_summary_writer = SummaryWriter(train_log_dir)
     val_summary_writer   = SummaryWriter(val_log_dir)
     mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
+
+    wandb.init(project='pytorchw_b')
+    wandb.watch(generator, log='all')
     ## DONE setup logger 
+
 
     ## training job
     kld_weight = 0.05
@@ -314,7 +319,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
-    parser.add_argument('--patience', type=int, default=100, help='prefix for naming purposes')
+    parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination')
 
     args = parser.parse_args()
     print(args, flush=True)

@@ -441,14 +441,14 @@ def _lift_2d_to_3d(inputSequence_2D):
 
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
+    feats = feats[0:2]
     feats_3d = []
-    idx = int(len(feats) / nPartitions)
+    idx = int(len(feats) / nPartitions) + 1
     for i in range(nPartitions):
         with ProcessPoolExecutor() as executor:
             feats_3d_sub = executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)])
-        feats_3d = feats_3d + feats_3d_sub
+        feats_3d = feats_3d + list(map(list, zip(*feats_3d_sub)) )
         save_binary(feats_3d, filename)
-        
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
         print(flush=True)
