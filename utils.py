@@ -544,14 +544,6 @@ def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a cer
     in_features, out_features = map(list, zip(*result))
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
-
-    # for clip in dir_list[0:int(len(dir_list)*subset)]:  # each clip is stored in a separate folder
-    #     print(i)
-    #     i += 1
-    #     clip_path = os.path.join(dir, clip)
-    #     in_kp, out_kp = load_clip(clip_path, pipeline)
-    #     in_features.append(in_kp)
-    #     out_features.append(out_kp)
     return in_features, out_features
 
 
@@ -688,31 +680,32 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     structure = skeletalModel.getSkeletalModelStructure()
-    mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=1)  # for the moment use just 10% of the available data
-    print("Loaded raw data from disk", flush=True)
-    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    print("Selected NECK keypoints", flush=True)
-    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    print("Selected ARMS keypoints", flush=True)
-    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    print("Selected HANDS keypoints", flush=True)
+    # mkdir("video_data")
 
-    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=1)  # for the moment use just 10% of the available data
+    # print("Loaded raw data from disk", flush=True)
+    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    # print("Selected NECK keypoints", flush=True)
+    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    # print("Selected ARMS keypoints", flush=True)
+    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    # print("Selected HANDS keypoints", flush=True)
+
+    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
     
-    save_binary(feats_train, "video_data/xy_train.pkl")
-    save_binary(feats_val, "video_data/xy_val.pkl")
-    save_binary(feats_test, "video_data/xy_test.pkl")
+    # save_binary(feats_train, "video_data/xy_train.pkl")
+    # save_binary(feats_val, "video_data/xy_val.pkl")
+    # save_binary(feats_test, "video_data/xy_test.pkl")
 
-    print()
-    print("saved xy original", flush=True)
-    print()
+    # print()
+    # print("saved xy original", flush=True)
+    # print()
 
-    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    # print("lifted train to 3d")
+    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    print("lifted train to 3d")
     # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
     # print("lifted val to 3d")
     # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
