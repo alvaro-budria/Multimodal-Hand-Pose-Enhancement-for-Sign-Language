@@ -87,7 +87,7 @@ def main(args):
         args.epoch = epoch
         # train discriminator
         if epoch > 100 and (epoch - prev_save_epoch) > patience:
-            print('early stopping at:', epoch-1)
+            print('early stopping at:', epoch-1, flush=True)
             break
 
         if epoch > 0 and epoch % 3 == 0:
@@ -123,13 +123,13 @@ def load_data(args, rng):
     train_X, train_Y, train_text = fetch_data("train")
     val_X, val_Y, val_text = fetch_data("val")
 
-    print("-"*20 + "train" + "-"*20)
-    print('===> in/out', train_X.shape, train_Y.shape)
-    print()
-    print("-"*20 + "val" + "-"*20)
-    print('===> in/out', val_X.shape, val_Y.shape)
+    print("-"*20 + "train" + "-"*20, flush=True)
+    print('===> in/out', train_X.shape, train_Y.shape, flush=True)
+    print(flush=True)
+    print("-"*20 + "val" + "-"*20, flush=True)
+    print('===> in/out', val_X.shape, val_Y.shape, flush=True)
     if args.require_text:
-        print("===> text", train_text.shape)
+        print("===> text", train_text.shape, flush=True)
     ## DONE load from external files
 
     train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
@@ -143,14 +143,14 @@ def load_data(args, rng):
                         body_mean_X=body_mean_X, body_std_X=body_std_X,
                         body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
-    print(f"train_X: {train_X.shape}; val_X: {val_X.shape}")
-    print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}")
+    print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
+    print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
     
     train_X = (train_X - body_mean_X) / body_std_X
     val_X = (val_X - body_mean_X) / body_std_X
     train_Y = (train_Y - body_mean_Y) / body_std_Y
     val_Y = (val_Y - body_mean_Y) / body_std_Y
-    print("===> standardization done")
+    print("===> standardization done", flush=True)
 
     # Data shuffle
     I = np.arange(len(train_X))
@@ -244,7 +244,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         if bii % args.log_step == 0:
             print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
-                                                                                                  np.exp(avgLoss / (totalSteps * args.batch_size))))
+                                                                                                  np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
     # Save data to tensorboard                             
     train_summary_writer.add_scalar('Tr. loss', avgLoss / (totalSteps * args.batch_size), epoch)
 
@@ -279,10 +279,10 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
     print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
-                                                                                                      g_optimizer.param_groups[0]["lr"]))
+                                                                                                      g_optimizer.param_groups[0]["lr"]), flush=True)
     # Save data to tensorboard                             
     val_summary_writer.add_scalar('Val. loss', testLoss, epoch)
-    print('----------------------------------')
+    print('----------------------------------', flush=True)
     g_scheduler.step(testLoss)
     d_scheduler.step(testLoss)
     if testLoss < currBestLoss:
@@ -317,5 +317,5 @@ if __name__ == '__main__':
     parser.add_argument('--patience', type=int, default=100, help='prefix for naming purposes')
 
     args = parser.parse_args()
-    print(args)
+    print(args, flush=True)
     main(args)

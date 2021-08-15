@@ -434,6 +434,8 @@ def _lift_2d_to_3d(inputSequence_2D):
     
     kp = np.empty((Yx.shape[0], Yx.shape[1] + Yy.shape[1] + Yz.shape[1]), dtype=dtype)
     kp[:,0::3], kp[:,1::3], kp[:,2::3] = Yx, Yy, Yz
+
+    print("LIFTED SEQUENCE SUCCESSFULLY", flush=True)
     return kp
 
 
@@ -442,17 +444,16 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
     feats_3d = []
     idx = int(len(feats) / nPartitions)
     for i in range(nPartitions):
+        with ProcessPoolExecutor() as executor:
+            feats_3d_sub = executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)])
+        feats_3d = feats_3d + feats_3d_sub
+        save_binary(feats_3d, filename)
+        
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
         print(flush=True)
         print(f"LIFTED {int(i / nPartitions *100)}%", flush=True)
         print("*"*50, flush=True)
-        feats_3d_sub = []
-        with ProcessPoolExecutor() as executor:  # parallelize to make it faster
-            for r in executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)]):
-                feats_3d_sub.append(r)
-        feats_3d = feats_3d + feats_3d_sub
-        save_binary(feats_3d, filename)
 
 
 ## helper for calculating mean and standard dev
@@ -523,23 +524,26 @@ def load_clip(clip_path, pipeline):
 
 
 
-def _load(clip, dir, pipeline):
+def _load(args):
+    clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
     in_kp, out_kp = load_clip(clip_path, pipeline)
     return in_kp, out_kp
 
 def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a certain % of the data only
     in_features, out_features = [], []
-    i = 1
+    #i = 1
     dir_list = os.listdir(dir)
 
     idx_max = int(len(dir_list)*subset)
-    with ProcessPoolExecutor() as executor:  # parallelize to make it faster
-        for in_kp, out_kp in executor.map(_load, dir_list[0:idx_max], repeat(dir), repeat(pipeline)):
-            print("holaa!!!!!!11one11!!!", flush=True)
-            in_features.append(in_kp)
-            out_features.append(out_kp)
+    dir_ = [dir for _ in range(idx_max)]
+    pipe_ = [pipeline for _ in range(idx_max)]
+    with ProcessPoolExecutor() as executor:
+        result = executor.map(_load, zip(dir_list[0:idx_max], dir_, pipe_))
 
+    in_features, out_features = map(list, zip(*result))
+    print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
+    print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
 
     # for clip in dir_list[0:int(len(dir_list)*subset)]:  # each clip is stored in a separate folder
     #     print(i)
@@ -683,9 +687,13 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
     (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=1)  # for the moment use just 10% of the available data
+    print("Loaded raw data from disk", flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    print("Selected NECK keypoints", flush=True)
     arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    print("Selected ARMS keypoints", flush=True)
     hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    print("Selected HANDS keypoints", flush=True)
 
     feats_train = hconcat_feats(neck_train, arms_train, hands_train)
     feats_val = hconcat_feats(neck_val, arms_val, hands_val)

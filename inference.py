@@ -63,8 +63,8 @@ def main(args):
 
     output = model(inputData, text_=textData)
     error = criterion(output, outputGT).data
-    print(">>> TOTAL ERROR: ", error)
-    print('----------------------------------')
+    print(">>> TOTAL ERROR: ", error, flush=True)
+    print('----------------------------------', flush=True)
     ## DONE pass loaded data into training
 
     ## preparing output for saving
@@ -89,5 +89,5 @@ if __name__ == '__main__':
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
 
     args = parser.parse_args()
-    print(args)
+    print(args, flush=True)
     main(args)
