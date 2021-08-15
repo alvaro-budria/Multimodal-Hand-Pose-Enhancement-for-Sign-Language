@@ -441,7 +441,6 @@ def _lift_2d_to_3d(inputSequence_2D):
 
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
-    feats = feats[0:2]
     feats_3d = []
     idx = int(len(feats) / nPartitions) + 1
     for i in range(nPartitions):
