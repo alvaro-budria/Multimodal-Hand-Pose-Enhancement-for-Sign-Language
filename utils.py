@@ -3,6 +3,8 @@ import sys
 import json
 import pickle
 import argparse
+from itertools import repeat
+from concurrent.futures import ProcessPoolExecutor
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -435,7 +437,6 @@ def _lift_2d_to_3d(inputSequence_2D):
     return kp
 
 
-from concurrent.futures import ProcessPoolExecutor
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
     feats_3d = []
@@ -520,18 +521,33 @@ def load_clip(clip_path, pipeline):
     return in_kp, out_kp
 
 
-def _load_H2S_dataset(dir, pipeline, subset=0.1):
+
+
+def _load(clip, dir, pipeline):
+    clip_path = os.path.join(dir, clip)
+    in_kp, out_kp = load_clip(clip_path, pipeline)
+    return in_kp, out_kp
+
+def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a certain % of the data only
     in_features, out_features = [], []
     i = 1
     dir_list = os.listdir(dir)
-    for clip in dir_list[0:int(len(dir_list)*subset)]:  # each clip is stored in a separate folder
-        print(i)
-        i += 1
-        clip_path = os.path.join(dir, clip)
-        in_kp, out_kp = load_clip(clip_path, pipeline)
-        in_features.append(in_kp)
-        out_features.append(out_kp)
-    #in_features = np.array([ elem for singleList in in_features for elem in singleList])
+
+    idx_max = int(len(dir_list)*subset)
+    with ProcessPoolExecutor() as executor:  # parallelize to make it faster
+        for in_kp, out_kp in executor.map(_load, dir_list[0:idx_max], repeat(dir), repeat(pipeline)):
+            print("holaa!!!!!!11one11!!!")
+            in_features.append(in_kp)
+            out_features.append(out_kp)
+
+
+    # for clip in dir_list[0:int(len(dir_list)*subset)]:  # each clip is stored in a separate folder
+    #     print(i)
+    #     i += 1
+    #     clip_path = os.path.join(dir, clip)
+    #     in_kp, out_kp = load_clip(clip_path, pipeline)
+    #     in_features.append(in_kp)
+    #     out_features.append(out_kp)
     return in_features, out_features
 
 
@@ -683,8 +699,8 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     print("saved xy original")
     print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d")
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d")
     # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
     # print("lifted val to 3d")
     # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
@@ -727,63 +743,6 @@ if __name__ == "__main__":
 
     structure = skeletalModel.getSkeletalModelStructure()
     
-
-    # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset("./Green Screen RGB clips* (frontal view)")
-
-    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-
-    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
-
-    # save_binary(feats_train, "xy_train.pkl")
-    # save_binary(feats_val, "xy_val.pkl")
-    # save_binary(feats_test, "xy_test.pkl")
-
-    # print()
-    # print("saved xyz original")
-    # print()
-
-    # lift_2d_to_3d(load_binary("xy_train.pkl"), "xyz_train.pkl")
-    # lift_2d_to_3d(load_binary("xy_val.pkl"), "xyz_val.pkl")
-    # lift_2d_to_3d(load_binary("xy_test.pkl"), "xyz_test.pkl")
-
-
-    #train_3d = load_binary("xyz_train.pkl")
-    #viz_3d.viz(train_3d, structure)
-    # val_3d = load_binary("xyz_val.pkl")
-    # test_3d = load_binary("xyz_test.pkl")
-    # print(len(train_3d), train_3d[0].shape)
-
-    # lengths = pose3D.get_bone_length(train_3d, structure)
-    # # print(lengths)
-    # save_binary(lengths, "lengths_train.pkl")
-
-             # xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    # train_aa = xyz_to_aa(train_3d, structure, root_filename="xyz_train_root.pkl")
-    # save_binary(train_aa, "aa_train.pkl")
-    # print(len(train_aa), train_aa[0].shape)
-
-    # root = get_root_bone(train_3d, structure)
-    # bone_len = load_binary("lengths_train.pkl")
-    # train_3d_from_aa = aa_to_xyz(train_aa, root, bone_len, structure)
-    # print(len(train_3d_from_aa), train_3d_from_aa[0].shape)
-    # viz_3d.viz(train_3d_from_aa, structure)
-    #print(train_3d[1]-train_3d_aa[1])
-
-    # train_rd6 = aa_to_rot6d(train_aa)
-    # print(len(train_rd6), train_rd6[0].shape)
-
-    # train_aa_from_r6d = rot6d_to_aa(train_rd6)
-    # print(len(train_aa_from_r6d), train_aa_from_r6d[1].shape)
-
-
-    #print(train_aa[0])
-    # recover neck and wrist keypoints to reconstruct the model's output from aa to xyz
-    #wrist_train = np.hstack(in_train[:,WRIST[0]], hands_train[:,WRIST[1]])
-
 
     # Visualize inference results
     # _inference_xyz = load_binary("results/_inference_xyz.pkl")
