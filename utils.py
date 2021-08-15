@@ -439,10 +439,12 @@ from concurrent.futures import ProcessPoolExecutor
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=5):
     feats_3d = []
-    with ProcessPoolExecutor() as executor:  # parallelize to make it faster
-        for r in executor.map(_lift_2d_to_3d, feats):
-            feats_3d.append(r)
-    save_binary(feats_3d, filename)
+    idx = int(len(feats) / nPartitions)
+    for i in range(nPartitions):
+        with ProcessPoolExecutor() as executor:  # parallelize to make it faster
+            for r in executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)]):
+                feats_3d.append(r)
+    save_binary(feats_3d, filename+"_"+str(i))
 
 
 ## helper for calculating mean and standard dev
@@ -655,24 +657,24 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     structure = skeletalModel.getSkeletalModelStructure()
-    mkdir("video_data")
+    # mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.1)  # for the moment use just 10% of the available data
+    # (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.1)  # for the moment use just 10% of the available data
 
-    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
 
-    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
     
-    save_binary(feats_train, "video_data/xy_train.pkl")
-    save_binary(feats_val, "video_data/xy_val.pkl")
-    save_binary(feats_test, "video_data/xy_test.pkl")
+    # save_binary(feats_train, "video_data/xy_train.pkl")
+    # save_binary(feats_val, "video_data/xy_val.pkl")
+    # save_binary(feats_test, "video_data/xy_test.pkl")
 
-    print()
-    print("saved xy original")
+    # print()
+    # print("saved xy original")
     print()
 
     lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
