@@ -446,9 +446,9 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
         feats_3d_sub = []
         with Pool(processes=24) as pool:
             feats_3d_sub = pool.starmap( _lift_2d_to_3d, zip(feats[idx*i:idx*(i+1)]) ) 
-        print(len(feats_3d_sub))
+        print(len(feats_3d_sub), flush=True)
         feats_3d = feats_3d + feats_3d_sub
-        print(len(feats_3d))
+        print(len(feats_3d), flush=True)
         save_binary(feats_3d, filename)
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
