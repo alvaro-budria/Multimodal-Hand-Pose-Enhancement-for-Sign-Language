@@ -3,8 +3,7 @@ import sys
 import json
 import pickle
 import argparse
-from itertools import repeat
-from concurrent.futures import ProcessPoolExecutor
+from multiprocessing import Pool
 
 import numpy as np
 from scipy.spatial.transform import Rotation as R
@@ -443,10 +442,13 @@ def _lift_2d_to_3d(inputSequence_2D):
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
     feats_3d = []
     idx = int(len(feats) / nPartitions) + 1
-    for i in range(nPartitions):
-        with ProcessPoolExecutor() as executor:
-            feats_3d_sub = executor.map(_lift_2d_to_3d, feats[idx*i:idx*(i+1)])
-        feats_3d = feats_3d + list(map(list, zip(*feats_3d_sub)) )
+    for i in range(nPartitions):  
+        feats_3d_sub = []
+        with Pool(processes=24) as pool:
+            feats_3d_sub = pool.starmap( _lift_2d_to_3d, zip(feats[idx*i:idx*(i+1)]) ) 
+        print(len(feats_3d_sub))
+        feats_3d = feats_3d + feats_3d_sub
+        print(len(feats_3d))
         save_binary(feats_3d, filename)
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
@@ -703,16 +705,16 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved xy original", flush=True)
     # print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d")
-    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    # print("lifted val to 3d")
-    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    # print("lifted test to 3d")
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d")
+    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    print("lifted val to 3d")
+    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    print("lifted test to 3d")
 
-    # print()
-    # print("saved lifted xyz")
-    # print()
+    print()
+    print("saved lifted xyz")
+    print()
 
     # train_3d = load_binary("video_data/xyz_train.pkl")
     # val_3d = load_binary("video_data/xyz_val.pkl")
