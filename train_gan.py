@@ -241,7 +241,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
-        if epoch % 5 == 1 and bii+1 == len(batchinds):  # every 5 epochs, generate gradient flow chart
+        if epoch % 1 == 0 and bii+1 == len(batchinds):  # every 5 epochs, generate gradient flow chart
             mkdir("viz_grads")
             plot_grad_flow(generator.named_parameters(), f'viz_grads/grad_graph_e{epoch}')
         g_optimizer.step()
