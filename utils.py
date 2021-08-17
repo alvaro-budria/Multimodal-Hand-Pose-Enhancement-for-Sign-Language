@@ -706,14 +706,14 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print()
 
     lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d")
+    print("lifted train to 3d", flush=True)
     # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    # print("lifted val to 3d")
+    # print("lifted val to 3d", flush=True)
     # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    # print("lifted test to 3d")
+    # print("lifted test to 3d", flush=True)
 
     # print()
-    # print("saved lifted xyz")
+    # print("saved lifted xyz", flush=True)
     # print()
 
     # train_3d = load_binary("video_data/xyz_train.pkl")
@@ -731,7 +731,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
     # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
 
-    # print(f"processed all H2S data in {dir}")
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":

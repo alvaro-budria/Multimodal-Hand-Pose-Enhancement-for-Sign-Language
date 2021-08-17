@@ -9,8 +9,9 @@ from torch import nn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
-import wandb
 
+sys.path.append('./viz')
+from track_grads import plot_grad_flow
 import modelZoo
 from utils import *
 
@@ -78,9 +79,6 @@ def main(args):
     train_summary_writer = SummaryWriter(train_log_dir)
     val_summary_writer   = SummaryWriter(val_log_dir)
     mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
-
-    wandb.init(project='pytorchw_b')
-    wandb.watch(generator, log='all')
     ## DONE setup logger 
 
 
@@ -243,6 +241,9 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
+        if epoch % 5 == 1 and bii+1 == len(batchinds):  # every 5 epochs, generate gradient flow chart
+            mkdir("viz_grads")
+            plot_grad_flow(generator.named_parameters(), f'viz_grads/grad_graph_e{epoch}')
         g_optimizer.step()
 
         avgLoss += g_loss.item() * args.batch_size
