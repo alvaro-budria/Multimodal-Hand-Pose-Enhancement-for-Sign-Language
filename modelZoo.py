@@ -25,9 +25,19 @@ class regressor_fcn_bn_32(nn.Module):
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
-				self.text_reduce = nn.Sequential(
-					nn.MaxPool1d(kernel_size=2, stride=2),
-				)
+
+		# if self.require_text == "v2":
+		# 	embed_size += default_size
+		# 	if self.use_embeds:
+		# 		self.text_embeds_postprocess = nn.Sequential(
+		# 			nn.Dropout(0.5),
+		# 			nn.Linear(768, default_size),  # 768 is the size of BERT's embeddings
+		# 			nn.LeakyReLU(0.2, True),
+		# 			nn.BatchNorm1d(default_size, momentum=0.01),
+		# 		)
+		# 		self.text_reduce = nn.Sequential(
+		# 			nn.MaxPool1d(kernel_size=2, stride=2),
+		# 		)
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
@@ -121,13 +131,16 @@ class regressor_fcn_bn_32(nn.Module):
 
 
 	## create text embedding
-	def process_text(self, text_):
-		B, T, _ = text_.shape 
-		text_ = text_.view(-1, 512*2)
+	def process_text(self, text_, T):
+		feat = text_
+		
+		feat = text_.repeat(1, T//2, 1)  # For a sequence of  T frames, we only have one text embedding.
+										 # So we replicate this embedding T/2 times so that we can concatenate it to the body enconder's output. 
+		B, T, _ = feat.shape 
+		text_ = text_.view(-1, 768)
 		feat = self.text_embeds_postprocess(text_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
-		feat = self.text_reduce(feat)
 		return feat
 
 
@@ -140,13 +153,14 @@ class regressor_fcn_bn_32(nn.Module):
 	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
-		if self.require_text:
-			feat = self.process_text(text_)
+		if self.require_text == "v1":
+			feat = self.process_text(text_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
 		sixth_block = self.conv6(fifth_block)
 		seventh_block = self.conv7(sixth_block)
+		print(f"seventh_block.shape: {seventh_block.shape}")
 		# eighth_block = self.conv8(seventh_block)
 		# ninth_block = self.conv9(eighth_block)
 		# tenth_block = self.conv10(ninth_block)
@@ -156,7 +170,14 @@ class regressor_fcn_bn_32(nn.Module):
 
 		# eighth_block = ninth_block + eighth_block
 		# eighth_block = self.skip2(eighth_block)
+		if self.require_text == "v2":
+			seventh_block = torch.cat((seventh_block, feat), dim=2)
+		# d = torch.randn([8, 256, 1])
+		# # bring d into the same format, and then concatenate tensors
+		# seventh_block = torch.cat((seventh_block, d), dim=-1)
 
+
+		print(f"sixth_block.shape: {sixth_block.shape}")
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
 		sixth_block = self.skip4(sixth_block)
 
