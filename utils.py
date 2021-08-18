@@ -441,14 +441,15 @@ def _lift_2d_to_3d(inputSequence_2D):
 # input is a list of arrays, one array per clip
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
     feats_3d = []
+    if os.path.exists(filename):
+        print(f"Found file with name {filename}. Appending results to this file.")
+        feats_3d = load_binary(filename)
     idx = int(len(feats) / nPartitions) + 1
     for i in range(nPartitions):  
         feats_3d_sub = []
         with Pool(processes=24) as pool:
             feats_3d_sub = pool.starmap( _lift_2d_to_3d, zip(feats[idx*i:idx*(i+1)]) ) 
-        print(len(feats_3d_sub), flush=True)
         feats_3d = feats_3d + feats_3d_sub
-        print(len(feats_3d), flush=True)
         save_binary(feats_3d, filename)
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
