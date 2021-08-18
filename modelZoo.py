@@ -160,7 +160,6 @@ class regressor_fcn_bn_32(nn.Module):
 		fifth_block = self.conv5(fourth_block)
 		sixth_block = self.conv6(fifth_block)
 		seventh_block = self.conv7(sixth_block)
-		print(f"seventh_block.shape: {seventh_block.shape}")
 		# eighth_block = self.conv8(seventh_block)
 		# ninth_block = self.conv9(eighth_block)
 		# tenth_block = self.conv10(ninth_block)
@@ -177,7 +176,6 @@ class regressor_fcn_bn_32(nn.Module):
 		# seventh_block = torch.cat((seventh_block, d), dim=-1)
 
 
-		print(f"sixth_block.shape: {sixth_block.shape}")
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
 		sixth_block = self.skip4(sixth_block)
 
