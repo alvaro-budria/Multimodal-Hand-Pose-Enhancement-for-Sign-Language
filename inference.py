@@ -62,18 +62,38 @@ def main(args):
     test_Y = (test_Y - body_mean_Y) / body_std_Y
     ## DONE load/prepare data from external files
 
-    ## pass loaded data into training
-    inputData = Variable(torch.from_numpy(test_X)).to(device)
-    outputGT = Variable(torch.from_numpy(test_Y)).to(device)
-    textData = None
+    ## pass loaded data into inference
+    test_X, test_Y = torch.from_numpy(test_X), torch.from_numpy(test_Y)
     if args.require_text:
-        textData = Variable(torch.from_numpy(test_text)).to(device)
+        test_text = torch.from_numpy(test_text)
+    error = 0
+    model.eval()
+    batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
+    totalSteps = len(batchinds)
+    for _, bi in enumerate(batchinds):
+        ## setting batch data
+        idxStart = bi * args.batch_size
+        inputData_np = test_X[idxStart:(idxStart + args.batch_size), :, :]
+        outputData_np = test_Y[idxStart:(idxStart + args.batch_size), :, :]
+        inputData = Variable(inputData_np).to(device)
+        outputGT = Variable(outputData_np).to(device)
 
-    output = model(inputData, text_=textData)
+        textData = None
+        if args.require_text:
+            textData_np = test_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData = Variable(textData_np).to(device)
+        ## DONE setting batch data
+
+        output = model(inputData, text_=textData)
+        g_loss = criterion(output, outputGT)
+        error += g_loss.item() * args.batch_size
+
+    error /= totalSteps * args.batch_size
+    ## DONE pass loaded data into inference
+
     error = criterion(output, outputGT).data
     print(">>> TOTAL ERROR: ", error, flush=True)
     print('----------------------------------', flush=True)
-    ## DONE pass loaded data into training
 
     ## preparing output for saving
     output_np = output.data.cpu().numpy()
@@ -100,6 +120,7 @@ if __name__ == '__main__':
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
+    parser.add_argument('--batch_size', type=int, default=256, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
 
     args = parser.parse_args()
