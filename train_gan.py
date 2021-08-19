@@ -145,21 +145,21 @@ def load_data(args, rng):
     train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
     val_X = np.swapaxes(val_X, 1, 2).astype(np.float32)
     val_Y = np.swapaxes(val_Y, 1, 2).astype(np.float32)
-    body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
+    # body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
     
-    mkdir(args.model_path)
-    np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
-                        body_mean_X=body_mean_X, body_std_X=body_std_X,
-                        body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
+    # mkdir(args.model_path)
+    # np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
+    #                     body_mean_X=body_mean_X, body_std_X=body_std_X,
+    #                     body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
-    print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
-    print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
+    # print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
+    # print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
     
-    train_X = (train_X - body_mean_X) / body_std_X
-    val_X = (val_X - body_mean_X) / body_std_X
-    train_Y = (train_Y - body_mean_Y) / body_std_Y
-    val_Y = (val_Y - body_mean_Y) / body_std_Y
-    print("===> standardization done", flush=True)
+    # train_X = (train_X - body_mean_X) / body_std_X
+    # val_X = (val_X - body_mean_X) / body_std_X
+    # train_Y = (train_Y - body_mean_Y) / body_std_Y
+    # val_Y = (val_Y - body_mean_Y) / body_std_Y
+    # print("===> standardization done", flush=True)
 
     # Data shuffle
     I = np.arange(len(train_X))
@@ -247,6 +247,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
         print(f"output.shape: {output.shape}")
         print(f"outputGT.shape: {outputGT.shape}")
+        print(output==outputGT)
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
