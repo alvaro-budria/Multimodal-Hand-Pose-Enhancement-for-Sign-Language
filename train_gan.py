@@ -245,9 +245,6 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             fake_score = discriminator(fake_motion)
         fake_score = fake_score.detach()
 
-        print(f"output.shape: {output.shape}")
-        print(f"outputGT.shape: {outputGT.shape}")
-        print(output==outputGT)
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
