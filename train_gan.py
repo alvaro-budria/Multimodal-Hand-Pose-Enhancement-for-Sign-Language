@@ -82,6 +82,12 @@ def main(args):
     ## DONE setup logger 
 
 
+    #######
+    print(train_X.shape)
+    train_X = train_X[0:50]
+    print(train_X.shape)
+
+
     ## training job
     kld_weight = 0.05
     prev_save_epoch = 0
@@ -210,7 +216,8 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
 
 ## training generator function
-def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=None):
+def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer,
+                    train_X, train_Y, epoch, train_summary_writer, clip_grad=False, train_text=None):
     discriminator.eval()
     generator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size + 1)
@@ -241,10 +248,11 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
+        if clip_grad:
+            torch.nn.utils.clip_grad_norm_(generator.parameters(), 1)
         if epoch % 1 == 0 and bii == 0:  # every epoch, generate gradient flow chart
             mkdir("viz_grads")
             plot_grad_flow(generator.named_parameters(), f'viz_grads/grad_graph_e{epoch}')
-        torch.nn.utils.clip_grad_norm_(generator.parameters(), 1)
         g_optimizer.step()
 
         avgLoss += g_loss.item() * args.batch_size
