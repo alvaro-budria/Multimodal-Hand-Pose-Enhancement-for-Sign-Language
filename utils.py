@@ -36,156 +36,6 @@ ARMS = [2, 3, 4, 5, 6, 7]  # arms in Open Pose 25
 HANDS = list(range(21*2))  # hands in Open Pose
 
 
-# # helper function for xyz_to_aa
-# # arms to axis-angle
-# def _arm_xyz_to_aa(in_kp, idxs, neck_up, neck_low):
-#     p_B = neck_up  # parent joint
-#     p_J = neck_low  # current join
-#     p_E = None  # next joint
-#     u = p_J - p_B
-#     v = None
-#     in_aa = np.array([])
-#     for i in ARMS:
-#         # start with right arm. Switch to left arm at the fourth (i==3) joint
-#         if i == 5:
-#             p_B = neck_up  # parent joint
-#             p_J = neck_low  # current join
-#             u = p_J - p_B
-#         p_E = in_kp[:,i*3:i*3+3]
-#         v = p_E - p_J
-        
-#         # rotation angle theta
-#         th = np.arccos(np.einsum('ij,ij->i', u, v)/(np.linalg.norm(u, axis=1)*np.linalg.norm(v, axis=1)) + 1e-6)
-
-#         a = np.cross(u, v)
-#         a = a / np.linalg.norm(a, axis=1)  # rotation axis
-
-#         in_aa = np.hstack(( in_aa, np.multiply(a, th[:, np.newaxis]) )) if in_aa.shape[0]!=0 else np.multiply(a, th[:, np.newaxis])
-
-#         p_B = p_J
-#         p_J = p_E
-#         u = v
-#     return in_aa
-
-
-# # helper function for xyz_to_aa
-# # hands to axis-angle
-# def _wh_xyz_to_aa(out_kp, wrist_r, wrist_l):
-#     #bone_L = {}
-#     out_aa_r, out_aa_l = np.array([]), np.array([])
-#     for i in range(5):  # a hand has 5 fingers
-#         p_B_r, p_B_l = wrist_r[0], wrist_l[0]  # parent joint
-#         p_J_r, p_J_l = wrist_r[1], wrist_l[1]  # current join
-#         p_E_r, p_E_l = None, None  # next joint
-#         u_r, u_l = p_J_r-p_B_r, p_J_l-p_B_l
-#         v_r, v_l = None, None
-#         for j in range(4):  # each finger has 4 joints
-#             p_E_r = out_kp[:,(1+4*i+j)*3:(1+4*i+j)*3+3]
-#             p_E_l = out_kp[:,(22+4*i+j)*3:(22+4*i+j)*3+3]
-#             v_r, v_l = p_E_r-p_J_r, p_E_l-p_J_l
-
-#             # rotation angle
-#             th_r = np.arccos(np.einsum('ij,ij->i', u_r, v_r)/(np.linalg.norm(u_r, axis=1)*np.linalg.norm(v_r, axis=1))) + 1e-6
-#             th_l = np.arccos(np.einsum('ij,ij->i', u_l, v_l)/(np.linalg.norm(u_l, axis=1)*np.linalg.norm(v_l, axis=1))) + 1e-6
-
-#             a_r, a_l = np.cross(u_r, v_r), np.cross(u_l, v_l)
-#             a_r, a_l = a_r / np.linalg.norm(a_r, axis=1), a_l / np.linalg.norm(a_l, axis=1)  # rotation axis
-
-#             out_aa_r = np.hstack(( out_aa_r, np.multiply(a, th_r[:, np.newaxis]) )) if out_aa_r.shape[0]!=0 else np.multiply(a, th_r[:, np.newaxis])
-#             out_aa_l = np.hstack(( out_aa_l, np.multiply(a, th_l[:, np.newaxis]) )) if out_aa_l.shape[0]!=0 else np.multiply(a, th_l[:, np.newaxis])
-
-#             p_B_r, p_B_l = p_J_r, p_J_l
-#             p_J_r, p_J_l = p_E_r, p_E_l
-#             u_r, u_l = v_r, v_l
-#     return np.hstack((out_aa_r, out_aa_l))
-
-
-# # Converts the spatial representation of a skeleton into axis-angle representation
-# # in_kp, out_kp: a list of arrays, one per clip, with arrays of dims NUM_FRAMES, KEYPOINTS; for each frame, a list of the form [X0, Y0, Z0, X1, Y1, Z1, ...] containing each joint's position
-# def old_xyz_to_aa(in_kp, out_kp, pipeline="arm2wh"):
-#     feats = pipeline.split('2')
-#     in_feat, out_feat = feats[0], feats[1]
-#     in_aa, out_aa = [], []
-#     neck, wrist = np.array([]), np.array([])
-
-#     if in_feat == "arm" and out_feat == "wh":
-#         for i in range(len(in_kp)):
-#             ## axis-angle - arms
-#             # take the upper and lower points of the neck as initial reference
-#             neck_up_i =  in_kp[i][:,NECK[0]*3:NECK[0]*3+3]
-#             neck_low_i = in_kp[i][:,NECK[1]*3:NECK[1]*3+3]
-#             neck_i = np.hstack((neck_up_i, neck_low_i))
-#             neck = np.vstack((neck, neck_i)) if neck.shape!=(0,) else neck_i
-#             in_aa_i = _arm_xyz_to_aa(in_kp[i], ARMS, neck_up_i, neck_low_i)
-#             in_aa.append(in_aa_i)
-
-#         for i in range(len(out_kp)):
-#             # take the wrist of the arms and the hands as initial references
-#             wrist_r_arm, wrist_r_hand = in_kp[i][:,4*3:4*3+3], out_kp[i][:,0*3:0*3+3]
-#             wrist_l_arm, wrist_l_hand = in_kp[i][:,7*3:7*3+3], out_kp[i][:,21*3:21*3+3]
-#             wrist_r, wrist_l = np.hstack((wrist_r_arm, wrist_r_hand)), np.hstack((wrist_l_arm, wrist_l_hand))
-#             wrist_i = np.hstack((wrist_r, wrist_l))
-#             wrist = np.vstack((wrist, wrist_i)) if wrist.shape!=(0,) else wrist_i
-#             # axis-angle - hands
-#             out_aa_i = _wh_xyz_to_aa(out_kp[i], (wrist_r_arm, wrist_r_hand), (wrist_l_arm, wrist_l_hand))
-#             out_aa.append(out_aa_i)
-
-#     return in_aa, out_aa, np.average(neck, axis=0), np.average(wrist, axis=0)
-#     #return in_aa, out_aa, (neck_up, neck_low), (wrist_r_arm, wrist_r_hand), (wrist_l_arm, wrist_l_hand)
-
-
-# # Converts keypoints in axis-angle representation to Cartesian coordinates
-# def old_aa_to_xyz(in_aa=None, lengths_in=None, neck_up=None, neck_low=None, out_aa=None, wrist_r=None, wrist_l=None, lengths_out=None):
-#     in_kp = np.full_like(in_aa, 1)
-#     if None not in [in_aa, neck_up, neck_low, lengths]:
-#         p_B = neck_up
-#         p_J = neck_low
-#         u = p_J - p_B
-#         for i in range(len(ARMS)):
-#             a, th = _retrieve_axis_angle(in_aa[:,i*3:i*3+3])
-#             # Rodrigues' rotation formula
-#             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
-#                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
-#                 + np.multiply(np.multiply(a, np.einsum('ij,ij->i', a, u)[:, np.newaxis]), (1-np.cos(th))[:, np.newaxis])
-
-#             p_E = p_J + lengths[i]*v
-#             in_kp[:,i*3:i*3+3] = p_E
-#             p_B = p_J
-#             p_J = p_E
-#             u = v
-
-#     out_kp_r, out_kp_l = wrist_r[1], wrist_l[1]
-#     #np.full_like(out_aa[:,:21], 1), np.full_like(out_aa[:,21:], 1)
-#     if None not in [out_aa, wrist_r, wrist_l, lengths]:
-#         for i in range(5):  # a hand has 5 fingers
-#             p_B_r, p_B_l = wrist_r[0], wrist_l[0]  # parent joint
-#             p_J_r, p_J_l = wrist_r[1], wrist_l[1]  # current join
-#             p_E_r, p_E_l = None, None  # next joint
-#             u_r, u_l = p_J_r-p_B_r, p_J_l-p_B_l
-#             v_r, v_l = None, None
-#             for j in range(4):  # each finger has 4 joints
-#                 a_r, th_r = _retrieve_axis_angle(out_aa[:,(4*i+j)*3:(4*i+j)*3+3])
-#                 a_l, th_l = _retrieve_axis_angle(out_aa[:,(20+4*i+j)*3:(20+4*i+j)*3+3])
-
-#                 # Rodrigues' rotation formula
-#                 v_r =   np.multiply(u_r, np.cos(th_r)[:, np.newaxis]) \
-#                       + np.multiply(np.cross(a_r, u_r), np.sin(th_r)[:, np.newaxis]) \
-#                       + np.multiply(np.multiply(a_r, np.einsum('ij,ij->i', a_r, u_r)[:, np.newaxis]), (1-np.cos(th_r))[:, np.newaxis])
-#                 v_l =   np.multiply(u_l, np.cos(th_l)[:, np.newaxis]) \
-#                       + np.multiply(np.cross(a_l, u_l), np.sin(th_l)[:, np.newaxis]) \
-#                       + np.multiply(np.multiply(a_l, np.einsum('ij,ij->i', a_l, u_l)[:, np.newaxis]), (1-np.cos(th_l))[:, np.newaxis])
-
-#                 p_E_r = p_J_r + lengths[i*4+j]*v_r
-#                 p_E_l = p_J_l + lengths[20+i*4+j]*v_l
-
-#                 p_E_r = out_kp[:,(1+4*i+j)*3:(1+4*i+j)*3+3]
-#                 p_E_l = out_kp[:,(22+4*i+j)*3:(22+4*i+j)*3+3]
-#                 v_r, v_l = p_E_r-p_J_r, p_E_l-p_J_l
-    
-#     out_kp = hstack((out_kp_r, out_kp_l))
-#     pass
-
-
 # removes those clips that contain at least one nan value
 def rmv_clips_nan(X, Y):
     x = []
@@ -374,14 +224,6 @@ def _lift_2d_to_3d(inputSequence_2D):
     # Getting our structure of skeletal model.
     structure = skeletalModel.getSkeletalModelStructure()
 
-    # Getting 2D data
-    # The sequence is an N-tuple of
-    #   (1st point - x, 1st point - y, 1st point - likelihood, 2nd point - x, ...)
-    # a missing point should have x=0, y=0, likelihood=0
-    #f = h5py.File("data/demo-sequence.h5", "r")
-    #inputSequence_2D = numpy.array(f.get("20161025_pocasi"))
-    #f.close()
-
     # Decomposition of the single matrix into three matrices: x, y, w (=likelihood)
     X = inputSequence_2D
     Xx = X[0:X.shape[0], 0:(X.shape[1]):3]
@@ -534,8 +376,6 @@ def load_clip(clip_path, pipeline):
                 else:
                     out_kp = np.array([temp])
     return in_kp, out_kp
-
-
 
 
 def _load(args):
@@ -720,31 +560,31 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    print("lifted val to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    print("lifted test to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # print("lifted val to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # print("lifted test to 3d", flush=True)
 
-    print()
-    print("saved lifted xyz", flush=True)
-    print()
+    # print()
+    # print("saved lifted xyz", flush=True)
+    # print()
 
-    train_3d = load_binary("video_data/xyz_train.pkl")
-    val_3d = load_binary("video_data/xyz_val.pkl")
-    test_3d = load_binary("video_data/xyz_test.pkl")
+    # train_3d = load_binary("video_data/xyz_train.pkl")
+    # val_3d = load_binary("video_data/xyz_val.pkl")
+    # test_3d = load_binary("video_data/xyz_test.pkl")
 
-    lengths = pose3D.get_bone_length(train_3d, structure)
-    save_binary(lengths, "video_data/lengths_train.pkl")
+    # lengths = pose3D.get_bone_length(train_3d, structure)
+    # save_binary(lengths, "video_data/lengths_train.pkl")
 
-            #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    #         #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
 
-    print(f"processed all H2S data in {dir}", flush=True)
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
