@@ -70,22 +70,12 @@ def main(args):
     else:
         train_X, train_Y, val_X, val_Y = data_tuple
         train_text, val_text = None, None
-    ## DONE: load data from saved files
-    
-
-
-    print(train_X.shape, train_Y.shape)
-    print(np.any(np.isnan(train_X)), np.any(np.isnan(train_Y)))
-    #assert not np.any(np.isnan(train_X))
+    print(train_X.shape, train_Y.shape, flush=True)
     train_X, train_Y = rmv_clips_nan(train_X, train_Y)
     val_X, val_Y = rmv_clips_nan(val_X, val_Y)
-    assert not np.any(np.isnan(train_X))
-    assert not np.any(np.isnan(train_Y))
-    assert not np.any(np.isnan(val_X))
-    assert not np.any(np.isnan(val_Y))
-    print(train_X.shape, train_Y.shape)
-
-
+    assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
+    print(train_X.shape, train_Y.shape, flush=True)
+    ## DONE: load data from saved files
 
     ## setup results logger
     mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
@@ -153,21 +143,21 @@ def load_data(args, rng):
     train_Y = np.swapaxes(train_Y, 1, 2).astype(np.float32)
     val_X = np.swapaxes(val_X, 1, 2).astype(np.float32)
     val_Y = np.swapaxes(val_Y, 1, 2).astype(np.float32)
-    # body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
+    body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
     
-    # mkdir(args.model_path)
-    # np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
-    #                     body_mean_X=body_mean_X, body_std_X=body_std_X,
-    #                     body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
+    mkdir(args.model_path)
+    np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
+                        body_mean_X=body_mean_X, body_std_X=body_std_X,
+                        body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
-    # print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
-    # print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
+    print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
+    print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
     
-    # train_X = (train_X - body_mean_X) / body_std_X
-    # val_X = (val_X - body_mean_X) / body_std_X
-    # train_Y = (train_Y - body_mean_Y) / body_std_Y
-    # val_Y = (val_Y - body_mean_Y) / body_std_Y
-    # print("===> standardization done", flush=True)
+    train_X = (train_X - body_mean_X) / body_std_X
+    val_X = (val_X - body_mean_X) / body_std_X
+    train_Y = (train_Y - body_mean_Y) / body_std_Y
+    val_Y = (val_Y - body_mean_Y) / body_std_Y
+    print("===> standardization done", flush=True)
 
     # Data shuffle
     I = np.arange(len(train_X))
