@@ -69,13 +69,16 @@ def main(args):
     error = 0
     output = None
     model.eval()
-    batchinds = np.arange(test_X.shape[0] // args.batch_size)
+    batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
     totalSteps = len(batchinds)
     for _, bi in enumerate(batchinds):
         ## setting batch data
         idxStart = bi * args.batch_size
-        inputData_np = test_X[idxStart:(idxStart + args.batch_size), :, :]
-        outputData_np = test_Y[idxStart:(idxStart + args.batch_size), :, :]
+        if idxStart >= test_X.shape[0]:
+            break
+        idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
+        inputData_np = test_X[idxStart:idxEnd, :, :]
+        outputData_np = test_Y[idxStart:idxEnd, :, :]
         inputData = Variable(inputData_np).to(device)
         outputGT = Variable(outputData_np).to(device)
 
@@ -107,7 +110,7 @@ def main(args):
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
     ## DONE preparing output for saving
 
-    ## generating viz
+    ## generating viz for qualitative assessment
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.tag}_inference_xyz.pkl"))[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
     viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")

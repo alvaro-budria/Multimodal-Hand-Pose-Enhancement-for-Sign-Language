@@ -182,7 +182,7 @@ def calc_motion(tensor):
 def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=None):
     generator.eval()
     discriminator.train()
-    batchinds = np.arange(train_X.shape[0] // args.batch_size)
+    batchinds = np.arange(train_X.shape[0] // args.batch_size)   # integer division so drop last incomplete batch
     totalSteps = len(batchinds)
     rng.shuffle(batchinds)
 
@@ -268,7 +268,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
     testLoss = 0
     generator.eval()
     discriminator.eval()
-    batchinds = np.arange(val_X.shape[0] // args.batch_size)
+    batchinds = np.arange(val_X.shape[0] // args.batch_size)  # integer division so drop last incomplete batch
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
