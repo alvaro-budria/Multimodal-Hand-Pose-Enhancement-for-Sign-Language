@@ -71,13 +71,20 @@ def main(args):
         train_X, train_Y, val_X, val_Y = data_tuple
         train_text, val_text = None, None
     ## DONE: load data from saved files
+    
+
+
+    print(train_X.shape, train_Y.shape)
+    print(np.any(np.isnan(train_X)), np.any(np.isnan(train_Y)))
+    #assert not np.any(np.isnan(train_X))
+    train_X, train_Y = rmv_clips_nan(train_X, train_Y)
+    val_X, val_Y = rmv_clips_nan(val_X, val_Y)
     assert not np.any(np.isnan(train_X))
     assert not np.any(np.isnan(train_Y))
+    assert not np.any(np.isnan(val_X))
+    assert not np.any(np.isnan(val_Y))
+    print(train_X.shape, train_Y.shape)
 
-        #######
-    print(train_X.shape)
-    # train_X = train_X[0:400]
-    # print(train_X.shape)
 
 
     ## setup results logger
@@ -172,6 +179,19 @@ def load_data(args, rng):
         return (train_X, train_Y, val_X, val_Y, train_text, val_text)
     ## DONE shuffle and set train/validation
     return (train_X, train_Y, val_X, val_Y)
+
+
+# removes those clips that contain a nan
+def rmv_clips_nan(X, Y):
+    x = []
+    y = []
+    for sample in range(X.shape[0]):
+        if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
+            x.append(X[sample,:,:])
+            y.append(Y[sample,:,:])
+    x = np.array(x)
+    y = np.array(y)
+    return x, y
 
 
 ## calc temporal deltas within sequences
