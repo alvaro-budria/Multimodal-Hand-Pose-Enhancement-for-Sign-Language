@@ -180,7 +180,6 @@ def rmv_clips_nan(X, Y):
         if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
             x.append(X[sample,:,:])
             y.append(Y[sample,:,:])
-            print("here!!!!!")
     x = np.array(x)
     y = np.array(y)
     return x, y
