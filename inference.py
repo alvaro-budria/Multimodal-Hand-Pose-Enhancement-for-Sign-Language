@@ -1,12 +1,16 @@
 import argparse
 import os
+import sys
 import numpy as np
 import torch
 from torch import nn
 from torch.autograd import Variable
 
+sys.path.append('./3DposeEstimator')
+import skeletalModel
 from utils import *
 import modelZoo
+import viz.viz_3d as viz
 
 
 def main(args):
@@ -28,11 +32,15 @@ def main(args):
     model.load_state_dict(loaded_state['state_dict'], strict=False)
     model = model.eval()
     model.to(device)
-    criterion = nn.MSELoss()
+    criterion = nn.L1Loss()
     ## DONE set up model/ load pretrained model
 
     ## load/prepare data from external files
     test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text)
+    print(test_X.shape, test_X.shape, flush=True)
+    test_X, test_Y = rmv_clips_nan(test_X, test_Y)
+    assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
+    print(test_X.shape, test_Y.shape, flush=True)
     input_feats = test_X.copy()
 
     if args.require_text:
@@ -45,7 +53,7 @@ def main(args):
     # standardize
     checkpoint_dir = os.path.split(pretrained_model)[0]
     model_tag = os.path.basename(args.checkpoint).split(args.pipeline)[0]
-    preprocess = np.load(os.path.join(checkpoint_dir,'{}{}_preprocess_core.npz'.format(model_tag, args.pipeline)))
+    preprocess = np.load(os.path.join(checkpoint_dir,'{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)))
     body_mean_X = preprocess['body_mean_X']
     body_std_X = preprocess['body_std_X']
     body_mean_Y = preprocess['body_mean_Y']
@@ -78,15 +86,21 @@ def main(args):
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
     ## DONE preparing output for saving
 
+    ## generating viz
+    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.tag}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    structure = skeletalModel.getSkeletalModelStructure()
+    viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
+    ## DONE generating viz
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--checkpoint', type=str, required=True, help='path to checkpoint file (pretrained model)')
+    parser.add_argument('--checkpoint', type=str, default="models/lastCheckpoint.pth", help='path to checkpoint file (pretrained model)')
     parser.add_argument('--base_path', type=str, default="./", help='absolute path to the base directory where all of the data is stored')
     parser.add_argument('--data_dir', type=str, default="video_data/r6d_test.pkl", help='path to test data directory')
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
+    parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
 
     args = parser.parse_args()
     print(args, flush=True)

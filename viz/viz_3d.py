@@ -6,7 +6,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
 sys.path.append(os.getcwd())
-from utils import *
+import utils
 import shutil
 
 
@@ -33,8 +33,8 @@ def plot_3d_lines(frame, structure, show=False):
 
 
 def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_results"):
-    mkdir(results_dir)
-    mkdir(f"{results_dir}/{clip_idx}")
+    utils.mkdir(results_dir)
+    utils.mkdir(f"{results_dir}/{clip_idx}")
     files = []
     for frame_idx in range(clip.shape[0]):
         fig, ax = plot_3d_lines(clip[frame_idx,:], structure, show=False)
@@ -72,4 +72,4 @@ if __name__ == '__main__':
     _inference_xyz = load_binary(args.file_path)
     import skeletalModel
     structure = skeletalModel.getSkeletalModelStructure()
-    viz(_inference_xyz, structure, frame_rate=12.5, results_dir="viz_results")
+    viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")

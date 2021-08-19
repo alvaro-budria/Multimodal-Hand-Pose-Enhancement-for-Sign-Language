@@ -186,6 +186,18 @@ HANDS = list(range(21*2))  # hands in Open Pose
 #     pass
 
 
+# removes those clips that contain at least one nan value
+def rmv_clips_nan(X, Y):
+    x = []
+    y = []
+    for sample in range(X.shape[0]):
+        if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
+            x.append(X[sample,:,:])
+            y.append(Y[sample,:,:])
+    x = np.array(x)
+    y = np.array(y)
+    return x, y
+
 
 def _array_to_list(input):
     if type(input) != type(list()):  # convert 3D array to list of 2D arrays

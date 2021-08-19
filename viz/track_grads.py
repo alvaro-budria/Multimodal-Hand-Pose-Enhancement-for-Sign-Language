@@ -41,6 +41,6 @@ def plot_grad_flow(named_parameters, filename):
 
 
 if __name__ == "__main__":
-    loss = self.criterion(outputs, labels)  
+    loss = self.criterion(outputs, labels)
     loss.backward()
     plot_grad_flow(model.named_parameters())

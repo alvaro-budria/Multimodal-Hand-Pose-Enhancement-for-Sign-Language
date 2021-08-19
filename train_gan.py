@@ -172,19 +172,6 @@ def load_data(args, rng):
     return (train_X, train_Y, val_X, val_Y)
 
 
-# removes those clips that contain at least one nan value
-def rmv_clips_nan(X, Y):
-    x = []
-    y = []
-    for sample in range(X.shape[0]):
-        if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
-            x.append(X[sample,:,:])
-            y.append(Y[sample,:,:])
-    x = np.array(x)
-    y = np.array(y)
-    return x, y
-
-
 ## calc temporal deltas within sequences
 def calc_motion(tensor):
     res = tensor[:,:,:1] - tensor[:,:,:-1]
