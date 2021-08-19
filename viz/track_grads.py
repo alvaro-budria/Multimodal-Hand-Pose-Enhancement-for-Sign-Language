@@ -37,7 +37,8 @@ def plot_grad_flow(named_parameters, filename):
 
     if filename[-4:] != ".png":
         filename = filename + ".png"
-    plt.savefig(filename)
+    plt.tight_layout()
+    plt.savefig(filename, dpi=150)
 
 
 if __name__ == "__main__":
