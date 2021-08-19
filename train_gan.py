@@ -70,11 +70,6 @@ def main(args):
     else:
         train_X, train_Y, val_X, val_Y = data_tuple
         train_text, val_text = None, None
-    print(train_X.shape, train_Y.shape, flush=True)
-    train_X, train_Y = rmv_clips_nan(train_X, train_Y)
-    val_X, val_Y = rmv_clips_nan(val_X, val_Y)
-    assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
-    print(train_X.shape, train_Y.shape, flush=True)
     ## DONE: load data from saved files
 
     ## setup results logger
@@ -129,6 +124,12 @@ def load_data(args, rng):
 
     train_X, train_Y, train_text = fetch_data("train")
     val_X, val_Y, val_text = fetch_data("val")
+
+    print(train_X.shape, train_Y.shape, flush=True)
+    train_X, train_Y = rmv_clips_nan(train_X, train_Y)
+    val_X, val_Y = rmv_clips_nan(val_X, val_Y)
+    assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
+    print(train_X.shape, train_Y.shape, flush=True)
 
     print("-"*20 + "train" + "-"*20, flush=True)
     print('===> in/out', train_X.shape, train_Y.shape, flush=True)
