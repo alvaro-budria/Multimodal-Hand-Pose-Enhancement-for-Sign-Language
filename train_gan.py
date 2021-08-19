@@ -72,6 +72,13 @@ def main(args):
         train_text, val_text = None, None
     ## DONE: load data from saved files
 
+
+        #######
+    print(train_X.shape)
+    train_X = train_X[0:400]
+    print(train_X.shape)
+
+
     ## setup results logger
     mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
     train_log_dir = 'logs/train/' + args.tag
@@ -80,13 +87,6 @@ def main(args):
     val_summary_writer   = SummaryWriter(val_log_dir)
     mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
     ## DONE setup logger 
-
-
-    #######
-    print(train_X.shape)
-    train_X = train_X[0:50]
-    print(train_X.shape)
-
 
     ## training job
     kld_weight = 0.05
@@ -245,6 +245,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             fake_score = discriminator(fake_motion)
         fake_score = fake_score.detach()
 
+        print(output==outputGT)
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
