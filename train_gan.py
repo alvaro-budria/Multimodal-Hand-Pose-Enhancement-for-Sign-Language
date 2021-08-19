@@ -75,8 +75,8 @@ def main(args):
 
         #######
     print(train_X.shape)
-    train_X = train_X[0:400]
-    print(train_X.shape)
+    # train_X = train_X[0:400]
+    # print(train_X.shape)
 
 
     ## setup results logger
@@ -245,7 +245,8 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             fake_score = discriminator(fake_motion)
         fake_score = fake_score.detach()
 
-        print(output==outputGT)
+        print(f"output.shape: {output.shape}")
+        print(f"outputGT.shape: {outputGT.shape}")
         g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
