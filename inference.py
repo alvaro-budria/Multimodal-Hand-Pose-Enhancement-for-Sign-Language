@@ -37,7 +37,7 @@ def main(args):
 
     ## load/prepare data from external files
     test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text)
-    print(test_X.shape, test_X.shape, flush=True)
+    print(test_X.shape, test_Y.shape, flush=True)
     test_X, test_Y = rmv_clips_nan(test_X, test_Y)
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
     print(test_X.shape, test_Y.shape, flush=True)
@@ -67,8 +67,9 @@ def main(args):
     if args.require_text:
         test_text = torch.from_numpy(test_text)
     error = 0
+    output = None
     model.eval()
-    batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
+    batchinds = np.arange(test_X.shape[0] // args.batch_size)
     totalSteps = len(batchinds)
     for _, bi in enumerate(batchinds):
         ## setting batch data
@@ -84,14 +85,14 @@ def main(args):
             textData = Variable(textData_np).to(device)
         ## DONE setting batch data
 
-        output = model(inputData, text_=textData)
-        g_loss = criterion(output, outputGT)
+        output_local = model(inputData, text_=textData)
+        g_loss = criterion(output_local, outputGT)
         error += g_loss.item() * args.batch_size
+        output = torch.cat((output, output_local), 0) if output is not None else output_local
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
 
-    error = criterion(output, outputGT).data
     print(">>> TOTAL ERROR: ", error, flush=True)
     print('----------------------------------', flush=True)
 

@@ -219,7 +219,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
                     train_X, train_Y, epoch, train_summary_writer, clip_grad=False, train_text=None):
     discriminator.eval()
     generator.train()
-    batchinds = np.arange(train_X.shape[0] // args.batch_size + 1)
+    batchinds = np.arange(train_X.shape[0] // args.batch_size)
     totalSteps = len(batchinds)
     rng.shuffle(batchinds)
     avgLoss = 0.
@@ -268,7 +268,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
     testLoss = 0
     generator.eval()
     discriminator.eval()
-    batchinds = np.arange(val_X.shape[0] // args.batch_size + 1)
+    batchinds = np.arange(val_X.shape[0] // args.batch_size)
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
