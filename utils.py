@@ -469,6 +469,9 @@ def mkdir(dir):
 # given a list of arrays (corresponding to a clip) with varying lengths,
 # makes all of them have equal (pair) length. The result is a single array
 def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=256):
+    print(type(data), len(data))
+    print(data[0])
+    print(type(data[0]))
     sizes = [arr.shape[0] for arr in data]
     if method=="0pad":
         maxpad = np.amax(sizes) if maxpad=="maxlen" else maxpad
@@ -523,9 +526,11 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
         structure = skeletalModel.getSkeletalModelStructure()
         xyz_train = load_binary("video_data/xyz_train.pkl")
-        print(len(xyz_train), flush=True)
-        print(np.dstack(xyz_train).shape, flush=True)
-        xyz_train, _ = rmv_clips_nan(np.dstack(xyz_train), np.array(xyz_train))
+        xyz_train = make_equal_len(xyz_train, method="reflect")
+        print(type(xyz_train), xyz_train.shape)
+        # print(len(xyz_train), flush=True)
+        # print(np.dstack(xyz_train).shape, flush=True)
+        xyz_train, _ = rmv_clips_nan(xyz_train, xyz_train)
         root = get_root_bone(xyz_train, structure)
         # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
         bone_len = pose3D.get_bone_length(xyz_train, structure)
