@@ -1,4 +1,5 @@
 import os
+import argparse
 import os.path
 import sys
 import matplotlib.pyplot as plt
@@ -6,6 +7,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
 sys.path.append(os.getcwd())
+sys.path.append("../")
 import utils
 import shutil
 
@@ -67,9 +69,9 @@ def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
 if __name__ == '__main__':
     # Visualize inference results 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--file_path', type=str, default="results/test_inference_xyz.pkl", help='path to the .pkl file containing results to visualize')
+    parser.add_argument('--file_path', type=str, default="results/_inference_xyz.pkl", help='path to the .pkl file containing results to visualize')
     args = parser.parse_args()
-    _inference_xyz = load_binary(args.file_path)
+    _inference_xyz = utils.load_binary(args.file_path)
     import skeletalModel
     structure = skeletalModel.getSkeletalModelStructure()
     viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
