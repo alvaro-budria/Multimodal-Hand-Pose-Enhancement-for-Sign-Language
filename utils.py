@@ -521,9 +521,13 @@ def save_results(input, output, pipeline, base_path, tag=''):
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
-        root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training 
-        bone_len = load_binary("video_data/lengths_train.pkl")
         structure = skeletalModel.getSkeletalModelStructure()
+        xyz_train = load_binary("video_data/xyz_train.pkl")
+        xyz_train, _ = rmv_clips_nan(np.array(xyz_train), np.array(xyz_train))
+        root = get_root_bone(xyz_train, structure)
+        # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
+        bone_len = pose3D.get_bone_length(xyz_train, structure)
+        # bone_len = load_binary("video_data/lengths_train.pkl")
 
         input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)

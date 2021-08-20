@@ -115,7 +115,7 @@ def main(args):
     output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
     # inputData = np.swapaxes(inputData, 1, 2).numpy().astype(np.float32)
     assert not np.any(np.isnan(input_feats))
-    assert not np.any(np.isnan(output_gt))
+    assert not np.any(np.isnan(output_np))
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
     print("Saved results.")
     ## DONE preparing output for saving
