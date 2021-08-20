@@ -104,7 +104,7 @@ def main(args):
     # print('----------------------------------', flush=True)
 
     # ## preparing output for saving
-    print("Saving results...")
+    print("Saving results...", flush=True)
     # output_np = output.data.cpu().numpy()
     # assert not np.any(np.isnan(output_np))
     # output_gt = outputGT.data.cpu().numpy()
@@ -118,7 +118,7 @@ def main(args):
     # assert not np.any(np.isnan(output_np))
     #save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
     save_results(None, None, args.pipeline, args.base_path, tag=args.tag)
-    print("Saved results.")
+    print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
