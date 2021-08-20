@@ -514,12 +514,12 @@ def save_results(input, output, pipeline, base_path, tag=''):
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
     if out_feat == 'wh':
-        filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
-        save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
+        # filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
+        # save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
 
-        filename = os.path.join(base_path, f"results/{tag}_inference_aa")
-        input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
-        save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
+        # filename = os.path.join(base_path, f"results/{tag}_inference_aa")
+        # input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
+        # save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
         xyz_train = load_binary("video_data/xyz_train.pkl")
@@ -529,7 +529,8 @@ def save_results(input, output, pipeline, base_path, tag=''):
         bone_len = pose3D.get_bone_length(xyz_train, structure)
         # bone_len = load_binary("video_data/lengths_train.pkl")
 
-        input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
+        input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
+        #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
         
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
