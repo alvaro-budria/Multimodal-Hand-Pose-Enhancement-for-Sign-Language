@@ -23,7 +23,7 @@ def main(args):
     feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
     ## DONE variable initializations
 
-    ## set up model/ load pretrained model
+    ## set up model / load pretrained model
     args.model = 'regressor_fcn_bn_32'
     model = getattr(modelZoo,args.model)()
     model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
@@ -64,6 +64,7 @@ def main(args):
 
     ## pass loaded data into inference
     test_X, test_Y = torch.from_numpy(test_X), torch.from_numpy(test_Y)
+    assert not torch.isnan(test_X).any() and not torch.isnan(test_Y).any()
     if args.require_text:
         test_text = torch.from_numpy(test_text)
     error = 0
@@ -81,6 +82,7 @@ def main(args):
         outputData_np = test_Y[idxStart:idxEnd, :, :]
         inputData = Variable(inputData_np).to(device)
         outputGT = Variable(outputData_np).to(device)
+        assert not torch.isnan(inputData).any() and not torch.isnan(outputGT).any()
 
         textData = None
         if args.require_text:
@@ -89,9 +91,11 @@ def main(args):
         ## DONE setting batch data
 
         output_local = model(inputData, text_=textData)
+        assert not torch.isnan(output_local).any()
         g_loss = criterion(output_local, outputGT)
         error += g_loss.item() * args.batch_size
         output = torch.cat((output, output_local), 0) if output is not None else output_local
+        assert not torch.isnan(output).any()
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
@@ -100,14 +104,20 @@ def main(args):
     print('----------------------------------', flush=True)
 
     ## preparing output for saving
+    print("Saving results...")
     output_np = output.data.cpu().numpy()
+    assert not np.any(np.isnan(output_np))
     output_gt = outputGT.data.cpu().numpy()
+    assert not np.any(np.isnan(output_gt))
     output_np = output_np * body_std_Y + body_mean_Y
     output_gt = output_gt * body_std_Y + body_mean_Y
     output_np = np.swapaxes(output_np, 1, 2).astype(np.float32)
     output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
     # inputData = np.swapaxes(inputData, 1, 2).numpy().astype(np.float32)
+    assert not np.any(np.isnan(input_feats))
+    assert not np.any(np.isnan(output_gt))
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
+    print("Saved results.")
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
