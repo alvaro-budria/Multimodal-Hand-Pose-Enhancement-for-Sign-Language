@@ -66,5 +66,5 @@ if __name__=="__main__":
         with open(f'video_data/{key}_sentence_embeddings.pkl', "wb") as fOut:
             pickle.dump(embeddings.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
         with open(f'video_data/{key}_sentence_raw.pkl', "wb") as fOut:
-            pickle.dump(sentence_list.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
+            pickle.dump(sentence_list, fOut, protocol=pickle.HIGHEST_PROTOCOL)
         print("Saved sentence embeddings.", flush=True)
