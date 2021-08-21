@@ -1,6 +1,4 @@
 import argparse
-
-from sentence_transformers import SentenceTransformer
 import pickle
 
 import torch
