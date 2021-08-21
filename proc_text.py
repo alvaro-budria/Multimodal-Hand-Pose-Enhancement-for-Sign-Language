@@ -47,7 +47,7 @@ def load_text(file_path="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/
             id, text = line.split(" ", 1)  # first space separates id from text
             dict_text[id] = text
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
-    sentence_tensor = torch.cat([clip.tokenize(sent) for sent in sentence_list]).to(device)
+    sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)  # all CLIP models use 77 as the context length
     return sentence_tensor, sentence_list
 
 
