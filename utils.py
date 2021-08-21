@@ -556,7 +556,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
     mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.01)
+    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.005)
     print("Loaded raw data from disk", flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     print("Selected NECK keypoints", flush=True)
