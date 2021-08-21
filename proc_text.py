@@ -31,28 +31,58 @@ sample_data = ["fyI1Ev5m1w4_12-8-rgb_front And then you would start to turn your
                "fyI1Ev5m1w4_9-8-rgb_front We would create--add some more sticks, which we've run out of"]
 
 
-# obtain embeddings for each sentence in the input list
-def obtain_embeddings(sentence_list):
-    model, _ = clip.load('ViT-B/32', device)
-    # Calculate features
-    with torch.no_grad():
-        embeddings = model.encode_text(sentence_list)
-    return embeddings
-
-
-def load_text(file_path="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", subset=1):
+def load_text(key, ids):
+    file_path = TEXT_PATHS[key]
     dict_text = {}
     with open(file_path) as fp:
         for line in fp:
             id, text = line.split(" ", 1)  # first space separates id from text
-            dict_text[id] = text
-    sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
-    print(f"len(sentence_list): {len(sentence_list)}")
-    idx_max = int(len(sentence_list)*subset)
-    print(f"idx_max: {idx_max}")
-    sentence_list = sentence_list[0:idx_max]
-    sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)  # all CLIP models use 77 as the context length
-    return sentence_tensor, sentence_list
+            if id in ids:
+                dict_text[id] = text
+    # sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
+    sentence_list = [v for _, v in dict_text.items()]  # it's important that the result is already sorted by clip ID
+    print(f"len(sentence_list): {len(sentence_list)}", flush=True)
+    return sentence_list
+
+
+# obtain embeddings for each sentence in the input list
+def obtain_embeddings(key, ids):
+    model, _ = clip.load('ViT-B/32', device)
+    # Calculate features
+    sentence_list = load_text(key, ids)
+    with torch.no_grad():
+        embeddings = model.encode_text(sentence_list)
+    return embeddings.numpy()
+
+
+# returns the ID of those clips for which text is available
+def get_clip_ids(key="test"):
+    file_path = TEXT_PATHS[key]
+    id_list = []
+    with open(file_path) as fp:
+        for line in fp:
+            id, text = line.split(" ", 1)  # first space separates id from text
+            id_list.append(id)
+    return id_list
+
+
+def process_text(subset=0.005):
+    for key in TEXT_PATHS:
+        sentence_list = load_text(key)
+        idx_max = int(len(sentence_list)*subset)
+        print(f"idx_max: {idx_max}", flush=True)
+        sentence_list = sentence_list[0:idx_max]
+        sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)
+
+        print(sentence_tensor.shape, flush=True)
+        embeddings = obtain_embeddings(sentence_tensor)
+        print(embeddings.shape, flush=True)
+        # #Store sentences & embeddings on disk
+        with open(f'video_data/{key}_sentence_embeddings.pkl', "wb") as fOut:
+            pickle.dump(embeddings.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(f'video_data/{key}_sentence_raw.pkl', "wb") as fOut:
+            pickle.dump(sentence_list, fOut, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Saved sentence embeddings.", flush=True)
 
 
 if __name__=="__main__":
@@ -60,15 +90,4 @@ if __name__=="__main__":
     # parser.add_argument('--file_path', type=str, default="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", help="path to the file where text dataset is located")
     # args = parser.parse_args()
 
-    for key in TEXT_PATHS:
-        sentence_tensor, sentence_list = load_text(TEXT_PATHS[key], subset=0.005)
-        print(sentence_tensor.shape, flush=True)
-        embeddings = obtain_embeddings(sentence_tensor)
-        print(embeddings.shape, flush=True)
-
-        # #Store sentences & embeddings on disk
-        with open(f'video_data/{key}_sentence_embeddings.pkl', "wb") as fOut:
-            pickle.dump(embeddings.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(f'video_data/{key}_sentence_raw.pkl', "wb") as fOut:
-            pickle.dump(sentence_list, fOut, protocol=pickle.HIGHEST_PROTOCOL)
-        print("Saved sentence embeddings.", flush=True)
+    process_text()

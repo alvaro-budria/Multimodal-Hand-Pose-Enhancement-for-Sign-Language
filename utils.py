@@ -18,6 +18,7 @@ import pose3D
 
 import viz.viz_3d as viz
 
+import proc_text
 
 DATA_PATHS = {
         "train": "train/rgb_front/features/openpose_output/json",
@@ -388,29 +389,41 @@ def load_clip(clip_path, pipeline):
     return in_kp, out_kp
 
 
+def _join_ids(dir_list, clip_ids_text):
+    return list(set(dir_list).intersection(clip_ids_text))
+
 def _load(args):
     clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
     in_kp, out_kp = load_clip(clip_path, pipeline)
     return clip, in_kp, out_kp
 
-def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a certain % of the data only
-    in_features, out_features = [], []
+def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep a certain % of the data only
+    #dir_list = sorted(os.listdir(dir))  # sort this list of clip IDs so that the order matches that of the text embeddings list
+    dir_list = os.listdir(dir)  # sort this list of clip IDs so that the order matches that of the text embeddings list
+    print(f"len(dir_list): {len(dir_list)}", flush=True)
 
-    dir_list = sorted(os.listdir(dir))  # sort this list of clip IDs so that the order matches that of the text embeddings list
-    print(f"len(sorted(os.listdir(dir)): {len(sorted(os.listdir(dir)))}")
+    clip_ids_text = proc_text.get_clip_ids(key=key)
+    print(f"len(clip_ids_text): {len(clip_ids_text)}", flush=True)
 
-    idx_max = int(len(dir_list)*subset)
-    print(f"idx_max: {idx_max}")
+    ids = _join_ids(dir_list, clip_ids_text)
+    ids = sorted(ids)
+    print(f"len(ids): {len(ids)}", flush=True)
+
+    idx_max = int(len(ids)*subset)
+    print(f"idx_max: {idx_max}", flush=True)
+
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])
+
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
-        result = executor.map(_load, zip(dir_list[0:idx_max], dir_, pipe_))
+        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
-    return clips, in_features, out_features
+    return in_features, out_features, embeds
 
 def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False, subset=0.1):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
@@ -419,21 +432,15 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     # load data
     in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None
     if os.path.exists(test_path):
-        _, in_test, out_test = _load_H2S_dataset(test_path, pipeline=pipeline, subset=subset)
-        # clip_dict = {clips_test[i]: (in_test[i], out_test[i]) for i in range(len(clips_test))}  # order by clip id
-        # in_test, out_test = map(list, zip(*[v for _, v in clip_dict.items()]))
+        in_test, out_test, embeds_test = _load_H2S_dataset(test_path, pipeline=pipeline, key="test", subset=subset)
         print("LOADED RAW TEST DATA", flush=True)
     if os.path.exists(val_path):
-        _, in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
-        # clip_dict = {clips_val[i]: (in_val[i], out_val[i]) for i in range(len(clips_val))}  # order by clip id
-        # in_val, out_val = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
+        in_val, out_val, embeds_val = _load_H2S_dataset(val_path, pipeline=pipeline, key="val", subset=subset)
         print("LOADED RAW VAL DATA", flush=True)
     if os.path.exists(train_path):
-        _, in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline, subset=subset)
-        # clip_dict = {clips_train[i]: (in_train[i], out_train[i]) for i in range(len(clips_train))}  # order by clip id
-        # in_train, out_train = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
+        in_train, out_train, embeds_train = _load_H2S_dataset(train_path, pipeline=pipeline, key="train", subset=subset)
         print("LOADED RAW TRAIN DATA", flush=True)
-    return (in_train, out_train), (in_val, out_val), (in_test, out_test)
+    return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
 # returns the keypoints in the specified indexes
@@ -556,7 +563,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.005)
+    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.005)
     print("Loaded raw data from disk", flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     print("Selected NECK keypoints", flush=True)
@@ -573,8 +580,12 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     save_binary(feats_val, "video_data/xy_val.pkl")
     save_binary(feats_test, "video_data/xy_test.pkl")
 
+    save_binary(embeds_train, "train_sentence_embeddings.pkl")
+    save_binary(embeds_test, "test_sentence_embeddings.pkl")
+    save_binary(embeds_val, "val_sentence_embeddings.pkl")
+
     print()
-    print("saved xy original", flush=True)
+    print("saved xy original and text embeddings", flush=True)
     print()
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
