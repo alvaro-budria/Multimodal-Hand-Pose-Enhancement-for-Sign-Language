@@ -16,7 +16,7 @@ class regressor_fcn_bn_32(nn.Module):
 		self.use_embeds = True
 
 		embed_size = default_size
-		if self.require_text == "v1":
+		if self.require_text:
 			embed_size += default_size
 			if self.use_embeds:
 				self.text_embeds_postprocess = nn.Sequential(

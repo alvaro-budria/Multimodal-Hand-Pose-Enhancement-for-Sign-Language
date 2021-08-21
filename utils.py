@@ -619,9 +619,7 @@ if __name__ == "__main__":
 
     process_H2S_dataset(args.dataset_path)
 
-    structure = skeletalModel.getSkeletalModelStructure()
-    
-
+    # structure = skeletalModel.getSkeletalModelStructure()
     # Visualize inference results
     # _inference_xyz = load_binary("results/_inference_xyz.pkl")
     # viz.viz(_inference_xyz, structure, frame_rate=1, results_dir="viz_results")
