@@ -36,16 +36,18 @@ def main(args):
     ## DONE set up model/ load pretrained model
 
     ## load/prepare data from external files
-    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text)
+    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
+    text_text = None
+    if args.require_text:
+        test_text = test_X[1]
+        test_X = test_X[0]
     print(test_X.shape, test_Y.shape, flush=True)
-    test_X, test_Y = rmv_clips_nan(test_X, test_Y)
+    if args.require_text:
+        print(test_text.shape)
+    test_X, test_Y, text_text = rmv_clips_nan(test_X, test_Y, text_text)
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
     print(test_X.shape, test_Y.shape, flush=True)
     input_feats = test_X.copy()
-
-    if args.require_text:
-        test_text = test_X[1].astype(np.float32)
-        test_X = test_X[0]
 
     test_X = np.swapaxes(test_X, 1, 2).astype(np.float32)
     test_Y = np.swapaxes(test_Y, 1, 2).astype(np.float32)

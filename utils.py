@@ -38,16 +38,25 @@ HANDS = list(range(21*2))  # hands in Open Pose
 
 
 # removes those clips that contain at least one nan value
-def rmv_clips_nan(X, Y):
+def rmv_clips_nan(X, Y, T=None):
     x = []
     y = []
+    t = []
     for sample in range(X.shape[0]):
-        if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
-            x.append(X[sample,:,:])
-            y.append(Y[sample,:,:])
+        if T is None:
+            if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
+                x.append(X[sample,:,:])
+                y.append(Y[sample,:,:])
+        else:
+            if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any() | np.isnan(T[sample,:]).any()):
+                x.append(X[sample,:,:])
+                y.append(Y[sample,:,:])
+                t.append(T[sample,:,:])
     x = np.array(x)
     y = np.array(y)
-    return x, y
+    if T is not None:
+        t = np.array(t)
+    return x, y, t
 
 
 def _array_to_list(input):
@@ -502,7 +511,7 @@ def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=256):
     return res
 
 
-def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require_text=False, require_audio=False,
+def load_windows(data_path, pipeline, require_text=False, text_path=None, require_audio=False,
                  hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
     feats = pipeline.split('2')
     p0_size, p1_size = FEATURE_MAP[pipeline]
@@ -513,10 +522,9 @@ def load_windows(data_path, pipeline, num_samples=None, use_euler=False, require
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
-            B,T = p0_windows.shape[0], p0_windows.shape[1]
-        # if require_text:
-        #   text_windows = ...
-        #    p0_windows = (p0_windows, text_windows)
+        if require_text:
+            text_windows = load_binary(text_path)
+            p0_windows = (p0_windows, text_windows)
         return p0_windows, p1_windows
 
 
@@ -536,7 +544,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
         structure = skeletalModel.getSkeletalModelStructure()
         xyz_train = load_binary("video_data/xyz_train.pkl")
         xyz_train = make_equal_len(xyz_train, method="reflect")
-        xyz_train, _ = rmv_clips_nan(xyz_train, xyz_train)
+        xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)
         root = get_root_bone(xyz_train, structure)
         # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
         bone_len = pose3D.get_bone_length(xyz_train, structure)
@@ -553,9 +561,9 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     structure = skeletalModel.getSkeletalModelStructure()
 
-    # mkdir("video_data")
+    mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.003)  # for the moment use just 10% of the available data
+    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.0025)
     print("Loaded raw data from disk", flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     print("Selected NECK keypoints", flush=True)

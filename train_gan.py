@@ -22,6 +22,12 @@ DATA_PATHS = {
         "test": "video_data/r6d_test.pkl"
         }
 
+TEXT_PATHS = {
+    "train": "video_data/train_sentence_embeddings.pkl",
+    "val": "video_data/val_sentence_embeddings.pkl",
+    "test": "video_data/test_sentence_embeddings.pkl"
+}
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lastCheckpoint = ""
 
@@ -114,8 +120,9 @@ def load_data(args, rng):
     def fetch_data(set="train"):
         ## load from external files
         path = DATA_PATHS[set]
+        text_path = TEXT_PATHS[set]
         data_path = os.path.join(args.base_path, path)
-        curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text)
+        curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
         if args.require_text:
             text = curr_p0[1]
             curr_p0 = curr_p0[0]
@@ -126,10 +133,15 @@ def load_data(args, rng):
     val_X, val_Y, val_text = fetch_data("val")
 
     print(train_X.shape, train_Y.shape, flush=True)
-    train_X, train_Y = rmv_clips_nan(train_X, train_Y)
-    val_X, val_Y = rmv_clips_nan(val_X, val_Y)
+    if args.require_text:
+        print(train_text.shape)
+    print(train_text)
+    train_X, train_Y, train_text = rmv_clips_nan(train_X, train_Y, train_text)
+    val_X, val_Y, val_text = rmv_clips_nan(val_X, val_Y, val_text)
     assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
     print(train_X.shape, train_Y.shape, flush=True)
+    if args.require_text:
+        print(train_text.shape)
 
     print("-"*20 + "train" + "-"*20, flush=True)
     print('===> in/out', train_X.shape, train_Y.shape, flush=True)
@@ -196,7 +208,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
         textData = None
         if args.require_text:
-            textData_np = train_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData_np = train_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
@@ -234,7 +246,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
         textData = None
         if args.require_text:
-            textData_np = train_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData_np = train_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
@@ -281,7 +293,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
 
         textData = None
         if args.require_text:
-            textData_np = val_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData_np = val_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
         
@@ -328,7 +340,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
-    parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination')
+    parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination') 
 
     args = parser.parse_args()
     print(args, flush=True)

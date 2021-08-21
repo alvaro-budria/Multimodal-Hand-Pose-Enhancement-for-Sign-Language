@@ -6,6 +6,13 @@ import pickle
 import torch
 import clip
 
+TEXT_PATHS = {
+    "train": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/train/text/en/raw_text/train.text.id.en",
+    "val": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/val/text/en/raw_text/val.text.id.en",
+    "test": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en"
+}
+
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 sentences = ['This framework generates embeddings for each input sentence',
@@ -47,20 +54,19 @@ def load_text(file_path="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/
 
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--file_path', type=str, default="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", help="path to the file where text dataset is located")
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--file_path', type=str, default="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", help="path to the file where text dataset is located")
+    # args = parser.parse_args()
 
-    sentence_tensor, sentence_list = load_text(args.file_path)
-    print(sentence_tensor.shape, flush=True)
-    embeddings = obtain_embeddings(sentence_tensor)
-    print(embeddings.shape, flush=True)
+    for key in FILE_PATHS:
+        sentence_tensor, sentence_list = load_text(TEXT_PATHS[key])
+        print(sentence_tensor.shape, flush=True)
+        embeddings = obtain_embeddings(sentence_tensor)
+        print(embeddings.shape, flush=True)
 
-    # #Store sentences & embeddings on disk
-    with open('video_data/sentence_embeddings.pkl', "wb") as fOut:
-        pickle.dump(embeddings, fOut, protocol=pickle.HIGHEST_PROTOCOL)
-    with open('video_data/sentence_raw.pkl', "wb") as fOut:
-        pickle.dump(sentence_list, fOut, protocol=pickle.HIGHEST_PROTOCOL)
-    print("Saved sentence embeddings.", flush=True)
-
-    pass
+        # #Store sentences & embeddings on disk
+        with open(f'video_data/{key}_sentence_embeddings.pkl', "wb") as fOut:
+            pickle.dump(embeddings.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(f'video_data/{key}_sentence_raw.pkl', "wb") as fOut:
+            pickle.dump(sentence_list.numpy(), fOut, protocol=pickle.HIGHEST_PROTOCOL)
+        print("Saved sentence embeddings.", flush=True)
