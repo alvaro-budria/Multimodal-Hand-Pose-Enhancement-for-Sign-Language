@@ -397,22 +397,16 @@ def _load(args):
 def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a certain % of the data only
     in_features, out_features = [], []
     dir_list = os.listdir(dir)
-
     idx_max = int(len(dir_list)*subset)
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
         result = executor.map(_load, zip(dir_list[0:idx_max], dir_, pipe_))
-
     clips, in_features, out_features = map(list, zip(*result))
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
-
     return clips, in_features, out_features
-
-def sort_by_id(clips, in_feat, out_feat):
-    dict_feat = dict(zip(clips, it))
 
 def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False, subset=0.1):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
@@ -437,7 +431,6 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
         #in_train, out_train = list(zip(*[v for _, v in sorted(clip_dict.items())]))
         in_train, out_train = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
         print("LOADED RAW TRAIN DATA", flush=True)
-    
     return (in_train, out_train), (in_val, out_val), (in_test, out_test)
 
 
@@ -563,7 +556,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
     mkdir("video_data")
 
-    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.0025)
+    (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.01)
     print("Loaded raw data from disk", flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     print("Selected NECK keypoints", flush=True)

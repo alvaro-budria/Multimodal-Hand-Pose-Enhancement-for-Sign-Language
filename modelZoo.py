@@ -21,7 +21,7 @@ class regressor_fcn_bn_32(nn.Module):
 			if self.use_embeds:
 				self.text_embeds_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
-					nn.Linear(768, default_size),  # 768 is the size of BERT's embeddings
+					nn.Linear(512, default_size),  # 512 is the size of CLIP's embeddings
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
