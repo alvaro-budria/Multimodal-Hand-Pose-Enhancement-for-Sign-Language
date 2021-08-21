@@ -58,7 +58,7 @@ if __name__=="__main__":
     # parser.add_argument('--file_path', type=str, default="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", help="path to the file where text dataset is located")
     # args = parser.parse_args()
 
-    for key in FILE_PATHS:
+    for key in TEXT_PATHS:
         sentence_tensor, sentence_list = load_text(TEXT_PATHS[key])
         print(sentence_tensor.shape, flush=True)
         embeddings = obtain_embeddings(sentence_tensor)
