@@ -396,8 +396,12 @@ def _load(args):
 
 def _load_H2S_dataset(dir, pipeline, subset=0.1):  # subset allows to keep a certain % of the data only
     in_features, out_features = [], []
-    dir_list = os.listdir(dir)
+
+    dir_list = sorted(os.listdir(dir))  # sort this list of clip IDs so that the order matches that of the text embeddings list
+    print(f"len(sorted(os.listdir(dir)): {len(sorted(os.listdir(dir)))}")
+
     idx_max = int(len(dir_list)*subset)
+    print(f"idx_max: {idx_max}")
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
@@ -415,21 +419,19 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     # load data
     in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None
     if os.path.exists(test_path):
-        clips_test, in_test, out_test = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
-        clip_dict = {clips_test[i]: (in_test[i], out_test[i]) for i in range(len(clips_test))}  # order by clip id
-        in_test, out_test = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
+        _, in_test, out_test = _load_H2S_dataset(test_path, pipeline=pipeline, subset=subset)
+        # clip_dict = {clips_test[i]: (in_test[i], out_test[i]) for i in range(len(clips_test))}  # order by clip id
+        # in_test, out_test = map(list, zip(*[v for _, v in clip_dict.items()]))
         print("LOADED RAW TEST DATA", flush=True)
     if os.path.exists(val_path):
-        clips_val, in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
-        clip_dict = {clips_val[i]: (in_val[i], out_val[i]) for i in range(len(clips_val))}  # order by clip id
-        #in_val, out_val = list(zip(*[v for _, v in sorted(clip_dict.items())]))
-        in_val, out_val = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
+        _, in_val, out_val = _load_H2S_dataset(val_path, pipeline=pipeline, subset=subset)
+        # clip_dict = {clips_val[i]: (in_val[i], out_val[i]) for i in range(len(clips_val))}  # order by clip id
+        # in_val, out_val = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
         print("LOADED RAW VAL DATA", flush=True)
     if os.path.exists(train_path):
-        clips_train, in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline, subset=subset)
-        clip_dict = {clips_train[i]: (in_train[i], out_train[i]) for i in range(len(clips_train))}  # order by clip id
-        #in_train, out_train = list(zip(*[v for _, v in sorted(clip_dict.items())]))
-        in_train, out_train = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
+        _, in_train, out_train = _load_H2S_dataset(train_path, pipeline=pipeline, subset=subset)
+        # clip_dict = {clips_train[i]: (in_train[i], out_train[i]) for i in range(len(clips_train))}  # order by clip id
+        # in_train, out_train = map(list, zip(*[v for _, v in sorted(clip_dict.items())]))
         print("LOADED RAW TRAIN DATA", flush=True)
     return (in_train, out_train), (in_val, out_val), (in_test, out_test)
 
@@ -552,8 +554,6 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
 
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
-    structure = skeletalModel.getSkeletalModelStructure()
-
     mkdir("video_data")
 
     (in_train, out_train), (in_val, out_val), (in_test, out_test) = load_H2S_dataset(dir, subset=0.005)
@@ -577,33 +577,34 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     print("saved xy original", flush=True)
     print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    print("lifted val to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    print("lifted test to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # print("lifted val to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # print("lifted test to 3d", flush=True)
 
-    print()
-    print("saved lifted xyz", flush=True)
-    print()
+    # print()
+    # print("saved lifted xyz", flush=True)
+    # print()
 
-    train_3d = load_binary("video_data/xyz_train.pkl")
-    val_3d = load_binary("video_data/xyz_val.pkl")
-    test_3d = load_binary("video_data/xyz_test.pkl")
+    # train_3d = load_binary("video_data/xyz_train.pkl")
+    # val_3d = load_binary("video_data/xyz_val.pkl")
+    # test_3d = load_binary("video_data/xyz_test.pkl")
 
-    lengths = pose3D.get_bone_length(train_3d, structure)
-    save_binary(lengths, "video_data/lengths_train.pkl")
+    # structure = skeletalModel.getSkeletalModelStructure()
+    # lengths = pose3D.get_bone_length(train_3d, structure)
+    # save_binary(lengths, "video_data/lengths_train.pkl")
 
-            #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    #         #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
 
-    print(f"processed all H2S data in {dir}", flush=True)
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":

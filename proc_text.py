@@ -40,13 +40,17 @@ def obtain_embeddings(sentence_list):
     return embeddings
 
 
-def load_text(file_path="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en"):
+def load_text(file_path="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", subset=1):
     dict_text = {}
     with open(file_path) as fp:
         for line in fp:
             id, text = line.split(" ", 1)  # first space separates id from text
             dict_text[id] = text
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
+    print(f"len(sentence_list): {len(sentence_list)}")
+    idx_max = int(len(sentence_list)*subset)
+    print(f"idx_max: {idx_max}")
+    sentence_list = sentence_list[0:idx_max]
     sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)  # all CLIP models use 77 as the context length
     return sentence_tensor, sentence_list
 
@@ -57,7 +61,7 @@ if __name__=="__main__":
     # args = parser.parse_args()
 
     for key in TEXT_PATHS:
-        sentence_tensor, sentence_list = load_text(TEXT_PATHS[key])
+        sentence_tensor, sentence_list = load_text(TEXT_PATHS[key], subset=0.005)
         print(sentence_tensor.shape, flush=True)
         embeddings = obtain_embeddings(sentence_tensor)
         print(embeddings.shape, flush=True)
