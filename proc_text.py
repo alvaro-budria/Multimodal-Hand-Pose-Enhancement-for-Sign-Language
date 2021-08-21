@@ -25,18 +25,6 @@ sample_data = ["fyI1Ev5m1w4_12-8-rgb_front And then you would start to turn your
                "fyI1Ev5m1w4_8-8-rgb_front We would put holes in the ground so it would drain good.",
                "fyI1Ev5m1w4_9-8-rgb_front We would create--add some more sticks, which we've run out of"]
 
-# #Store sentences & embeddings on disk
-# with open('embeddings.pkl', "wb") as fOut:
-#     pickle.dump({'sentences': sentences, 'embeddings': embeddings}, fOut, protocol=pickle.HIGHEST_PROTOCOL)
-
-# #Load sentences & embeddings from disk
-# with open('embeddings.pkl', "rb") as fIn:
-#     stored_data = pickle.load(fIn)
-#     stored_sentences = stored_data['sentences']
-#     stored_embeddings = stored_data['embeddings']
-
-# print(stored_sentences)
-
 
 # obtain embeddings for each sentence in the input list
 def obtain_embeddings(sentence_list):

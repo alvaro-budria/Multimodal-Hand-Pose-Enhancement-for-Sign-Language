@@ -117,7 +117,6 @@ def main(args):
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
-    save_results(None, None, args.pipeline, args.base_path, tag=args.tag)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
@@ -126,6 +125,7 @@ def main(args):
     structure = skeletalModel.getSkeletalModelStructure()
     viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
     ## DONE generating viz
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
