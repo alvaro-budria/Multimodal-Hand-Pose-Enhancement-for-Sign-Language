@@ -153,7 +153,7 @@ class regressor_fcn_bn_32(nn.Module):
 	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
-		if self.require_text == "v1":
+		if self.require_text:
 			feat = self.process_text(text_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
@@ -169,8 +169,12 @@ class regressor_fcn_bn_32(nn.Module):
 
 		# eighth_block = ninth_block + eighth_block
 		# eighth_block = self.skip2(eighth_block)
-		if self.require_text == "v2":
-			seventh_block = torch.cat((seventh_block, feat), dim=2)
+
+		####
+		# if self.require_text == "v2":
+		# 	seventh_block = torch.cat((seventh_block, feat), dim=2)
+		####
+		
 		# d = torch.randn([8, 256, 1])
 		# # bring d into the same format, and then concatenate tensors
 		# seventh_block = torch.cat((seventh_block, d), dim=-1)
