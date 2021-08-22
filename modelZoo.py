@@ -136,24 +136,24 @@ class regressor_fcn_bn_32(nn.Module):
 
 	## create text embedding
 	def process_text(self, text_, T):
-		print(f"text_.shape: {text_.shape}")
+		# print(f"text_.shape: {text_.shape}")
 
 		text_ = text_.unsqueeze(1).repeat(1, T, 1)
-		print(f"text_.shape: {text_.shape}")
+		# print(f"text_.shape: {text_.shape}")
 		B, _, E = text_.shape
 
 		text_ = text_.view(-1, E)
-		print(f"text_.shape: {text_.shape}")
+		# print(f"text_.shape: {text_.shape}")
 
 		feat = self.text_embeds_postprocess(text_)
-		print(f"feat.shape: {feat.shape}")
+		# print(f"feat.shape: {feat.shape}")
 		feat = feat.view(B, T, self.default_size)
-		print(f"feat.shape: {feat.shape}")
+		# print(f"feat.shape: {feat.shape}")
 		feat = feat.permute(0, 2, 1).contiguous()
-		print(f"feat.shape: {feat.shape}")
+		# print(f"feat.shape: {feat.shape}")
 
 		feat = self.text_reduce(feat)
-		print(f"feat.shape: {feat.shape}")
+		# print(f"feat.shape: {feat.shape}")
 		return feat
 
 
@@ -177,10 +177,10 @@ class regressor_fcn_bn_32(nn.Module):
 	## forward pass through generator
 	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
 		B, T = input_.shape[0], input_.shape[2]
-		print(f"input_.shape: {input_.shape}")
+		# print(f"input_.shape: {input_.shape}")
 		fourth_block = self.encoder(input_)
 		if self.require_text:
-			print(text_.shape)
+			# print(text_.shape)
 			feat = self.process_text(text_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
