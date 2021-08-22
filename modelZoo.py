@@ -21,23 +21,27 @@ class regressor_fcn_bn_32(nn.Module):
 			if self.use_embeds:
 				self.text_embeds_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
-					nn.Linear(512, default_size),  # 512 is the size of CLIP's embeddings
+					nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
+				self.text_reduce = nn.Sequential(
+					nn.MaxPool1d(kernel_size=2, stride=2),
+				)
+
 
 		# if self.require_text:
 		# 	embed_size += default_size
 		# 	if self.use_embeds:
 		# 		self.text_embeds_postprocess = nn.Sequential(
 		# 			nn.Dropout(0.5),
-		# 			nn.Linear(768, default_size),  # 768 is the size of BERT's embeddings
+		# 			nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
 		# 			nn.LeakyReLU(0.2, True),
 		# 			nn.BatchNorm1d(default_size, momentum=0.01),
 		# 		)
-		# 		self.text_reduce = nn.Sequential(
-		# 			nn.MaxPool1d(kernel_size=2, stride=2),
-		# 		)
+		#		self.text_reduce = nn.Sequential(
+		#			nn.MaxPool1d(kernel_size=2, stride=2),
+		#		)
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
@@ -129,19 +133,40 @@ class regressor_fcn_bn_32(nn.Module):
 			nn.Conv1d(feature_out_dim, feature_out_dim, 7, padding=3),
 		)
 
-
 	## create text embedding
 	def process_text(self, text_, T):
-		feat = text_.repeat(1, T//2, 1)  # For a sequence of  T frames, we only have one text embedding.
-										 # So we replicate this embedding T/2 times so that we can concatenate it to the body enconder's output. 
-		print(feat.shape)
-		B, T, _ = feat.shape   # T correspon a la segona o a la tercera dimensió?? 
-		text_ = text_.view(-1, 512)
+		print(f"text_.shape: {text_.shape}")
+
+		text_ = text_.unsqueeze(1).repeat(1, T, 1)
+		print(f"text_.shape: {text_.shape}")
+		B, _, E = text_.shape
+
+		text_ = text_.view(-1, E)
+		print(f"text_.shape: {text_.shape}")
+
 		feat = self.text_embeds_postprocess(text_)
+		print(f"feat.shape: {feat.shape}")
 		feat = feat.view(B, T, self.default_size)
+		print(f"feat.shape: {feat.shape}")
 		feat = feat.permute(0, 2, 1).contiguous()
+		print(f"feat.shape: {feat.shape}")
+
+		feat = self.text_reduce(feat)
+		print(f"feat.shape: {feat.shape}")
 		return feat
 
+
+	# ## create text embedding
+	# def process_text(self, text_, T):
+	# 	feat = text_.repeat(1, T//2, 2)  # For a sequence of  T frames, we only have one text embedding.
+	# 									 # So we replicate this embedding T/2 times so that we can concatenate it to the body enconder's output. 
+	# 	print(feat.shape)
+	# 	B, T, _ = feat.shape   # T correspon a la segona o a la tercera dimensió?? 
+	# 	text_ = text_.view(-1, 512)
+	# 	feat = self.text_embeds_postprocess(text_)
+	# 	feat = feat.view(B, T, self.default_size)
+	# 	feat = feat.permute(0, 2, 1).contiguous()
+	# 	return feat
 
 	## utility upsampling function
 	def upsample(self, tensor, shape):
