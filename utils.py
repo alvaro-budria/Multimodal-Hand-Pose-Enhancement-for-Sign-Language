@@ -399,8 +399,7 @@ def _load(args):
     return clip, in_kp, out_kp
 
 def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep a certain % of the data only
-    #dir_list = sorted(os.listdir(dir))  # sort this list of clip IDs so that the order matches that of the text embeddings list
-    dir_list = os.listdir(dir)  # sort this list of clip IDs so that the order matches that of the text embeddings list
+    dir_list = os.listdir(dir)
     print(f"len(dir_list): {len(dir_list)}", flush=True)
 
     clip_ids_text = proc_text.get_clip_ids(key=key)
@@ -562,59 +561,59 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.005)
-    print("Loaded raw data from disk", flush=True)
-    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    print("Selected NECK keypoints", flush=True)
-    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    print("Selected ARMS keypoints", flush=True)
-    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    print("Selected HANDS keypoints", flush=True)
+    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
+    # print("Loaded raw data from disk", flush=True)
+    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    # print("Selected NECK keypoints", flush=True)
+    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    # print("Selected ARMS keypoints", flush=True)
+    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    # print("Selected HANDS keypoints", flush=True)
 
-    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
     
-    save_binary(feats_train, "video_data/xy_train.pkl")
-    save_binary(feats_val, "video_data/xy_val.pkl")
-    save_binary(feats_test, "video_data/xy_test.pkl")
+    # save_binary(feats_train, "video_data/xy_train.pkl")
+    # save_binary(feats_val, "video_data/xy_val.pkl")
+    # save_binary(feats_test, "video_data/xy_test.pkl")
 
-    save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl")
-    save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl")
-    save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl")
-
-    print()
-    print("saved xy original and text embeddings", flush=True)
-    print()
-
-    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    # print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    # print("lifted test to 3d", flush=True)
+    # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl")
+    # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl")
+    # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl")
 
     # print()
-    # print("saved lifted xyz", flush=True)
+    # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    # train_3d = load_binary("video_data/xyz_train.pkl")
-    # val_3d = load_binary("video_data/xyz_val.pkl")
-    # test_3d = load_binary("video_data/xyz_test.pkl")
+    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    print("lifted train to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    print("lifted val to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    print("lifted test to 3d", flush=True)
 
-    # structure = skeletalModel.getSkeletalModelStructure()
-    # lengths = pose3D.get_bone_length(train_3d, structure)
-    # save_binary(lengths, "video_data/lengths_train.pkl")
+    print()
+    print("saved lifted xyz", flush=True)
+    print()
 
-    #         #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    train_3d = load_binary("video_data/xyz_train.pkl")
+    val_3d = load_binary("video_data/xyz_val.pkl")
+    test_3d = load_binary("video_data/xyz_test.pkl")
 
-    # print(f"processed all H2S data in {dir}", flush=True)
+    structure = skeletalModel.getSkeletalModelStructure()
+    lengths = pose3D.get_bone_length(train_3d, structure)
+    save_binary(lengths, "video_data/lengths_train.pkl")
+
+            #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
+    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+
+    print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
