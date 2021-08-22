@@ -50,8 +50,9 @@ def obtain_embeddings(key, ids):
     model, _ = clip.load('ViT-B/32', device)
     # Calculate features
     sentence_list = load_text(key, ids)
+    sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)
     with torch.no_grad():
-        embeddings = model.encode_text(sentence_list)
+        embeddings = model.encode_text(sentence_tensor)
     return embeddings.numpy()
 
 
