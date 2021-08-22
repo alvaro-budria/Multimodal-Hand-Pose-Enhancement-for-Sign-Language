@@ -271,7 +271,10 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
                                                                                                   np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
-    # Save data to tensorboard                             
+    # Save data to tensorboard
+    print(avgLoss)
+    print(totalSteps)
+    print(args.batch_size)                     
     train_summary_writer.add_scalar('Tr. loss', avgLoss / (totalSteps * args.batch_size), epoch)
 
 
