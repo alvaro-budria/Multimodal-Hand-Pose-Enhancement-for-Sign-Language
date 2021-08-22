@@ -26,7 +26,7 @@ class regressor_fcn_bn_32(nn.Module):
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
 
-		# if self.require_text == "v2":
+		# if self.require_text:
 		# 	embed_size += default_size
 		# 	if self.use_embeds:
 		# 		self.text_embeds_postprocess = nn.Sequential(

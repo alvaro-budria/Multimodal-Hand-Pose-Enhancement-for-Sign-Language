@@ -414,7 +414,6 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     print(f"idx_max: {idx_max}", flush=True)
 
     embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])
-
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
@@ -580,9 +579,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     save_binary(feats_val, "video_data/xy_val.pkl")
     save_binary(feats_test, "video_data/xy_test.pkl")
 
-    save_binary(embeds_train, "train_sentence_embeddings.pkl")
-    save_binary(embeds_test, "test_sentence_embeddings.pkl")
-    save_binary(embeds_val, "val_sentence_embeddings.pkl")
+    save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl")
+    save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl")
+    save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl")
 
     print()
     print("saved xy original and text embeddings", flush=True)
