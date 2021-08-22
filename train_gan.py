@@ -52,20 +52,30 @@ def main(args):
     args.model = 'regressor_fcn_bn_32'
     generator = getattr(modelZoo, args.model)()
     generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
+    g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+    if args.use_checkpoint:
+        loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
+        generator.load_state_dict(loaded_state['state_dict'], strict=False)
+        g_optimizer.load_state_dict(loaded_state['g_optimizer'])
     generator.to(device)
-    reg_criterion = nn.L1Loss()
-    g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=1e-5)
-    g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-8)
+    reg_criterion = nn.L1Loss() 
+    # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
+    g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
     generator.train()
 
     ## set up discriminator model
     args.model = 'regressor_fcn_bn_discriminator'
     discriminator = getattr(modelZoo, args.model)()
     discriminator.build_net(feature_out_dim)
+    d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+    if args.use_checkpoint:
+        loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
+        discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
+        d_optimizer.load_state_dict(loaded_state['d_optimizer'])
     discriminator.to(device)
     gan_criterion = nn.MSELoss()
-    d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=1e-5)
-    d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-8)
+    # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
+    d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
     discriminator.train()
     ## DONE model
 
@@ -102,7 +112,7 @@ def main(args):
             train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=train_text)
         else:
             train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
-            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
+            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
     
     shutil.copyfile(lastCheckpoint, args.model_path + "/lastCheckpoint.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
@@ -276,7 +286,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
 
 ## validating generator function
-def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
+def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
@@ -313,6 +323,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
     d_scheduler.step(testLoss)
     if testLoss < currBestLoss:
         prev_save_epoch = args.epoch
+        # store generator
         checkpoint = {'epoch': args.epoch,
                       'state_dict': generator.state_dict(),
                       'g_optimizer': g_optimizer.state_dict()}
@@ -322,9 +333,12 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, g_
         global lastCheckpoint
         lastCheckpoint = fileName
 
-        # for f in os.listdir(args.model_path):  # remove past checkpoints to avod blowing up disk memory
-        #     if f != fileName:
-        #         os.remove(os.path.join(args.model_path, f))
+        # store discriminator
+        checkpoint = {'epoch': args.epoch,
+                      'state_dict': discriminator.state_dict(),
+                      'd_optimizer': d_optimizer.state_dict()}
+        fileName = args.model_path + '/discriminator.pth'
+        torch.save(checkpoint, fileName)
 
     return currBestLoss, prev_save_epoch
 
@@ -335,12 +349,13 @@ if __name__ == '__main__':
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
-    parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
+    parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for training G and D')
     parser.add_argument('--require_text', action="store_true", help="use additional text feature or not")
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
-    parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination') 
+    parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination')
+    parser.add_argument('--use_checkpoint', action="store_true", help="path to checkpoint from which to start training")
 
     args = parser.parse_args()
     print(args, flush=True)
