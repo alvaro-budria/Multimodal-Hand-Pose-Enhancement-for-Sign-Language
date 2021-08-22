@@ -132,11 +132,10 @@ class regressor_fcn_bn_32(nn.Module):
 
 	## create text embedding
 	def process_text(self, text_, T):
-		feat = text_
-		
 		feat = text_.repeat(1, T//2, 1)  # For a sequence of  T frames, we only have one text embedding.
 										 # So we replicate this embedding T/2 times so that we can concatenate it to the body enconder's output. 
-		B, T, _ = feat.shape 
+		print(feat.shape)
+		B, T, _ = feat.shape   # T correspons a la segona o a la tercera dimensió?? 
 		text_ = text_.view(-1, 512)
 		feat = self.text_embeds_postprocess(text_)
 		feat = feat.view(B, T, self.default_size)
@@ -154,6 +153,7 @@ class regressor_fcn_bn_32(nn.Module):
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
 		if self.require_text:
+			print(text_.shape)
 			feat = self.process_text(text_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
