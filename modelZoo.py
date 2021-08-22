@@ -48,7 +48,7 @@ class regressor_fcn_bn_32(nn.Module):
 			nn.Dropout(0.5),
 			nn.Conv1d(feature_in_dim,embed_size_encoder,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(embed_size_encoder),
 			nn.MaxPool1d(kernel_size=2, stride=2),
 		)
 
