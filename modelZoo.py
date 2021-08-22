@@ -16,11 +16,9 @@ class regressor_fcn_bn_32(nn.Module):
 		self.use_embeds = True
 
 		embed_size_encoder = default_size
-		print(f"embed_size_encoder: {embed_size_encoder}")
 		embed_size = default_size
 		if self.require_text:
 			embed_size += default_size
-			print(f"embed_size_encoder: {embed_size_encoder}")
 			if self.use_embeds:
 				self.text_embeds_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
@@ -179,7 +177,7 @@ class regressor_fcn_bn_32(nn.Module):
 	## forward pass through generator
 	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
 		B, T = input_.shape[0], input_.shape[2]
-		print(input_.shape)
+		print(f"input_.shape: {input_.shape}")
 		fourth_block = self.encoder(input_)
 		if self.require_text:
 			print(text_.shape)
