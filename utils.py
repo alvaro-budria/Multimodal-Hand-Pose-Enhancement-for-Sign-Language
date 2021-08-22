@@ -52,7 +52,7 @@ def rmv_clips_nan(X, Y, T=None):
             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any() | np.isnan(T[sample,:]).any()):
                 x.append(X[sample,:,:])
                 y.append(Y[sample,:,:])
-                t.append(T[sample,:,:])
+                t.append(T[sample,:])
     x = np.array(x)
     y = np.array(y)
     if T is not None:
