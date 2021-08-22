@@ -15,6 +15,7 @@ class regressor_fcn_bn_32(nn.Module):
 		self.default_size = default_size
 		self.use_embeds = True
 
+		embed_size_encoder = default_size
 		embed_size = default_size
 		if self.require_text:
 			embed_size += default_size
@@ -45,7 +46,7 @@ class regressor_fcn_bn_32(nn.Module):
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(feature_in_dim,embed_size,3,padding=1),
+			nn.Conv1d(feature_in_dim,embed_size_encoder,3,padding=1),
 			nn.LeakyReLU(0.2, True),
 			nn.BatchNorm1d(embed_size),
 			nn.MaxPool1d(kernel_size=2, stride=2),
