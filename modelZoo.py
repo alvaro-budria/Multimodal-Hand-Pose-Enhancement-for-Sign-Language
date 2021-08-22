@@ -137,7 +137,7 @@ class regressor_fcn_bn_32(nn.Module):
 		feat = text_.repeat(1, T//2, 1)  # For a sequence of  T frames, we only have one text embedding.
 										 # So we replicate this embedding T/2 times so that we can concatenate it to the body enconder's output. 
 		B, T, _ = feat.shape 
-		text_ = text_.view(-1, 768)
+		text_ = text_.view(-1, 512)
 		feat = self.text_embeds_postprocess(text_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
