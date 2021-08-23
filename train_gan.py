@@ -20,12 +20,12 @@ DATA_PATHS = {
         "train": "video_data/r6d_train.pkl",
         "val": "video_data/r6d_val.pkl",
         "test": "video_data/r6d_test.pkl"
-        }
+}
 
 TEXT_PATHS = {
-    "train": "video_data/train_sentence_embeddings.pkl",
-    "val": "video_data/val_sentence_embeddings.pkl",
-    "test": "video_data/test_sentence_embeddings.pkl"
+        "train": "video_data/train_sentence_embeddings.pkl",
+        "val": "video_data/val_sentence_embeddings.pkl",
+        "test": "video_data/test_sentence_embeddings.pkl"
 }
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -145,7 +145,6 @@ def load_data(args, rng):
     print(train_X.shape, train_Y.shape, flush=True)
     if args.require_text:
         print(train_text.shape)
-    print(train_text)
     train_X, train_Y, train_text = rmv_clips_nan(train_X, train_Y, train_text)
     val_X, val_Y, val_text = rmv_clips_nan(val_X, val_Y, val_text)
     assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
