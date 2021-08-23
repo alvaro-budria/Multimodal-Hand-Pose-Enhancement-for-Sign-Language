@@ -310,7 +310,7 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=20):
         print(f"Found file with name {filename}. Appending results to this file.")
         feats_3d = load_binary(filename)
     idx = len(feats) // nPartitions + 1
-    min_i = 13
+    min_i = 0
     for i in range(min_i, nPartitions):
         feats_3d_sub = []
         with Pool(processes=24) as pool:
