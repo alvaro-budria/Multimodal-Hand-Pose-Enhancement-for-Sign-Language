@@ -286,7 +286,6 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
 ## validating generator function
 def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
-    print("in val_generator !!1!!!")
     testLoss = 0
     generator.eval()
     discriminator.eval()
