@@ -560,7 +560,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
 
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
-    # mkdir("video_data")
+    mkdir("video_data")
 
     # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
     # print("Loaded raw data from disk", flush=True)
@@ -589,36 +589,36 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    print("lifted val to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    print("lifted test to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # print("lifted val to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # print("lifted test to 3d", flush=True)
 
-    print()
-    print("saved lifted xyz", flush=True)
-    print()
+    # print()
+    # print("saved lifted xyz", flush=True)
+    # print()
 
-    train_3d = load_binary("video_data/xyz_train.pkl")
-    val_3d = load_binary("video_data/xyz_val.pkl")
-    test_3d = load_binary("video_data/xyz_test.pkl")
+    # train_3d = load_binary("video_data/xyz_train.pkl")
+    # val_3d = load_binary("video_data/xyz_val.pkl")
+    # test_3d = load_binary("video_data/xyz_test.pkl")
 
-    structure = skeletalModel.getSkeletalModelStructure()
-    lengths = pose3D.get_bone_length(train_3d, structure)
-    save_binary(lengths, "video_data/lengths_train.pkl")
+    # structure = skeletalModel.getSkeletalModelStructure()
+    # lengths = pose3D.get_bone_length(train_3d, structure)
+    # save_binary(lengths, "video_data/lengths_train.pkl")
 
-            #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    #         #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
 
-    print()
-    print("saved r6d data", flush=True)
-    print()
+    # print()
+    # print("saved r6d data", flush=True)
+    # print()
 
-    print(f"processed all H2S data in {dir}", flush=True)
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
