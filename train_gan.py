@@ -286,31 +286,33 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
 ## validating generator function
 def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
+    print("in val_generator !!1!!!")
     testLoss = 0
     generator.eval()
     discriminator.eval()
-    batchinds = np.arange(val_X.shape[0] // (args.batch_size//2))  # integer division so drop last incomplete batch
+    val_batch_size = args.batch_size // 2
+    batchinds = np.arange(val_X.shape[0] // val_batch_size)  # integer division so drop last incomplete batch
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
         ## setting batch data
-        idxStart = bi * args.batch_size
-        inputData_np = val_X[idxStart:(idxStart + args.batch_size), :, :]
-        outputData_np = val_Y[idxStart:(idxStart + args.batch_size), :, :]
+        idxStart = bi * val_batch_size
+        inputData_np = val_X[idxStart:(idxStart + val_batch_size), :, :]
+        outputData_np = val_Y[idxStart:(idxStart + val_batch_size), :, :]
         inputData = Variable(torch.from_numpy(inputData_np)).to(device)
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
         textData = None
         if args.require_text:
-            textData_np = val_text[idxStart:(idxStart + args.batch_size), :]
+            textData_np = val_text[idxStart:(idxStart + val_batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
         
         output = generator(inputData, text_=textData)
         g_loss = reg_criterion(output, outputGT)
-        testLoss += g_loss.item() * args.batch_size
+        testLoss += g_loss.item() * val_batch_size
 
-    testLoss /= totalSteps * args.batch_size
+    testLoss /= totalSteps * val_batch_size
     print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
