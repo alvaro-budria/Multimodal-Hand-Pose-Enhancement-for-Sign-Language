@@ -289,7 +289,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
     testLoss = 0
     generator.eval()
     discriminator.eval()
-    batchinds = np.arange(val_X.shape[0] // args.batch_size)  # integer division so drop last incomplete batch
+    batchinds = np.arange(val_X.shape[0] // (args.batch_size//2))  # integer division so drop last incomplete batch
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
