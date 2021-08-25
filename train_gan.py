@@ -113,7 +113,14 @@ def main(args):
         else:
             train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
             currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
-    
+            # Data shuffle
+            I = np.arange(len(train_X))
+            rng.shuffle(I)
+            train_X = train_X[I]
+            train_Y = train_Y[I]
+            if args.require_text:
+                train_text = train_text[I]
+
     shutil.copyfile(lastCheckpoint, args.model_path + "/lastCheckpoint.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
     train_summary_writer.flush()
