@@ -120,26 +120,26 @@ class regressor_fcn_bn_32(nn.Module):
 			nn.Conv1d(feature_out_dim, feature_out_dim, 7, padding=3),
 		)
 
-	# ## create text embedding
-	# def process_text(self, text_, T):  # "v1"
-	# 	text_ = text_.unsqueeze(1).repeat(1, T, 1)
-	# 	B, _, E = text_.shape
-	# 	text_ = text_.view(-1, E)
-	# 	feat = self.text_embeds_postprocess(text_)
-	# 	feat = feat.view(B, T, self.default_size)
-	# 	feat = feat.permute(0, 2, 1).contiguous()
-	# 	feat = self.text_reduce(feat)
-	# 	return feat
-
 	## create text embedding
-	def process_text(self, text_):  # "v2"
-		text_ = text_.unsqueeze(1)
-		B, TT, E = text_.shape
+	def process_text(self, text_, T):  # "v1"
+		text_ = text_.unsqueeze(1).repeat(1, T, 1)
+		B, _, E = text_.shape
 		text_ = text_.view(-1, E)
 		feat = self.text_embeds_postprocess(text_)
-		feat = feat.view(B, TT, self.default_size)  # TT should = 1
+		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
+		feat = self.text_reduce(feat)
 		return feat
+
+	# ## create text embedding
+	# def process_text(self, text_):  # "v2"
+	# 	text_ = text_.unsqueeze(1)
+	# 	B, TT, E = text_.shape
+	# 	text_ = text_.view(-1, E)
+	# 	feat = self.text_embeds_postprocess(text_)
+	# 	feat = feat.view(B, TT, self.default_size)  # TT should = 1
+	# 	feat = feat.permute(0, 2, 1).contiguous()
+	# 	return feat
 
 	## utility upsampling function
 	def upsample(self, tensor, shape):
@@ -152,7 +152,7 @@ class regressor_fcn_bn_32(nn.Module):
 		fourth_block = self.encoder(input_)
 		if self.require_text:  # "v1"
 			# print(text_.shape)
-			feat = self.process_text(text_)
+			feat = self.process_text(text_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
