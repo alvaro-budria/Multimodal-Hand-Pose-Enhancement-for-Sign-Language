@@ -413,7 +413,7 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     idx_max = int(len(ids)*subset)
     print(f"idx_max: {idx_max}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
@@ -504,8 +504,12 @@ def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=256):
         min_T = min_T - 1 if sizes % 2 == 1 else min_T
         res = np.array([arr[:min_T,:] for arr in data])
 
+    elif method=="cutting+0pad":  # 0pad shorter sequences, cut longer sequences
+        res = np.array([arr[:maxpad,:] if arr.shape[0] >= maxpad else np.vstack( (arr, np.zeros((maxpad-arr.shape[0],arr.shape[1]),int)) ) for arr in data])
+
     else: # method=="wrap" or method=="reflect"
         max_T = np.amax(sizes) + 1 if np.amax(sizes) % 2 == 1 else np.amax(sizes)
+        max_T = max(max_T, maxpad)
         res = [np.pad(arr, ((0, max_T-arr.shape[0]), (0,0)), method) for arr in data]
         res = np.stack(res)
 
@@ -519,7 +523,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
     if os.path.exists(data_path):
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="reflect")
+        data = make_equal_len(data, method="cutting+0pad")
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
