@@ -152,7 +152,7 @@ class regressor_fcn_bn_32(nn.Module):
 		fourth_block = self.encoder(input_)
 		if self.require_text:  # "v1"
 			# print(text_.shape)
-			feat = self.process_text(text_, T)
+			feat = self.process_text(text_)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
