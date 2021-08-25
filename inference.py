@@ -88,7 +88,7 @@ def main(args):
 
         textData = None
         if args.require_text:
-            textData_np = test_text[idxStart:(idxStart + args.batch_size), :, :]
+            textData_np = test_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(textData_np).to(device)
         ## DONE setting batch data
 
