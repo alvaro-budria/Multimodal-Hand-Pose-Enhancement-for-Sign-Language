@@ -191,9 +191,9 @@ class regressor_fcn_bn_32_v2(nn.Module):
 			self.embed_size += default_size
 			self.text_embeds_postprocess = nn.Sequential(
 				nn.Dropout(0.5),
-				nn.Linear(512, self.embed_size//4),  # 512 is the size of CLIP's text embeddings
+				nn.Linear(512, self.embed_size),  # 512 is the size of CLIP's text embeddings
 				nn.LeakyReLU(0.2, True),
-				nn.BatchNorm1d(self.embed_size//4, momentum=0.01),
+				nn.BatchNorm1d(self.embed_size, momentum=0.01),
 			)
 
 		self.encoder = nn.Sequential(
@@ -293,7 +293,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		B, TT, E = text_.shape
 		text_ = text_.view(-1, E)
 		feat = self.text_embeds_postprocess(text_)
-		feat = feat.view(B, TT, self.embed_size//4)  # TT should == 1
+		feat = feat.view(B, TT, self.embed_size)  # TT should == 1
 		feat = feat.permute(0, 2, 1).contiguous()
 		return feat
 
@@ -322,6 +322,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 
 		if self.require_text:
 			feat = self.process_text(text_)
+			print(seventh_block.shape, feat.shape)
 			seventh_block = torch.cat((seventh_block, feat), dim=2)
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
