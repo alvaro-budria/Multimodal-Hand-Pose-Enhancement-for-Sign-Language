@@ -186,43 +186,43 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		self.require_text = require_text
 		self.default_size = default_size
 
-		embed_size = default_size
+		self.embed_size = default_size
 		if self.require_text:
-			embed_size += default_size
+			self.embed_size += default_size
 			self.text_embeds_postprocess = nn.Sequential(
 				nn.Dropout(0.5),
-				nn.Linear(512, embed_size//4),  # 512 is the size of CLIP's text embeddings
+				nn.Linear(512, self.embed_size//4),  # 512 is the size of CLIP's text embeddings
 				nn.LeakyReLU(0.2, True),
-				nn.BatchNorm1d(embed_size//4, momentum=0.01),
+				nn.BatchNorm1d(self.embed_size//4, momentum=0.01),
 			)
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(feature_in_dim,embed_size,3,padding=1),
+			nn.Conv1d(feature_in_dim,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 			nn.MaxPool1d(kernel_size=2, stride=2),
 		)
 
 		self.conv5 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 		)
 
 		self.conv6 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 		)
 
 		self.conv7 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,5,stride=2,padding=2),
+			nn.Conv1d(self.embed_size,self.embed_size,5,stride=2,padding=2),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 		)
 
 		# self.conv8 = nn.Sequential(
@@ -261,25 +261,25 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		# )
 		self.skip4 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 		)
 		self.skip5 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 		)
 
 		self.decoder = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
+			nn.BatchNorm1d(self.embed_size),
 
 			nn.Dropout(0.5),
-			nn.ConvTranspose1d(embed_size, feature_out_dim, 7, stride=2, padding=3, output_padding=1),
+			nn.ConvTranspose1d(self.embed_size, feature_out_dim, 7, stride=2, padding=3, output_padding=1),
 			nn.ReLU(True),
 			nn.BatchNorm1d(feature_out_dim),
 
@@ -293,7 +293,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		B, TT, E = text_.shape
 		text_ = text_.view(-1, E)
 		feat = self.text_embeds_postprocess(text_)
-		feat = feat.view(B, TT, self.default_size)  # TT should == 1
+		feat = feat.view(B, TT, self.embed_size//4)  # TT should == 1
 		feat = feat.permute(0, 2, 1).contiguous()
 		return feat
 
