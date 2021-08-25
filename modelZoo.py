@@ -14,30 +14,20 @@ class regressor_fcn_bn_32(nn.Module):
 		self.require_text = require_text
 		self.default_size = default_size
 
-		v = 1  # v1 -> 1 (embeddings text added at the beginning); v2 -> 2 (embeddings text added at the bottleneck)
 		embed_size_encoder = default_size
 		embed_size = default_size
 		if self.require_text:
 			embed_size += default_size
-			
-			if v == 1:
-				self.text_embeds_postprocess = nn.Sequential(
-					nn.Dropout(0.5),
-					nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
-					nn.LeakyReLU(0.2, True),
-					nn.BatchNorm1d(default_size, momentum=0.01),
-				)
-				self.text_reduce = nn.Sequential(
-					nn.MaxPool1d(kernel_size=2, stride=2),
-				)
-			elif v == 2:
-				self.text_embeds_postprocess = nn.Sequential(
-					nn.Dropout(0.5),
-					nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
-					nn.LeakyReLU(0.2, True),
-					nn.BatchNorm1d(default_size, momentum=0.01),
-				)
 
+			self.text_embeds_postprocess = nn.Sequential(
+				nn.Dropout(0.5),
+				nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
+				nn.LeakyReLU(0.2, True),
+				nn.BatchNorm1d(default_size, momentum=0.01),
+			)
+			self.text_reduce = nn.Sequential(
+				nn.MaxPool1d(kernel_size=2, stride=2),
+			)
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
@@ -332,7 +322,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		# eighth_block = self.skip2(eighth_block)
 
 		if self.require_text:
-		  	feat = self.process_text(text_)
+			feat = self.process_text(text_)
 			seventh_block = torch.cat((seventh_block, feat), dim=2)
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block

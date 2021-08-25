@@ -25,7 +25,7 @@ def plot_grad_flow(named_parameters, filename):
     plt.hlines(0, 0, len(ave_grads)+1, lw=2, color="k" )
     plt.xticks(range(0,len(ave_grads), 1), layers, rotation="vertical")
     plt.xlim(left=0, right=len(ave_grads))
-    plt.ylim(bottom = -0.001, top=0.02) # zoom in on the lower gradient regions
+    plt.ylim(bottom = -0.001, top=0.01) # zoom in on the lower gradient regions
     plt.xlabel("Layers")
     plt.ylabel("average gradient")
     plt.title("Gradient flow")
