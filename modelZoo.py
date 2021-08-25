@@ -21,9 +21,9 @@ class regressor_fcn_bn_32(nn.Module):
 
 			self.text_embeds_postprocess = nn.Sequential(
 				nn.Dropout(0.5),
-				nn.Linear(512, embed_size),  # 512 is the size of CLIP's text embeddings
+				nn.Linear(512, default_size),  # 512 is the size of CLIP's text embeddings
 				nn.LeakyReLU(0.2, True),
-				nn.BatchNorm1d(embed_size, momentum=0.01),
+				nn.BatchNorm1d(default_size, momentum=0.01),
 			)
 			self.text_reduce = nn.Sequential(
 				nn.MaxPool1d(kernel_size=2, stride=2),
