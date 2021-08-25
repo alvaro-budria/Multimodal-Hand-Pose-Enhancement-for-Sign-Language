@@ -523,7 +523,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
     if os.path.exists(data_path):
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="cutting+0pad")
+        data = make_equal_len(data, method="reflect")#, method="cutting+0pad")
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
