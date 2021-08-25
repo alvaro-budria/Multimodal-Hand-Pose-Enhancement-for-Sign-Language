@@ -180,7 +180,7 @@ class regressor_fcn_bn_32(nn.Module):
 
 class regressor_fcn_bn_32_v2(nn.Module):
 	def __init__(self):
-		super(regressor_fcn_bn_32, self).__init__()
+		super(regressor_fcn_bn_32_v2, self).__init__()
 
 	def build_net(self, feature_in_dim, feature_out_dim, require_text=None, default_size=256):
 		self.require_text = require_text
@@ -195,7 +195,6 @@ class regressor_fcn_bn_32_v2(nn.Module):
 				nn.LeakyReLU(0.2, True),
 				nn.BatchNorm1d(embed_size//4, momentum=0.01),
 			)
-
 
 		self.encoder = nn.Sequential(
 			nn.Dropout(0.5),
