@@ -60,7 +60,6 @@ def main(args):
     torch.manual_seed(23456)
     torch.cuda.manual_seed(23456)
     ## DONE variables
-
     with wandb.init(project="B2H-H2S", name=args.exp_name):
 
         ## load data from saved files
