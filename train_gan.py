@@ -15,6 +15,9 @@ from track_grads import plot_grad_flow
 import modelZoo
 from utils import *
 
+# experiment logging
+import wandb
+
 
 DATA_PATHS = {
         "train": "video_data/r6d_train.pkl",
@@ -35,6 +38,16 @@ lastCheckpoint = ""
 ## main training function
 #######################################################
 def main(args):
+    wandb.login()
+    # config = dict(
+    #     epochs=args.num_epochs,
+    #     batch_size=args.batch_size,
+    #     learning_rate=args.learning_rate,
+    #     architecture="v1",
+    #     pipeline = args.pipeline)
+    
+    # config = wandb.config
+
     ## variables
     learning_rate = args.learning_rate
     pipeline = args.pipeline
@@ -48,78 +61,81 @@ def main(args):
     torch.cuda.manual_seed(23456)
     ## DONE variables
 
-    ## set up generator model
-    args.model = "regressor_fcn_bn_32_v2"# 'regressor_fcn_bn_32'
-    generator = getattr(modelZoo, args.model)()
-    generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
-    g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
-    if args.use_checkpoint:
-        loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
-        generator.load_state_dict(loaded_state['state_dict'], strict=False)
-        g_optimizer.load_state_dict(loaded_state['g_optimizer'])
-    generator.to(device)
-    reg_criterion = nn.L1Loss() 
-    # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
-    g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
-    generator.train()
+    with wandb.init(project="B2H-H2S", name=args.exp_name):
 
-    ## set up discriminator model
-    args.model = 'regressor_fcn_bn_discriminator'
-    discriminator = getattr(modelZoo, args.model)()
-    discriminator.build_net(feature_out_dim)
-    d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
-    if args.use_checkpoint:
-        loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
-        discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
-        d_optimizer.load_state_dict(loaded_state['d_optimizer'])
-    discriminator.to(device)
-    gan_criterion = nn.MSELoss()
-    # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
-    d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
-    discriminator.train()
-    ## DONE model
-
-    ## load data from saved files
-    data_tuple = load_data(args, rng)
-    if args.require_text:
-        train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
-    else:
-        train_X, train_Y, val_X, val_Y = data_tuple
-        train_text, val_text = None, None
-    ## DONE: load data from saved files
-
-    ## setup results logger
-    mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
-    train_log_dir = 'logs/train/' + args.tag
-    val_log_dir   = 'logs/val/' + args.tag
-    train_summary_writer = SummaryWriter(train_log_dir)
-    val_summary_writer   = SummaryWriter(val_log_dir)
-    mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
-    ## DONE setup logger 
-
-    ## training job
-    kld_weight = 0.05
-    prev_save_epoch = 0
-    patience = args.patience
-    for epoch in range(args.num_epochs):
-        args.epoch = epoch
-        # train discriminator
-        if epoch > 100 and (epoch - prev_save_epoch) > patience:
-            print('early stopping at:', epoch-1, flush=True)
-            break
-
-        if epoch > 0 and epoch % 3 == 0:
-            train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=train_text)
+        ## load data from saved files
+        data_tuple = load_data(args, rng)
+        if args.require_text:
+            train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
         else:
-            train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
-            currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
-            # Data shuffle
-            I = np.arange(len(train_X))
-            rng.shuffle(I)
-            train_X = train_X[I]
-            train_Y = train_Y[I]
-            if args.require_text:
-                train_text = train_text[I]
+            train_X, train_Y, val_X, val_Y = data_tuple
+            train_text, val_text = None, None
+        ## DONE: load data from saved files
+    
+        ## set up generator model
+        args.model = "regressor_fcn_bn_32_v2"# 'regressor_fcn_bn_32'
+        generator = getattr(modelZoo, args.model)()
+        generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
+        g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+        if args.use_checkpoint:
+            loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
+            generator.load_state_dict(loaded_state['state_dict'], strict=False)
+            g_optimizer.load_state_dict(loaded_state['g_optimizer'])
+        generator.to(device)
+        reg_criterion = nn.L1Loss() 
+        # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
+        g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
+        generator.train()
+        wandb.watch(generator, reg_criterion, log="all", log_freq=10)
+
+        ## set up discriminator model
+        args.model = 'regressor_fcn_bn_discriminator'
+        discriminator = getattr(modelZoo, args.model)()
+        discriminator.build_net(feature_out_dim)
+        d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+        if args.use_checkpoint:
+            loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
+            discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
+            d_optimizer.load_state_dict(loaded_state['d_optimizer'])
+        discriminator.to(device)
+        gan_criterion = nn.MSELoss()
+        # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
+        d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
+        discriminator.train()
+        wandb.watch(discriminator, gan_criterion, log="all", log_freq=10)
+        ## DONE model
+
+        ## setup results logger
+        mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
+        train_log_dir = 'logs/train/' + args.tag
+        val_log_dir   = 'logs/val/' + args.tag
+        train_summary_writer = SummaryWriter(train_log_dir)
+        val_summary_writer   = SummaryWriter(val_log_dir)
+        mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
+        ## DONE setup logger 
+
+        ## training job
+        prev_save_epoch = 0
+        patience = args.patience
+        for epoch in range(args.num_epochs):
+            args.epoch = epoch
+            # train discriminator
+            if epoch > 100 and (epoch - prev_save_epoch) > patience:
+                print('early stopping at:', epoch-1, flush=True)
+                break
+
+            if epoch > 0 and epoch % 3 == 0:
+                train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=train_text)
+            else:
+                train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
+                currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
+                # Data shuffle
+                I = np.arange(len(train_X))
+                rng.shuffle(I)
+                train_X = train_X[I]
+                train_Y = train_Y[I]
+                if args.require_text:
+                    train_text = train_text[I]
 
     shutil.copyfile(lastCheckpoint, args.model_path + "/lastCheckpoint.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
@@ -207,13 +223,13 @@ def calc_motion(tensor):
 
 
 ## training discriminator function
-def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, train_text=None):
+def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=None):
     generator.eval()
     discriminator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size)   # integer division so drop last incomplete minibatch
     totalSteps = len(batchinds)
     rng.shuffle(batchinds)
-
+    avgLoss = 0.
     for bii, bi in enumerate(batchinds):
         ## setting batch data
         idxStart = bi * args.batch_size
@@ -240,6 +256,9 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         d_optimizer.zero_grad()
         d_loss.backward()
         d_optimizer.step()
+        avgLoss += d_loss.item() * args.batch_size
+    
+    wandb.log({"epoch": epoch, "loss_train_disc": avgLoss / (totalSteps * args.batch_size)})
 
 
 ## training generator function
@@ -283,10 +302,11 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         g_optimizer.step()
 
         avgLoss += g_loss.item() * args.batch_size
-        if bii % args.log_step == 0:
+        if bii % args.log_step == 0 or bii ==len(batchinds):
             print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
                                                                                                   np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
+    wandb.log({"epoch": epoch, "loss_train_gen": avgLoss / (totalSteps * args.batch_size)})
     # Save data to tensorboard                   
     train_summary_writer.add_scalar('Tr. loss', avgLoss / (totalSteps * args.batch_size), epoch)
 
@@ -319,6 +339,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         testLoss += g_loss.item() * val_batch_size
 
     testLoss /= totalSteps * val_batch_size
+    wandb.log({"loss_val_gen": testLoss})
     print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
@@ -361,6 +382,7 @@ if __name__ == '__main__':
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
+    parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination')
     parser.add_argument('--use_checkpoint', action="store_true", help="path to checkpoint from which to start training")
 
