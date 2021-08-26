@@ -1,6 +1,7 @@
 import argparse
 import pickle
 
+import numpy as np
 import torch
 import clip
 
@@ -86,9 +87,17 @@ def process_text(subset=0.005):
         print("Saved sentence embeddings.", flush=True)
 
 
+def obtain_avg_embed(key="train", subset=1):
+    clip_ids_text = get_clip_ids(key=key)
+    ids = sorted(clip_ids_text)
+    idx_max = int(len(ids)*subset)
+    embeds = obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
+    col_mean = np.average(embeds, axis=0)
+    return np.tile(col_mean, (embeds.shape[0],1))
+
+
 if __name__=="__main__":
     # parser = argparse.ArgumentParser()
     # parser.add_argument('--file_path', type=str, default="/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en", help="path to the file where text dataset is located")
     # args = parser.parse_args()
-
-    process_text()
+    pass

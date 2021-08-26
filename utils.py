@@ -523,7 +523,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
     if os.path.exists(data_path):
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="reflect")#, method="cutting+0pad")
+        data = make_equal_len(data, method="cutting+0pad")
         if pipeline=="arm2wh":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
@@ -548,7 +548,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
         structure = skeletalModel.getSkeletalModelStructure()
         xyz_train = load_binary("video_data/xyz_train.pkl")
-        xyz_train = make_equal_len(xyz_train, method="reflect")
+        xyz_train = make_equal_len(xyz_train, method="cutting+0pad")
         xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)
         root = get_root_bone(xyz_train, structure)
         # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
@@ -636,7 +636,10 @@ if __name__ == "__main__":
         "test": "test_2D_keypoints/openpose_output/json"
     }
 
-    process_H2S_dataset(args.dataset_path)
+    #process_H2S_dataset(args.dataset_path)
+
+    # obtain array where each row is the average sentence embedding
+    save_binary(proc_text.obtain_avg_embed(key="train", subset=0.4), "video_data/average_train_sentence_embeddings.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # Visualize inference results
