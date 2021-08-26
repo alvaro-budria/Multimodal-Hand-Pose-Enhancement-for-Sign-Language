@@ -44,6 +44,7 @@ def rmv_clips_nan(X, Y, T=None):
     y = []
     t = []
     print(f"X.shape: {X.shape}")
+    print(f"T.shape: {T.shape}")
     for sample in range(X.shape[0]):
         if T is None:
             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
