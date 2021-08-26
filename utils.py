@@ -43,9 +43,6 @@ def rmv_clips_nan(X, Y, T=None):
     x = []
     y = []
     t = []
-    print(f"X.shape: {X.shape}")
-    print(f"T.shape: {T.shape}")
-    print(f"range(X.shape[0]): {range(X.shape[0])}")
     for sample in range(X.shape[0]):
         if T is None:
             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
@@ -642,7 +639,7 @@ if __name__ == "__main__":
     #process_H2S_dataset(args.dataset_path)
 
     # obtain array where each row is the average sentence embedding
-    save_binary(proc_text.obtain_avg_embed(key="train", subset=0.4), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # Visualize inference results

@@ -90,7 +90,7 @@ def process_text(subset=0.005):
 def obtain_avg_embed(key="train", subset=1):
     clip_ids_text = get_clip_ids(key=key)
     ids = sorted(clip_ids_text)
-    idx_max = int(len(ids)*subset) + 200
+    idx_max = int(len(ids)*subset)
     embeds = obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
     col_mean = np.average(embeds, axis=0)
     return np.tile(col_mean, (embeds.shape[0],1))
