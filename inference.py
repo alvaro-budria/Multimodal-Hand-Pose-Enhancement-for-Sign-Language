@@ -128,7 +128,7 @@ def main(args):
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.tag}_inference_xyz.pkl"))[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
-    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True):
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True):
         wandb.log({"video1": [wandb.Video(path, fps=50, format="gif") for path in gifs_paths]})
     ## DONE generating viz
 

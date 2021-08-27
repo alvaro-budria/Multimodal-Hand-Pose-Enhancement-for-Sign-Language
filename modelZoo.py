@@ -342,6 +342,33 @@ class decoder_embed2pose(nn.Module):
 		self.default_size = default_size
 		self.use_embeds = True
 
+		self.conv1 = nn.Sequential(
+			nn.Dropout(0.5),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
+			nn.LeakyReLU(0.2, True),
+			nn.BatchNorm1d(self.embed_size),
+		)
+		self.conv2 = nn.Sequential(
+			nn.Dropout(0.5),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
+			nn.LeakyReLU(0.2, True),
+			nn.BatchNorm1d(self.embed_size),
+		)
+
+		self.decoder = nn.Sequential(
+			nn.Dropout(0.5),
+			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
+			nn.LeakyReLU(0.2, True),
+			nn.BatchNorm1d(self.embed_size),
+
+			nn.Dropout(0.5),
+			nn.ConvTranspose1d(self.embed_size, feature_out_dim, 7, stride=2, padding=3, output_padding=1),
+			nn.ReLU(True),
+			nn.BatchNorm1d(feature_out_dim),
+
+			nn.Dropout(0.5),
+			nn.Conv1d(feature_out_dim, feature_out_dim, 7, padding=3),
+		)
 
 	## utility upsampling function
 	def upsample(self, tensor, shape):

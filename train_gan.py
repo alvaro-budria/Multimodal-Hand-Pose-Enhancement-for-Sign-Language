@@ -60,8 +60,7 @@ def main(args):
     torch.manual_seed(23456)
     torch.cuda.manual_seed(23456)
     ## DONE variables
-    with wandb.init(project="B2H-H2S", name=args.exp_name, save_code=True):
-
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True):
         ## load data from saved files
         data_tuple = load_data(args, rng)
         if args.require_text:
@@ -72,7 +71,7 @@ def main(args):
         ## DONE: load data from saved files
     
         ## set up generator model
-        args.model = "regressor_fcn_bn_32_v2"# 'regressor_fcn_bn_32'
+        args.model = "regressor_fcn_bn_32"# 'regressor_fcn_bn_32_v2'
         generator = getattr(modelZoo, args.model)()
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
@@ -152,8 +151,10 @@ def load_data(args, rng):
     def fetch_data(set="train"):
         ## load from external files
         path = DATA_PATHS[set]
+        
         #text_path = TEXT_PATHS[set]
         text_path = "video_data/average_train_sentence_embeddings.pkl"
+        
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
         if args.require_text:
