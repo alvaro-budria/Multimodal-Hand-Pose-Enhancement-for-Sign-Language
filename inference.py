@@ -26,7 +26,7 @@ def main(args):
     ## DONE variable initializations
 
     ## set up model / load pretrained model
-    args.model = 'regressor_fcn_bn_32'
+    args.model = 'regressor_fcn_bn_32_v2'
     model = getattr(modelZoo,args.model)()
     model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
     pretrained_model = args.checkpoint

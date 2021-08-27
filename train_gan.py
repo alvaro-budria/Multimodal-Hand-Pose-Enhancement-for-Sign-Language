@@ -71,7 +71,7 @@ def main(args):
         ## DONE: load data from saved files
     
         ## set up generator model
-        args.model = "regressor_fcn_bn_32"# 'regressor_fcn_bn_32_v2'
+        args.model = "regressor_fcn_bn_32_v2"# 'regressor_fcn_bn_32'
         generator = getattr(modelZoo, args.model)()
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
