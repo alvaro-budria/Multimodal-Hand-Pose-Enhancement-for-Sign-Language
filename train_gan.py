@@ -60,7 +60,7 @@ def main(args):
     torch.manual_seed(23456)
     torch.cuda.manual_seed(23456)
     ## DONE variables
-    with wandb.init(project="B2H-H2S", name=args.exp_name):
+    with wandb.init(project="B2H-H2S", name=args.exp_name, save_code=True):
 
         ## load data from saved files
         data_tuple = load_data(args, rng)
@@ -81,7 +81,7 @@ def main(args):
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         generator.to(device)
-        reg_criterion = nn.L1Loss() 
+        reg_criterion = nn.L1Loss()
         # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
         generator.train()

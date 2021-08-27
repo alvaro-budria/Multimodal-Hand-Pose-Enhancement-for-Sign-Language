@@ -1,10 +1,12 @@
 import argparse
 import os
 import sys
+
 import numpy as np
 import torch
 from torch import nn
 from torch.autograd import Variable
+import wandb
 
 sys.path.append('./3DposeEstimator')
 import skeletalModel
@@ -125,7 +127,9 @@ def main(args):
     ## generating viz for qualitative assessment
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.tag}_inference_xyz.pkl"))[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
-    viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
+    gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True):
+        wandb.log({"video1": [wandb.Video(path, fps=50, format="gif") for path in gifs_paths]})
     ## DONE generating viz
 
 
@@ -139,6 +143,7 @@ if __name__ == '__main__':
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
+    parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
 
     args = parser.parse_args()
     print(args, flush=True)

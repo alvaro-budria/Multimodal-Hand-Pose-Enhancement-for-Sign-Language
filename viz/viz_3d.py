@@ -59,11 +59,14 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_result
     
     # delete temporal dir
     shutil.rmtree(f"{results_dir}/{clip_idx}")
+    return f"{results_dir}/{clip_idx}.gif"  # return animation filename
 
 
 def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
+    gifs_paths = []
     for clip_idx in range(len(xyz)):
-        viz_clip(xyz[clip_idx], clip_idx, structure, frame_rate=frame_rate, results_dir=results_dir)
+        gifs_paths.append(viz_clip(xyz[clip_idx], clip_idx, structure, frame_rate=frame_rate, results_dir=results_dir))
+    return gifs_paths
 
 
 if __name__ == '__main__':
