@@ -638,8 +638,8 @@ if __name__ == "__main__":
 
     #process_H2S_dataset(args.dataset_path)
 
-    # obtain array where each row is the average sentence embedding
-    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    # # obtain array where each row is the average sentence embedding
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # Visualize inference results

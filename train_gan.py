@@ -152,8 +152,8 @@ def load_data(args, rng):
         ## load from external files
         path = DATA_PATHS[set]
         
-        #text_path = TEXT_PATHS[set]
-        text_path = "video_data/average_train_sentence_embeddings.pkl"
+        text_path = TEXT_PATHS[set]
+        #text_path = "video_data/average_train_sentence_embeddings.pkl"
         
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
