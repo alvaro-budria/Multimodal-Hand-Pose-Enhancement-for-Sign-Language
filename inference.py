@@ -130,6 +130,7 @@ def main(args):
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
         for path in gifs_paths:
+            print(path)
             print(os.getcwd())
             wandb.save(path)
         #wandb.log({"video1": [wandb.Video(path, fps=50, format="gif") for path in gifs_paths]})
