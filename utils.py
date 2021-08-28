@@ -477,10 +477,13 @@ def save_binary(obj, filename, append=False):
         print("Adding .pkl extension as it was not found.", flush=True)
         filename = filename + ".pkl"
 
-    if append and os.path.exists(filename):  # contents of filename are assumed to be contained in the form of a list. obj is assumed to be a list
+    if os.path.exists(filename):
         print(f"Found file with name {filename}. Appending results to this file.")
         contents = load_binary(filename)
-        obj = contents + obj
+        if append=="embeds":
+            obj = np.vstack((contents,obj))
+        elif append:  # contents of filename are assumed to be contained in the form of a list. obj is assumed to be a list
+            obj = contents + obj
 
     with open(filename, 'wb') as outfile:
         pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
@@ -577,14 +580,14 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
-    # print("Loaded raw data from disk", flush=True)
-    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    # print("Selected NECK keypoints", flush=True)
-    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    # print("Selected ARMS keypoints", flush=True)
-    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    # print("Selected HANDS keypoints", flush=True)
+    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
+    print("Loaded raw data from disk", flush=True)
+    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    print("Selected NECK keypoints", flush=True)
+    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    print("Selected ARMS keypoints", flush=True)
+    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    print("Selected HANDS keypoints", flush=True)
 
     # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
     # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
@@ -594,16 +597,16 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # save_binary(feats_val, "video_data/xy_val.pkl", append=True)
     # save_binary(feats_test, "video_data/xy_test.pkl", append=True)
 
-    # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=True)
-    # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=True)
-    # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=True)
+    save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append="embeds")
+    save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append="embeds")
+    save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append="embeds")
 
-    # print()
-    # print("saved xy original and text embeddings", flush=True)
-    # print()
+    print()
+    print("saved xy original and text embeddings", flush=True)
+    print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
     # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
     # print("lifted val to 3d", flush=True)
     # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
