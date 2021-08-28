@@ -647,7 +647,7 @@ if __name__ == "__main__":
         "test": "test_2D_keypoints/openpose_output/json"
     }
 
-    #process_H2S_dataset(args.dataset_path)
+    process_H2S_dataset(args.dataset_path)
 
     # # obtain array where each row is the average sentence embedding
     # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
