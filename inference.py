@@ -26,9 +26,9 @@ def main(args):
     ## DONE variable initializations
 
     ## set up model / load pretrained model
-    if config.model == "v1":
+    if args.model == "v1":
         args.model = "regressor_fcn_bn_32"
-    elif config.model == "v2":
+    elif args.model == "v2":
         args.model = "regressor_fcn_bn_32_v2"
     model = getattr(modelZoo,args.model)()
     model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
