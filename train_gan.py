@@ -39,28 +39,38 @@ lastCheckpoint = ""
 #######################################################
 def main(args):
     wandb.login()
-    # config = dict(
-    #     epochs=args.num_epochs,
-    #     batch_size=args.batch_size,
-    #     learning_rate=args.learning_rate,
-    #     architecture="v1",
-    #     pipeline = args.pipeline)
     
-    # config = wandb.config
-
     ## variables
-    learning_rate = args.learning_rate
-    pipeline = args.pipeline
+    config = dict(
+        epochs=args.num_epochs,
+        batch_size=args.batch_size,
+        learning_rate=args.learning_rate,
+        model=args.model,
+        pipeline = args.pipeline,
+        epochs_train_disc=args.epochs_train_disc)
 
-    feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
-    feats = pipeline.split('2')
-    in_feat, out_feat = feats[0], feats[1]
-    currBestLoss = 1e3
-    rng = np.random.RandomState(23456)
-    torch.manual_seed(23456)
-    torch.cuda.manual_seed(23456)
+    # learning_rate = args.learning_rate
+    # pipeline = args.pipeline
+
+    # feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
+    # feats = pipeline.split('2')
+    # in_feat, out_feat = feats[0], feats[1]
+    # currBestLoss = 1e3
+    # rng = np.random.RandomState(23456)
+    # torch.manual_seed(23456)
+    # torch.cuda.manual_seed(23456)
     ## DONE variables
-    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True):
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True, config=config):
+        config = wandb.config
+
+        feature_in_dim, feature_out_dim = FEATURE_MAP[config.pipeline]
+        feats = config.pipeline.split('2')
+        in_feat, out_feat = feats[0], feats[1]
+        currBestLoss = 1e3
+        rng = np.random.RandomState(23456)
+        torch.manual_seed(23456)
+        torch.cuda.manual_seed(23456)
+
         ## load data from saved files
         data_tuple = load_data(args, rng)
         if args.require_text:
@@ -71,10 +81,13 @@ def main(args):
         ## DONE: load data from saved files
     
         ## set up generator model
-        args.model = "regressor_fcn_bn_32_v2"# 'regressor_fcn_bn_32'
-        generator = getattr(modelZoo, args.model)()
+        if config.model == "v1":
+            mod = "regressor_fcn_bn_32"
+        elif config.model == "v2":
+            mod = "regressor_fcn_bn_32_v2"
+        generator = getattr(modelZoo, mod)()
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
-        g_optimizer = torch.optim.Adam(generator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+        g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
             loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
@@ -90,7 +103,7 @@ def main(args):
         args.model = 'regressor_fcn_bn_discriminator'
         discriminator = getattr(modelZoo, args.model)()
         discriminator.build_net(feature_out_dim)
-        d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=learning_rate, weight_decay=0)#1e-5)
+        d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
             loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
@@ -122,7 +135,7 @@ def main(args):
                 print('early stopping at:', epoch-1, flush=True)
                 break
 
-            if epoch > 0 and epoch % 3 == 0:
+            if epoch > 0 and epoch % config.epochs_train_disc == 0:
                 train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=train_text)
             else:
                 train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
@@ -258,7 +271,8 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         d_loss.backward()
         d_optimizer.step()
         avgLoss += d_loss.item() * args.batch_size
-    
+
+    print(f'Epoch [{epoch}/{args.num_epochs-1}], Tr. Disc. Loss: {avgLoss / (totalSteps * args.batch_size)}')
     wandb.log({"epoch": epoch, "loss_train_disc": avgLoss / (totalSteps * args.batch_size)})
 
 
@@ -378,7 +392,7 @@ if __name__ == '__main__':
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
-    parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for training G and D')
+    parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
     parser.add_argument('--require_text', action="store_true", help="use additional text feature or not")
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
@@ -386,6 +400,8 @@ if __name__ == '__main__':
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--patience', type=int, default=100, help='amount of epochs without loss improvement before termination')
     parser.add_argument('--use_checkpoint', action="store_true", help="path to checkpoint from which to start training")
+    parser.add_argument('--epochs_train_disc', type=int , default=3, help='train the discriminator every epochs_train_disc epochs')
+    parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
 
     args = parser.parse_args()
     print(args, flush=True)

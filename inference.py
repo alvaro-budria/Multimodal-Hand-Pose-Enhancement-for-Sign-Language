@@ -26,7 +26,10 @@ def main(args):
     ## DONE variable initializations
 
     ## set up model / load pretrained model
-    args.model = 'regressor_fcn_bn_32_v2'
+    if config.model == "v1":
+        args.model = "regressor_fcn_bn_32"
+    elif config.model == "v2":
+        args.model = "regressor_fcn_bn_32_v2"
     model = getattr(modelZoo,args.model)()
     model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
     pretrained_model = args.checkpoint
@@ -145,6 +148,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=256, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
+    parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
+
 
     args = parser.parse_args()
     print(args, flush=True)
