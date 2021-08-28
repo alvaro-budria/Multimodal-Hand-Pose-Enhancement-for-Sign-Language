@@ -401,23 +401,28 @@ def _load(args):
 
 def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep a certain % of the data only
     dir_list = os.listdir(dir)
-    print(f"len(dir_list): {len(dir_list)}", flush=True)
+    print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
 
     clip_ids_text = proc_text.get_clip_ids(key=key)
-    print(f"len(clip_ids_text): {len(clip_ids_text)}", flush=True)
+    print(f"{key} len(clip_ids_text): {len(clip_ids_text)}", flush=True)
 
     ids = _join_ids(dir_list, clip_ids_text)
     ids = sorted(ids)
-    print(f"len(ids): {len(ids)}", flush=True)
+    print(f"{key} len(ids): {len(ids)}", flush=True)
 
     idx_max = int(len(ids)*subset)
-    print(f"idx_max: {idx_max}", flush=True)
+    print(f"{key} idx_max: {idx_max}", flush=True)
+    print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
+    print(f"{key} len(ids[idx_max:]): {len(ids[idx_max:])}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
+    # embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
+    embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
+
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
-        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
+        # result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
+        result = executor.map(_load, zip(ids[idx_max:], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
@@ -467,10 +472,16 @@ def hconcat_feats(neck, arms, hands):
     return feats
 
 
-def save_binary(obj, filename):
+def save_binary(obj, filename, append=False):
     if filename[-4:] != ".pkl":
         print("Adding .pkl extension as it was not found.", flush=True)
         filename = filename + ".pkl"
+
+    if append and os.path.exists(filename):  # contents of filename are assumed to be contained in the form of a list. obj is assumed to be a list
+        print(f"Found file with name {filename}. Appending results to this file.")
+        contents = load_binary(filename)
+        obj = contents + obj
+
     with open(filename, 'wb') as outfile:
         pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
 
@@ -566,30 +577,30 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
-    # print("Loaded raw data from disk", flush=True)
-    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    # print("Selected NECK keypoints", flush=True)
-    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    # print("Selected ARMS keypoints", flush=True)
-    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    # print("Selected HANDS keypoints", flush=True)
+    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=0.5)
+    print("Loaded raw data from disk", flush=True)
+    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    print("Selected NECK keypoints", flush=True)
+    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    print("Selected ARMS keypoints", flush=True)
+    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    print("Selected HANDS keypoints", flush=True)
 
-    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
-    
-    # save_binary(feats_train, "video_data/xy_train.pkl")
-    # save_binary(feats_val, "video_data/xy_val.pkl")
-    # save_binary(feats_test, "video_data/xy_test.pkl")
+    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
-    # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl")
-    # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl")
-    # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl")
+    save_binary(feats_train, "video_data/xy_train.pkl", append=True)
+    save_binary(feats_val, "video_data/xy_val.pkl", append=True)
+    save_binary(feats_test, "video_data/xy_test.pkl", append=True)
 
-    # print()
-    # print("saved xy original and text embeddings", flush=True)
-    # print()
+    save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=True)
+    save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=True)
+    save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=True)
+
+    print()
+    print("saved xy original and text embeddings", flush=True)
+    print()
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
