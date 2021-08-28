@@ -42,12 +42,13 @@ def main(args):
     
     ## variables
     config = dict(
-        epochs=args.num_epochs,
-        batch_size=args.batch_size,
-        learning_rate=args.learning_rate,
-        model=args.model,
+        epochs = args.num_epochs,
+        batch_size = args.batch_size,
+        learning_rate = args.learning_rate,
+        model = args.model,
         pipeline = args.pipeline,
-        epochs_train_disc=args.epochs_train_disc)
+        epochs_train_disc = args.epochs_train_disc,
+        disc_label_smooth = args.disc_label_smooth)
 
     # learning_rate = args.learning_rate
     # pipeline = args.pipeline
@@ -265,8 +266,12 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         real_motion = calc_motion(outputGT)
         fake_score = discriminator(fake_motion)
         real_score = discriminator(real_motion)
+        target_fake = torch.zeros_like(fake_score)
+        target_real = torch.ones_like(real_score)
+        if args.disc_label_smooth:
+            target_fake, target_real = target_fake.fill_(0.1), target_real.fill_(0.9)
 
-        d_loss = gan_criterion(fake_score, torch.zeros_like(fake_score)) + gan_criterion(real_score, torch.ones_like(real_score))
+        d_loss = gan_criterion(fake_score, target_fake) + gan_criterion(real_score, target_real)
         d_optimizer.zero_grad()
         d_loss.backward()
         d_optimizer.step()
@@ -402,6 +407,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_checkpoint', action="store_true", help="path to checkpoint from which to start training")
     parser.add_argument('--epochs_train_disc', type=int , default=3, help='train the discriminator every epochs_train_disc epochs')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
+    parser.add_argument('--disc_label_smooth', action="store_true", help="if True, use label smoothing for the discriminator")
 
     args = parser.parse_args()
     print(args, flush=True)
