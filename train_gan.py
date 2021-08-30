@@ -149,7 +149,7 @@ def main(args):
                 if args.require_text:
                     train_text = train_text[I]
 
-    shutil.copyfile(lastCheckpoint, args.model_path + "/lastCheckpoint.pth")  #  name last checkpoint as "lastCheckpoint.pth"
+    shutil.copyfile(lastCheckpoint, args.model_path + f"/lastCheckpoint_{args.exp_name}.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
     train_summary_writer.flush()
     val_summary_writer.flush()
