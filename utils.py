@@ -605,12 +605,12 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    # print("lifted test to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    print("lifted val to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    print("lifted test to 3d", flush=True)
 
     # print()
     # print("saved lifted xyz", flush=True)
