@@ -27,7 +27,8 @@ DATA_PATHS = {
     }
 
 FEATURE_MAP = {
-    'arm2wh':((6*6), 42*6),
+    'arm2wh': ((6*6), 42*6),
+    "arm_wh2fingerL": ( ((6+38)*6), (4*6) )  # predict 5th finger of left hand given arms and rest of fingers
 }
 
 EPSILON = 1e-10
@@ -211,7 +212,7 @@ def get_root_bone(xyz, structure):
 
 def xyz_to_aa(xyz, structure, root_filename=None):
     xyz = _array_to_list(xyz)
-    save_binary(get_root_bone(xyz, structure), root_filename)
+    #save_binary(get_root_bone(xyz, structure), root_filename)
     aa = []
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
@@ -538,7 +539,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
         data = make_equal_len(data, method="cutting+0pad")
-        if pipeline=="arm2wh":
+        if pipeline=="arm2wh" or pipeline=="arm_wh2fingerL":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
         if require_text:
@@ -552,7 +553,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
     feats = pipeline.split('2')
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
-    if out_feat == 'wh':
+    if out_feat == 'wh' or out_feat == 'wh2fingerL':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
 
@@ -572,7 +573,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
         #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
-        
+
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
 
@@ -607,36 +608,39 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 
     # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    print("lifted val to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    print("lifted test to 3d", flush=True)
-
-    print()
-    print("saved lifted xyz", flush=True)
-    print()
-
-    # train_3d = load_binary("video_data/xyz_train.pkl")
-    # val_3d = load_binary("video_data/xyz_val.pkl")
-    # test_3d = load_binary("video_data/xyz_test.pkl")
-
-    # structure = skeletalModel.getSkeletalModelStructure()
-    # lengths = pose3D.get_bone_length(train_3d, structure)
-    # save_binary(lengths, "video_data/lengths_train.pkl")
-
-    #         #  xyz_to_aa() also saves the root bone (first one in the skeletal structure)
-    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # print("lifted val to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # print("lifted test to 3d", flush=True)
 
     # print()
-    # print("saved r6d data", flush=True)
+    # print("saved lifted xyz", flush=True)
     # print()
 
-    # print(f"processed all H2S data in {dir}", flush=True)
+    train_3d = load_binary("video_data/xyz_train.pkl")
+    val_3d = load_binary("video_data/xyz_val.pkl")
+    test_3d = load_binary("video_data/xyz_test.pkl")
+
+    structure = skeletalModel.getSkeletalModelStructure()
+    lengths = pose3D.get_bone_length(train_3d, structure)
+    save_binary(lengths, "video_data/lengths_train.pkl")
+    print("Obtained bone lengths.", flush=True)
+
+    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    print("Train xyz to r6d.", flush=True)
+    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    print("Val xyz to r6d.", flush=True)
+    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    print("Test xyz to r6d.", flush=True)
+
+    print()
+    print("saved r6d data", flush=True)
+    print()
+
+    print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
