@@ -87,7 +87,7 @@ def main(args):
         idxStart = bi * args.batch_size
         if idxStart >= test_X.shape[0]:
             break
-        if bi > 10:
+        if bi > args.seqs_to_viz:
             break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
