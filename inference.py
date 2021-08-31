@@ -23,6 +23,7 @@ def main(args):
     torch.cuda.manual_seed(23456)
     pipeline = args.pipeline
     feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
+    print(f"feature_in_dim, feature_out_dim: {feature_in_dim}, {feature_out_dim}")
     ## DONE variable initializations
 
     ## set up model / load pretrained model
@@ -42,7 +43,8 @@ def main(args):
 
     ## load/prepare data from external files
     args.data_dir = "video_data/r6d_train.pkl" #  to make inference on train set
-    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
+    #test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
+    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/train_sentence_embeddings.pkl")
     text_text = None
     if args.require_text:
         test_text = test_X[1]
@@ -97,7 +99,7 @@ def main(args):
             textData_np = test_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(textData_np).to(device)
         ## DONE setting batch data
-
+        print("bi: {bi}")
         output_local = model(inputData, text_=textData)
         assert not torch.isnan(output_local).any()
         g_loss = criterion(output_local, outputGT)
