@@ -555,26 +555,37 @@ def save_results(input, output, pipeline, base_path, tag=''):
     feats = pipeline.split('2')
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
+    print(f"input.shape, output.shape: {input.shape}, {output.shape}")
+    assert not np.any(np.isnan(input))
+    assert not np.any(np.isnan(output))
     if out_feat == 'wh' or out_feat == 'fingerL':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
 
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
+        print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}")
+        assert not np.any(np.isnan(input_aa))
+        assert not np.any(np.isnan(output_aa))
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
         xyz_train = load_binary("video_data/xyz_train.pkl")
         xyz_train = make_equal_len(xyz_train, method="cutting+0pad")
-        xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)
+        xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
         root = get_root_bone(xyz_train, structure)
+        assert not np.any(np.isnan(root))
         # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
         bone_len = pose3D.get_bone_length(xyz_train, structure)
+        assert not np.any(np.isnan(root))
         # bone_len = load_binary("video_data/lengths_train.pkl")
 
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
+        assert not np.any(np.isnan(input_output_aa))
+        print(f"input_output_aa.shape: {input_output_aa.shape}")
         #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
+        assert not np.any(np.isnan(input_output_xyz))
 
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
