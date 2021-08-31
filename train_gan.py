@@ -50,16 +50,6 @@ def main(args):
         epochs_train_disc = args.epochs_train_disc,
         disc_label_smooth = args.disc_label_smooth)
 
-    # learning_rate = args.learning_rate
-    # pipeline = args.pipeline
-
-    # feature_in_dim, feature_out_dim = FEATURE_MAP[pipeline]
-    # feats = pipeline.split('2')
-    # in_feat, out_feat = feats[0], feats[1]
-    # currBestLoss = 1e3
-    # rng = np.random.RandomState(23456)
-    # torch.manual_seed(23456)
-    # torch.cuda.manual_seed(23456)
     ## DONE variables
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True, config=config):
         config = wandb.config
@@ -75,6 +65,7 @@ def main(args):
         ## load data from saved files
         data_tuple = load_data(args, rng)
         if args.require_text:
+            print("Using text as input to the model.")
             train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
         else:
             train_X, train_Y, val_X, val_Y = data_tuple
@@ -165,7 +156,7 @@ def load_data(args, rng):
     def fetch_data(set="train"):
         ## load from external files
         path = DATA_PATHS[set]
-        
+
         text_path = TEXT_PATHS[set]
         #text_path = "video_data/average_train_sentence_embeddings.pkl"
         
