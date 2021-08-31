@@ -88,7 +88,7 @@ def main(args):
         if idxStart >= test_X.shape[0]:
             break
         print(bi)
-        if args.num_samples > bi:
+        if bi >= args.num_samples:
             break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
