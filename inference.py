@@ -42,17 +42,19 @@ def main(args):
     ## DONE set up model/ load pretrained model
 
     ## load/prepare data from external files
+
     args.data_dir = "video_data/r6d_train.pkl" #  to make inference on train set
+
     #test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
     test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/train_sentence_embeddings.pkl")
-    text_text = None
+    test_text = None
     if args.require_text:
         test_text = test_X[1]
         test_X = test_X[0]
     print(test_X.shape, test_Y.shape, flush=True)
     if args.require_text:
         print(test_text.shape)
-    test_X, test_Y, text_text = rmv_clips_nan(test_X, test_Y, text_text)
+    test_X, test_Y, test_text = rmv_clips_nan(test_X, test_Y, test_text)
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
     print(test_X.shape, test_Y.shape, flush=True)
     input_feats = test_X.copy()
@@ -81,14 +83,12 @@ def main(args):
     output = None
     model.eval()
     batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
-    totalSteps = len(batchinds)
+    totalSteps = 0
     for _, bi in enumerate(batchinds):
+        totalSteps += 1
         ## setting batch data
         idxStart = bi * args.batch_size
-        if idxStart >= test_X.shape[0]:
-            break
-        print(bi)
-        if bi * args.batch_size >= args.num_samples:
+        if idxStart >= test_X.shape[0] or bi * args.batch_size >= args.num_samples:
             break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
@@ -104,9 +104,11 @@ def main(args):
         ## DONE setting batch data
         output_local = model(inputData, text_=textData)
         assert not torch.isnan(output_local).any()
+        print(f"output_local.shape, outputGT.shape: {output_local.shape, outputGT.shape}")
         g_loss = criterion(output_local, outputGT)
         error += g_loss.item() * args.batch_size
         output = torch.cat((output, output_local), 0) if output is not None else output_local
+        print(f"output.shape: {output.shape}")
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
@@ -134,6 +136,7 @@ def main(args):
 
     ## generating viz for qualitative assessment
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    print(f"len(_inference_xyz), _inference_xyz[0].shape : {len(_inference_xyz), _inference_xyz[0].shape}")
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=25, results_dir=f"viz_results_{args.exp_name}")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):

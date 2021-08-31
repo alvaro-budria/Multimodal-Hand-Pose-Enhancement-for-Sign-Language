@@ -110,6 +110,8 @@ def rot6d_to_aa(r6d):
         r6d_clip = r6d[clip]
         aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
         for idx in range(0, r6d_clip.shape[1], 6):
+            # print(f"r6d_clip.shape: {r6d_clip.shape}")
+            # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
             aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
         aa.append(aa_clip)
     return aa
