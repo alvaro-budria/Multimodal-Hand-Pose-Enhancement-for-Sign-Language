@@ -128,7 +128,8 @@ def main(args):
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}")
-    save_results(input_feats[args.num_samples,:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name)
+    print(f"input_feats[:args.num_samples,:,:]: {input_feats[:args.num_samples,:,:]}")
+    save_results(input_feats[:args.num_samples,:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
@@ -154,7 +155,7 @@ if __name__ == '__main__':
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
-    parser.add_argument('--num_samples', type=int, default=15, help='number of sequences to predict')
+    parser.add_argument('--num_samples', type=int, default=16, help='number of sequences to predict')
 
 
     args = parser.parse_args()
