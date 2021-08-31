@@ -87,6 +87,8 @@ def main(args):
         idxStart = bi * args.batch_size
         if idxStart >= test_X.shape[0]:
             break
+        if bi > 10:
+            break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
         outputData_np = test_Y[idxStart:idxEnd, :, :]
@@ -99,7 +101,6 @@ def main(args):
             textData_np = test_text[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(textData_np).to(device)
         ## DONE setting batch data
-        print("bi: {bi}")
         output_local = model(inputData, text_=textData)
         assert not torch.isnan(output_local).any()
         g_loss = criterion(output_local, outputGT)
@@ -123,7 +124,6 @@ def main(args):
     output_gt = output_gt * body_std_Y + body_mean_Y
     output_np = np.swapaxes(output_np, 1, 2).astype(np.float32)
     output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
-    # inputData = np.swapaxes(inputData, 1, 2).numpy().astype(np.float32)
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
     save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
