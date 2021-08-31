@@ -300,7 +300,7 @@ def _lift_2d_to_3d(inputSequence_2D):
         structure,
         "float32",
         learningRate=35,
-        nCycles=800
+        nCycles=900
     )
     # # Backpropagation-based filtering
     # Yx, Yy, Yz = pose3D.backpropagationBasedFiltering(
