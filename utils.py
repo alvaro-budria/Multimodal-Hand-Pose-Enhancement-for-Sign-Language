@@ -553,7 +553,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
     feats = pipeline.split('2')
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
-    if out_feat == 'wh' or out_feat == 'wh2fingerL':
+    if out_feat == 'wh' or out_feat == 'fingerL':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
 
