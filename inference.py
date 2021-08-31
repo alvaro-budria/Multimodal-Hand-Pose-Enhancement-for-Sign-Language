@@ -87,7 +87,8 @@ def main(args):
         idxStart = bi * args.batch_size
         if idxStart >= test_X.shape[0]:
             break
-        if bi > args.seqs_to_viz:
+        print(bi)
+        if args.num_samples > bi:
             break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
@@ -126,12 +127,13 @@ def main(args):
     output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
-    save_results(input_feats, output_np, args.pipeline, args.base_path, tag=args.tag)
+    print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}")
+    save_results(input_feats[args.num_samples,:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
-    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.tag}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_inference_xyz.pkl"))[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=25, results_dir=f"viz_results_{args.exp_name}")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
@@ -152,6 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
+    parser.add_argument('--num_samples', type=int, default=15, help='number of sequences to predict')
 
 
     args = parser.parse_args()
