@@ -111,21 +111,36 @@ def _rot6d_to_aa(r6ds):
     return res
 
 
+def clip_rot6d_to_aa(r6d_clip):
+    assert not np.any(np.isnan(r6d_clip))
+    aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
+    for idx in range(0, r6d_clip.shape[1], 6):
+        # print(f"r6d_clip.shape: {r6d_clip.shape}")
+        # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
+        assert not np.any(np.isnan(r6d_clip[:,idx:idx+6]))
+        assert not np.any(np.isnan(_rot6d_to_aa(r6d_clip[:,idx:idx+6])))
+        aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
+    return aa_clip
+
+
 def rot6d_to_aa(r6d):
     r6d = _array_to_list(r6d)
     assert not np.any(np.isnan(r6d))
     aa = []
-    for clip in range(len(r6d)):
-        r6d_clip = r6d[clip]
-        assert not np.any(np.isnan(r6d_clip))
-        aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
-        for idx in range(0, r6d_clip.shape[1], 6):
-            # print(f"r6d_clip.shape: {r6d_clip.shape}")
-            # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
-            assert not np.any(np.isnan(r6d_clip[:,idx:idx+6]))
-            assert not np.any(np.isnan(_rot6d_to_aa(r6d_clip[:,idx:idx+6])))
-            aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
-        aa.append(aa_clip)
+    with Pool(processes=24) as pool:
+        aa = pool.starmap( clip_rot6d_to_aa, zip(r6d) )
+
+    # for clip in range(len(r6d)):
+    #     r6d_clip = r6d[clip]
+    #     assert not np.any(np.isnan(r6d_clip))
+    #     aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
+    #     for idx in range(0, r6d_clip.shape[1], 6):
+    #         # print(f"r6d_clip.shape: {r6d_clip.shape}")
+    #         # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
+    #         assert not np.any(np.isnan(r6d_clip[:,idx:idx+6]))
+    #         assert not np.any(np.isnan(_rot6d_to_aa(r6d_clip[:,idx:idx+6])))
+    #         aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
+    #     aa.append(aa_clip)
     return aa
 
 
@@ -546,6 +561,9 @@ def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=192):
     elif method=="cutting+0pad":  # 0pad shorter sequences, cut longer sequences
         res = np.array([arr[:maxpad,:] if arr.shape[0] >= maxpad else np.vstack( (arr, np.zeros((maxpad-arr.shape[0],arr.shape[1]),int)) ) for arr in data])
 
+    elif method=="cutting+reflect":
+        res = np.array([arr[:maxpad,:] if arr.shape[0] >= maxpad else np.pad(arr, ((0, maxpad-arr.shape[0]), (0,0)), "reflect") for arr in data])
+
     else: # method=="wrap" or method=="reflect"
         max_T = np.amax(sizes) + 1 if np.amax(sizes) % 2 == 1 else np.amax(sizes)
         max_T = max(max_T, maxpad)
@@ -562,7 +580,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
     if os.path.exists(data_path):
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
-        data = make_equal_len(data, method="cutting+0pad")
+        data = make_equal_len(data, method="cutting+reflect")
         if pipeline=="arm2wh" or pipeline=="arm_wh2fingerL":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
@@ -583,7 +601,6 @@ def save_results(input, output, pipeline, base_path, tag=''):
     if out_feat == 'wh' or out_feat == 'fingerL':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
-
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
         print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}")
@@ -592,8 +609,8 @@ def save_results(input, output, pipeline, base_path, tag=''):
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
-        xyz_train = load_binary("video_data/xyz_train.pkl")
-        xyz_train = make_equal_len(xyz_train, method="cutting+0pad")
+        xyz_train = load_binary("video_data/xyz_train.pkl")[:input.shape[0]]
+        xyz_train = make_equal_len(xyz_train, method="cutting+reflect")
         xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
         root = get_root_bone(xyz_train, structure)
         assert not np.any(np.isnan(root))
@@ -604,11 +621,9 @@ def save_results(input, output, pipeline, base_path, tag=''):
 
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
         assert not np.any(np.isnan(input_output_aa))
-        print(f"input_output_aa.shape: {input_output_aa.shape}")
         #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
         assert not np.any(np.isnan(input_output_xyz))
-
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
 
@@ -641,22 +656,22 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    # print("lifted train to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    print("lifted val to 3d", flush=True)
-    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    print("lifted test to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    print("lifted train to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # print("lifted val to 3d", flush=True)
+    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # print("lifted test to 3d", flush=True)
 
     print()
     print("saved lifted xyz", flush=True)
     print()
 
     # train_3d = load_binary("video_data/xyz_train.pkl")
-    val_3d = load_binary("video_data/xyz_val.pkl")
-    test_3d = load_binary("video_data/xyz_test.pkl")
+    # val_3d = load_binary("video_data/xyz_val.pkl")
+    # test_3d = load_binary("video_data/xyz_test.pkl")
 
-    structure = skeletalModel.getSkeletalModelStructure()
+    # structure = skeletalModel.getSkeletalModelStructure()
     # lengths = pose3D.get_bone_length(train_3d, structure)
     # save_binary(lengths, "video_data/lengths_train.pkl")
     # print("Obtained bone lengths.", flush=True)
@@ -664,18 +679,18 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
     # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
     # print("Train xyz to r6d.", flush=True)
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    print("Val xyz to r6d.", flush=True)
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
-    print("Test xyz to r6d.", flush=True)
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # print("Val xyz to r6d.", flush=True)
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    # print("Test xyz to r6d.", flush=True)
 
-    print()
-    print("saved r6d data", flush=True)
-    print()
+    # print()
+    # print("saved r6d data", flush=True)
+    # print()
 
-    print(f"processed all H2S data in {dir}", flush=True)
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
