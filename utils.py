@@ -314,7 +314,7 @@ def _lift_2d_to_3d(inputSequence_2D):
         Xw,
         structure,
         "float32",
-        learningRate=35,
+        learningRate=20,
         nCycles=900
     )
     # # Backpropagation-based filtering
