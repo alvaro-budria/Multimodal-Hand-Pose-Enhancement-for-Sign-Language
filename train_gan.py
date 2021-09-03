@@ -51,7 +51,7 @@ def main(args):
         disc_label_smooth = args.disc_label_smooth)
 
     ## DONE variables
-    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="allow", save_code=True, config=config):
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
         feature_in_dim, feature_out_dim = FEATURE_MAP[config.pipeline]
