@@ -44,9 +44,9 @@ def main(args):
     ## load/prepare data from external files
 
     args.data_dir = "video_data/r6d_train.pkl" #  to make inference on train set
+    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/train_sentence_embeddings.pkl")
 
     #test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
-    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/train_sentence_embeddings.pkl")
     test_text = None
     if args.require_text:
         test_text = test_X[1]
