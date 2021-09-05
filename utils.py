@@ -362,7 +362,7 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
         print(f" -> Found file with name {filename}. Appending results to this file.")
         feats_3d = load_binary(filename)
     idx = len(feats) // nPartitions + 1
-    min_i = 19
+    min_i = 0
     for i in range(min_i, nPartitions):
         feats_3d_sub = []
         with Pool(processes=24) as pool:
@@ -671,13 +671,13 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
-    print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
-    # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
-    # print("lifted test to 3d", flush=True)
-
+    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    print("lifted val to 3d", flush=True)
+    lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    print("lifted test to 3d", flush=True)
+ 
     print()
     print("saved lifted xyz", flush=True)
     print()
