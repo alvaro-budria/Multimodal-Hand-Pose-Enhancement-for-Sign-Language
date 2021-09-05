@@ -156,8 +156,13 @@ def load_data(args, rng):
     def fetch_data(set="train"):
         ## load from external files
         path = DATA_PATHS[set]
-
-        text_path = TEXT_PATHS[set]
+        
+        text_path = None
+        if args.embeds_type == "normal":
+            text_path = f"video_data/{set}_sentence_embeddings.pkl"
+        elif args.embeds_type == "average":
+            text_path = f"video_data/average_{set}_sentence_embeddings.pkl"
+        #text_path = TEXT_PATHS[set]
         #text_path = "video_data/average_train_sentence_embeddings.pkl"
         
         data_path = os.path.join(args.base_path, path)
@@ -390,6 +395,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
     parser.add_argument('--require_text', action="store_true", help="use additional text feature or not")
+    parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "avg", use avg text embeds')
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')

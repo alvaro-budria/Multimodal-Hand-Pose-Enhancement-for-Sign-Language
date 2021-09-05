@@ -42,11 +42,13 @@ def main(args):
     ## DONE set up model/ load pretrained model
 
     ## load/prepare data from external files
+    args.data_dir = f"video_data/r6d_{args.infer_set}.pkl"
+    if args.embeds_type == "normal":
+        text_path = f"video_data/{args.infer_set}_sentence_embeddings.pkl"
+    elif args.embeds_type == "average":
+        text_path = f"video_data/average_{args.infer_set}_sentence_embeddings.pkl"
+    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path=text_path)
 
-    args.data_dir = "video_data/r6d_train.pkl" #  to make inference on train set
-    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/train_sentence_embeddings.pkl")
-
-    #test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path="video_data/test_sentence_embeddings.pkl")
     test_text = None
     if args.require_text:
         test_text = test_X[1]
@@ -130,15 +132,15 @@ def main(args):
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}")
     print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}")
-    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name)
+    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
-    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_{args.infer_set}_inference_xyz.pkl"))[0:args.seqs_to_viz]
     print(f"len(_inference_xyz), _inference_xyz[0].shape : {len(_inference_xyz), _inference_xyz[0].shape}")
     structure = skeletalModel.getSkeletalModelStructure()
-    gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}")
+    gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
         for path in gifs_paths:
             wandb.save(path)
@@ -152,6 +154,8 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str, default="video_data/r6d_test.pkl", help='path to test data directory')
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
+    parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "average", use average text embeds')
+    parser.add_argument('--infer_set', type=str, default="test" , help='if "test", infer using test set; if "train", infer using train set')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
     parser.add_argument('--batch_size', type=int, default=256, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')

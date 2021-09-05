@@ -28,7 +28,19 @@ DATA_PATHS = {
 
 FEATURE_MAP = {
     'arm2wh': ((6*6), 42*6),
-    "arm_wh2fingerL": ( ((6+38)*6), (4*6) )  # predict 5th finger of left hand given arms and rest of fingers
+    "arm_wh2finger1": ( ((6+38)*6), (4*6) ),  # predict 5th finger of left hand given arms and rest of fingers
+    "arm_wh2finger2": ( ((6+34)*6), (8*6) ),  # predict 4th and 5th fingers of left hand given arms and rest of fingers
+    "arm_wh2finger3": ( ((6+30)*6), (12*6) ),
+    "arm_wh2finger4": ( ((6+26)*6), (16*6) ),
+    "arm_wh2finger5": ( ((6+22)*6), (20*6) ),
+    "arm_wh2finger6": ( ((6+18)*6), (24*6) ), # predict 5th finger of right hand given arms, left hand and rest of fingers
+    "arm_wh2finger7": ( ((6+14)*6), (28*6) ),
+    "arm_wh2finger8": ( ((6+10)*6), (32*6) ),
+    "arm_wh2finger9": ( ((6+6)*6), (36*6) ),
+    "arm_wh2finger10": ( ((6+2)*6), (40*6) ),
+    "arm_wh2finger11": ( ((6+1)*6), (41*6) ), # also predict orientation of left hand
+    "arm_wh2finger12": ( ((6+0)*6), (42*6) ), # predict complete hands and orientations given arms
+    # "arm_wh2finger_": ( ((6+0)*6), (42*6) ), # predict fingers and hand orientation given arms
 }
 
 EPSILON = 1e-10
@@ -581,7 +593,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
         data = make_equal_len(data, method="cutting+reflect")
-        if pipeline=="arm2wh" or pipeline=="arm_wh2fingerL":
+        if pipeline=="arm2wh" or pipeline[:13]=="arm_wh2finger":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
         if require_text:
@@ -651,6 +663,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=False)
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_train_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
