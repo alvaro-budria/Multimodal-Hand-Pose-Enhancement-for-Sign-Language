@@ -663,9 +663,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=False)
-    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_train_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
