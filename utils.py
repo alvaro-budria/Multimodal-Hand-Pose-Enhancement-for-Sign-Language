@@ -32,14 +32,14 @@ FEATURE_MAP = {
     "arm_wh2finger2": ( ((6+34)*6), (8*6) ),  # predict 4th and 5th fingers of left hand given arms and rest of fingers
     "arm_wh2finger3": ( ((6+30)*6), (12*6) ),
     "arm_wh2finger4": ( ((6+26)*6), (16*6) ),
-    "arm_wh2finger5": ( ((6+22)*6), (20*6) ),
-    "arm_wh2finger6": ( ((6+18)*6), (24*6) ), # predict 5th finger of right hand given arms, left hand and rest of fingers
-    "arm_wh2finger7": ( ((6+14)*6), (28*6) ),
-    "arm_wh2finger8": ( ((6+10)*6), (32*6) ),
-    "arm_wh2finger9": ( ((6+6)*6), (36*6) ),
-    "arm_wh2finger10": ( ((6+2)*6), (40*6) ),
-    "arm_wh2finger11": ( ((6+1)*6), (41*6) ), # also predict orientation of left hand
-    "arm_wh2finger12": ( ((6+0)*6), (42*6) ), # predict complete hands and orientations given arms
+    "arm_wh2finger5": ( ((6+22)*6), (20*6) ), # predict left hand
+    "arm_wh2finger6": ( ((6+21)*6), (21*6) ), # predict left hand including wrist
+    "arm_wh2finger7": ( ((6+17)*6), (25*6) ), # predict 5th finger of right hand given arms, left hand and rest of fingers
+    "arm_wh2finger8": ( ((6+13)*6), (29*6) ),
+    "arm_wh2finger9": ( ((6+9)*6), (33*6) ),
+    "arm_wh2finger10": ( ((6+5)*6), (37*6) ),
+    "arm_wh2finger11": ( ((6+1)*6), (41*6) ), 
+    "arm_wh2finger12": ( ((6+0)*6), (42*6) ), # predict hands, including wrists, given arms
     # "arm_wh2finger_": ( ((6+0)*6), (42*6) ), # predict fingers and hand orientation given arms
 }
 
@@ -663,9 +663,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=False)
-    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_val_sentence_embeddings.pkl")
+    save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_test_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
@@ -682,30 +682,30 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved lifted xyz", flush=True)
     # print()
 
-    train_3d = load_binary("video_data/xyz_train.pkl")
-    val_3d = load_binary("video_data/xyz_val.pkl")
-    test_3d = load_binary("video_data/xyz_test.pkl")
+    # train_3d = load_binary("video_data/xyz_train.pkl")
+    # val_3d = load_binary("video_data/xyz_val.pkl")
+    # test_3d = load_binary("video_data/xyz_test.pkl")
 
-    structure = skeletalModel.getSkeletalModelStructure()
-    lengths = pose3D.get_bone_length(train_3d, structure)
-    save_binary(lengths, "video_data/lengths_train.pkl")
-    print("Obtained bone lengths.", flush=True)
+    # structure = skeletalModel.getSkeletalModelStructure()
+    # lengths = pose3D.get_bone_length(train_3d, structure)
+    # save_binary(lengths, "video_data/lengths_train.pkl")
+    # print("Obtained bone lengths.", flush=True)
 
-    train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
-    print("Train xyz to r6d.", flush=True)
-    val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
-    print("Val xyz to r6d.", flush=True)
-    test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
-    print("Test xyz to r6d.", flush=True)
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
+    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    # print("Train xyz to r6d.", flush=True)
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # print("Val xyz to r6d.", flush=True)
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    # print("Test xyz to r6d.", flush=True)
 
-    print()
-    print("saved r6d data", flush=True)
-    print()
+    # print()
+    # print("saved r6d data", flush=True)
+    # print()
 
-    print(f"processed all H2S data in {dir}", flush=True)
+    # print(f"processed all H2S data in {dir}", flush=True)
 
 
 if __name__ == "__main__":
