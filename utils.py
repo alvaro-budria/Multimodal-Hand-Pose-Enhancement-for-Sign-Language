@@ -40,7 +40,6 @@ FEATURE_MAP = {
     "arm_wh2finger10": ( ((6+5)*6), (37*6) ),
     "arm_wh2finger11": ( ((6+1)*6), (41*6) ), 
     "arm_wh2finger12": ( ((6+0)*6), (42*6) ), # predict hands, including wrists, given arms
-    # "arm_wh2finger_": ( ((6+0)*6), (42*6) ), # predict fingers and hand orientation given arms
 }
 
 EPSILON = 1e-10
@@ -610,7 +609,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
     print(f"input.shape, output.shape: {input.shape}, {output.shape}")
     assert not np.any(np.isnan(input))
     assert not np.any(np.isnan(output))
-    if out_feat == 'wh' or out_feat == 'fingerL':
+    if pipeline in list(FEATURE_MAP.keys()) or out_feat == 'wh' or out_feat == 'fingerL':
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
@@ -663,9 +662,9 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=False)
-    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_val_sentence_embeddings.pkl")
-    save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_test_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_val_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_test_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
