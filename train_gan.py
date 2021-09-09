@@ -77,6 +77,8 @@ def main(args):
             mod = "regressor_fcn_bn_32"
         elif config.model == "v2":
             mod = "regressor_fcn_bn_32_v2"
+        elif config.model == "v2_deeper":
+            mod = "regressor_fcn_bn_32_v2_deeper"
         generator = getattr(modelZoo, mod)()
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
@@ -170,7 +172,7 @@ def load_data(args, rng):
         if args.require_text:
             text = curr_p0[1]
             curr_p0 = curr_p0[0]
-            return curr_p0[:args.batch_size], curr_p1[:args.batch_size], text[:args.batch_size]
+            return curr_p0, curr_p1, text
         return curr_p0, curr_p1, None
 
     train_X, train_Y, train_text = fetch_data("train")
