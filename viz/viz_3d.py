@@ -39,21 +39,17 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_result
     utils.mkdir(f"{results_dir}/{clip_idx}")
     files = []
     for frame_idx in range(clip.shape[0]):
-        if frame_idx == 0:
-            print(f"clip[frame_idx,:].shape: {clip[frame_idx,:].shape}")
         fig, ax = plot_3d_lines(clip[frame_idx,:], structure, show=False)
         
         filename = f"{results_dir}/"+str(clip_idx)+"/"+str(frame_idx)+".png"
         files.append(filename)
         plt.savefig(filename, dpi=75)
         plt.close(fig)
-    print(f"len(files): {len(files)}")
     # Create the frames
     frames = []
     for f in files:
         new_frame = Image.open(f)
         frames.append(new_frame)
-    print(f"len(frames): {len(frames)}")
     # Save into a GIF file that loops forever
     frames[0].save(f"{results_dir}/{clip_idx}.gif", format='GIF',
                    append_images=frames[1:],
@@ -61,17 +57,15 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_result
                    duration=len(frames)/frame_rate, loop=0)
 
     # delete temporal dir
-    #shutil.rmtree(f"{results_dir}/{clip_idx}")
+    shutil.rmtree(f"{results_dir}/{clip_idx}")
     return f"{results_dir}/{clip_idx}.gif"  # return animation filename
 
 import numpy as np ########
 def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
-    print(f"len(xyz): {len(xyz)}")
     gifs_paths = []
     for clip_idx in range(len(xyz)):
         assert not np.any(np.isnan(xyz[clip_idx]))
         gifs_paths.append(viz_clip(xyz[clip_idx], clip_idx, structure, frame_rate=frame_rate, results_dir=results_dir))
-    print(f"len(gifs_paths): {len(gifs_paths)}")
     return gifs_paths
 
 
