@@ -718,7 +718,20 @@ if __name__ == "__main__":
         "test": "test_2D_keypoints/openpose_output/json"
     }
 
-    process_H2S_dataset(args.dataset_path)
+    ##
+    # process_H2S_dataset(args.dataset_path)
+    ##
+
+    ## generating viz for qualitative assessment
+    xyz = load_binary("video_data/xyz_train.pkl")[0:30]
+    structure = skeletalModel.getSkeletalModelStructure()
+    gifs_paths = viz.viz(xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
+    import wandb
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
+        for path in gifs_paths:
+            wandb.save(path)
+    ## DONE generating viz
+
 
     # # obtain array where each row is the average sentence embedding
     # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
