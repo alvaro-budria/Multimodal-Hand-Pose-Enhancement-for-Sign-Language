@@ -723,13 +723,9 @@ if __name__ == "__main__":
     ##
 
     ## generating viz for qualitative assessment
-    xyz = load_binary("video_data/xyz_train.pkl")[0:30]
+    xyz = load_binary("video_data/xyz_train.pkl")[0:25]
     structure = skeletalModel.getSkeletalModelStructure()
-    gifs_paths = viz.viz(xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
-    import wandb
-    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
-        for path in gifs_paths:
-            wandb.save(path)
+    gifs_paths = viz.viz(xyz, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
     ## DONE generating viz
 
 
