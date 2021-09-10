@@ -723,10 +723,20 @@ if __name__ == "__main__":
     ##
 
     ## generating viz for qualitative assessment
-    xyz = load_binary("video_data/xyz_train.pkl")[0:25]
-    structure = skeletalModel.getSkeletalModelStructure()
-    gifs_paths = viz.viz(xyz, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
+    # xyz = load_binary("video_data/xyz_train.pkl")[0:25]
+    # structure = skeletalModel.getSkeletalModelStructure()
+    # gifs_paths = viz.viz(xyz, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
+    # with wandb.init(project="B2H-H2S", name="viz_xyz_train"):
+    #     for path in gifs_paths:
+    #         wandb.save(path)
     ## DONE generating viz
+    ## save to wandb viz from existing folder
+
+    from glob import glob
+    gifs_paths = glob("viz_results_xyz_train/"+"*.gif")
+    with wandb.init(project="B2H-H2S", name="viz_results_xyz_train"):
+        for path in gifs_paths:
+            wandb.save(path)
 
 
     # # obtain array where each row is the average sentence embedding
