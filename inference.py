@@ -31,6 +31,10 @@ def main(args):
         args.model = "regressor_fcn_bn_32"
     elif args.model == "v2":
         args.model = "regressor_fcn_bn_32_v2"
+    elif args.model == "v4":
+        args.model = "regressor_fcn_bn_32_v4"
+    elif args.model == "v4_deeper":
+        args.model = "regressor_fcn_bn_32_v4_deeper"
     model = getattr(modelZoo,args.model)()
     model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
     pretrained_model = args.checkpoint
