@@ -494,9 +494,9 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 			self.embed_size += default_size
 			self.text_embeds_postprocess = nn.Sequential(
 				nn.Dropout(0.5),
-				nn.Linear(512, self.embed_size),  # 512 is the size of CLIP's text embeddings
+				nn.Linear(512, self.embed_size//2),  # 512 is the size of CLIP's text embeddings
 				nn.LeakyReLU(0.2, True),
-				nn.BatchNorm1d(self.embed_size, momentum=0.01),
+				nn.BatchNorm1d(self.embed_size//2, momentum=0.01),
 			)
 
 		self.encoder = nn.Sequential(
@@ -537,16 +537,16 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 
 		self.conv9 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size//(1+self.require_text),3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(self.embed_size),
+			nn.BatchNorm1d(self.embed_size//(1+self.require_text)),
 		)
 
 		self.conv10 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
+			nn.Conv1d(self.embed_size,self.embed_size//(1+self.require_text),3,padding=1),
 			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(self.embed_size),
+			nn.BatchNorm1d(self.embed_size//(1+self.require_text)),
 		)
 
 		self.skip1 = nn.Sequential(
@@ -592,12 +592,12 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 		)
 
 	## create text embedding
-	def process_text(self, text_):
-		text_ = text_.unsqueeze(1)
-		B, TT, E = text_.shape
+	def process_text(self, text_, T):
+		text_ = text_.unsqueeze(1).repeat(1, T, 1)
+		B, _, E = text_.shape
 		text_ = text_.view(-1, E)
 		feat = self.text_embeds_postprocess(text_)
-		feat = feat.view(B, TT, self.embed_size)  # TT should == 1
+		feat = feat.view(B, T, -1)
 		feat = feat.permute(0, 2, 1).contiguous()
 		return feat
 
@@ -619,8 +619,9 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 
 		ninth_block = tenth_block + ninth_block
 		if self.require_text:
-			feat = self.process_text(text_)
-			ninth_block = torch.cat((ninth_block, feat), dim=2)
+			T = ninth_block.shape[2]
+			feat = self.process_text(text_, T)
+			ninth_block = torch.cat((ninth_block, feat), dim=1)
 		ninth_block = self.skip1(ninth_block)
 
 		eighth_block = ninth_block + eighth_block
