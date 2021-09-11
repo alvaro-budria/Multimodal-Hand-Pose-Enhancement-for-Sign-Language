@@ -544,7 +544,7 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 
 		self.conv10 = nn.Sequential(
 			nn.Dropout(0.5),
-			nn.Conv1d(self.embed_size,self.embed_size//(1+self.require_text),3,padding=1),
+			nn.Conv1d(self.embed_size//(1+self.require_text),self.embed_size//(1+self.require_text),3,padding=1),
 			nn.LeakyReLU(0.2, True),
 			nn.BatchNorm1d(self.embed_size//(1+self.require_text)),
 		)
