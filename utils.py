@@ -722,11 +722,14 @@ if __name__ == "__main__":
     # process_H2S_dataset(args.dataset_path)
     ##
 
+
     ## generating viz for qualitative assessment
+    import wandb
+    from glob import glob
     # xyz_train = load_binary("video_data/xyz_train.pkl")[0:25]
     # structure = skeletalModel.getSkeletalModelStructure()
     # gifs_paths = viz.viz(xyz_train, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
-    gifs_paths = glob("viz_results_xyz_train/"+"*.gif")
+    gifs_paths = glob("viz_results_xyz_train/"+"*.gif")[0:25]
     with wandb.init(project="B2H-H2S", name="viz_xyz_train"):
         for path in gifs_paths:
             wandb.save(path)
