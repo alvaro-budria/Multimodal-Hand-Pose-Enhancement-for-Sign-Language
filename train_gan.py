@@ -85,7 +85,7 @@ def main(args):
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
-            loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
+            loaded_state = torch.load(os.path.join(args.model_path, f"lastCheckpoint_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         generator.to(device)
