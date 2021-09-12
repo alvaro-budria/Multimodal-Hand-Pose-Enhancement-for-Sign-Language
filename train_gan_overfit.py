@@ -360,7 +360,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
 
     testLoss /= totalSteps * val_batch_size
     wandb.log({"loss_val_gen": testLoss})
-    print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps, 
+    print('Epoch [{}/{}], Step [{}/{}], Val. Loss: {:.4f}, Val. Perplexity: {:5.4f}, LR: {:e}'.format(args.epoch, args.num_epochs-1, bii, totalSteps-1, 
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
                                                                                                       g_optimizer.param_groups[0]["lr"]), flush=True)
