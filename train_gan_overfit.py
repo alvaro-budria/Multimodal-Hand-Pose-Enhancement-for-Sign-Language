@@ -83,12 +83,12 @@ def main(args):
             mod = "regressor_fcn_bn_32_v4_deeper"
         generator = getattr(modelZoo, mod)()
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
+        generator.to(device)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
             loaded_state = torch.load(os.path.join(args.model_path, f"lastCheckpoint_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
-        generator.to(device)
         reg_criterion = nn.L1Loss()
         # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
@@ -99,12 +99,12 @@ def main(args):
         args.model = 'regressor_fcn_bn_discriminator'
         discriminator = getattr(modelZoo, args.model)()
         discriminator.build_net(feature_out_dim)
+        discriminator.to(device)
         d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
             loaded_state = torch.load(os.path.join(args.model_path, f"discriminator_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
             d_optimizer.load_state_dict(loaded_state['d_optimizer'])
-        discriminator.to(device)
         gan_criterion = nn.MSELoss()
         # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
