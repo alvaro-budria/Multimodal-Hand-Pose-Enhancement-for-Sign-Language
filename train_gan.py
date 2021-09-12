@@ -376,7 +376,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         checkpoint = {'epoch': args.epoch,
                       'state_dict': generator.state_dict(),
                       'g_optimizer': g_optimizer.state_dict()}
-        fileName = args.model_path + '/{}{}_checkpoint_e{}_loss{:.4f}.pth'.format(args.tag, args.pipeline, args.epoch, testLoss)
+        fileName = args.model_path + '/{}_checkpoint.pth'.format(args.exp_name)
         torch.save(checkpoint, fileName)
         currBestLoss = testLoss
         global lastCheckpoint
