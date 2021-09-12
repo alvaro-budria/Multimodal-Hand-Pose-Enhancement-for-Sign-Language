@@ -89,7 +89,6 @@ def main(args):
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         generator.to(device)
-        g_optimizer.to(device)
         reg_criterion = nn.L1Loss()
         # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
@@ -106,7 +105,6 @@ def main(args):
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
             d_optimizer.load_state_dict(loaded_state['d_optimizer'])
         discriminator.to(device)
-        d_optimizer.to(device)
         gan_criterion = nn.MSELoss()
         # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
@@ -169,7 +167,6 @@ def load_data(args, rng):
         elif args.embeds_type == "average":
             text_path = f"video_data/average_{set}_sentence_embeddings.pkl"
         #text_path = TEXT_PATHS[set]
-        #text_path = "video_data/average_train_sentence_embeddings.pkl"
         
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
