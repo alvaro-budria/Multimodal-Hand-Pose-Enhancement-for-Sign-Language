@@ -131,7 +131,7 @@ def main(args):
                 print('early stopping at:', epoch-1, flush=True)
                 break
 
-            if epoch > 0 and epoch % config.epochs_train_disc == 0:
+            if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0) :
                 train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=train_text)
             else:
                 train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
