@@ -85,7 +85,7 @@ def main(args):
         generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
-            loaded_state = torch.load(os.path.join(args.model_path, "lastCheckpoint.pth"), map_location=lambda storage, loc: storage)
+            loaded_state = torch.load(os.path.join(args.model_path, f"lastCheckpoint_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         generator.to(device)
@@ -101,7 +101,7 @@ def main(args):
         discriminator.build_net(feature_out_dim)
         d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
-            loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
+            loaded_state = torch.load(os.path.join(args.model_path, f"discriminator_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
             d_optimizer.load_state_dict(loaded_state['d_optimizer'])
         discriminator.to(device)
@@ -131,7 +131,7 @@ def main(args):
                 print('early stopping at:', epoch-1, flush=True)
                 break
 
-            if epoch > 0 and epoch % config.epochs_train_disc == 0:
+            if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0) :
                 train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=train_text)
             else:
                 train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
@@ -175,7 +175,6 @@ def load_data(args, rng):
             text = curr_p0[1]
             curr_p0 = curr_p0[0]
             return curr_p0[:args.batch_size], curr_p1[:args.batch_size], text[:args.batch_size]
-            #return curr_p0, curr_p1, text
         return curr_p0, curr_p1, None
 
     train_X, train_Y, train_text = fetch_data("train")
@@ -376,7 +375,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         checkpoint = {'epoch': args.epoch,
                       'state_dict': generator.state_dict(),
                       'g_optimizer': g_optimizer.state_dict()}
-        fileName = args.model_path + '/{}{}_checkpoint_e{}_loss{:.4f}.pth'.format(args.tag, args.pipeline, args.epoch, testLoss)
+        fileName = args.model_path + f'/{args.exp_name}_checkpoint.pth'
         torch.save(checkpoint, fileName)
         currBestLoss = testLoss
         global lastCheckpoint
@@ -386,7 +385,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         checkpoint = {'epoch': args.epoch,
                       'state_dict': discriminator.state_dict(),
                       'd_optimizer': d_optimizer.state_dict()}
-        fileName = args.model_path + '/discriminator.pth'
+        fileName = args.model_path + f'/discriminator_{args.exp_name}.pth'
         torch.save(checkpoint, fileName)
 
     return currBestLoss, prev_save_epoch

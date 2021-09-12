@@ -101,7 +101,7 @@ def main(args):
         discriminator.build_net(feature_out_dim)
         d_optimizer = torch.optim.Adam(discriminator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
-            loaded_state = torch.load(os.path.join(args.model_path, "discriminator.pth"), map_location=lambda storage, loc: storage)
+            loaded_state = torch.load(os.path.join(args.model_path, f"discriminator_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
             d_optimizer.load_state_dict(loaded_state['d_optimizer'])
         discriminator.to(device)
@@ -386,7 +386,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         checkpoint = {'epoch': args.epoch,
                       'state_dict': discriminator.state_dict(),
                       'd_optimizer': d_optimizer.state_dict()}
-        fileName = args.model_path + '/discriminator.pth'
+        fileName = args.model_path + f'/discriminator_{args.exp_name}.pth'
         torch.save(checkpoint, fileName)
 
     return currBestLoss, prev_save_epoch
