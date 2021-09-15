@@ -40,8 +40,8 @@ def load_text(key, ids):
             id, text = line.split(" ", 1)  # first space separates id from text
             if id in ids:
                 dict_text[id] = text
-    # sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
-    sentence_list = [v for _, v in dict_text.items()]  # it's important that the result is already sorted by clip ID
+    sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
+    # sentence_list = [v for _, v in dict_text.items()]  # it's important that the result is already sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
     return sentence_list
 

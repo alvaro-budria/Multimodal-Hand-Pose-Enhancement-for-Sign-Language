@@ -19,6 +19,7 @@ import pose3D
 import viz.viz_3d as viz
 
 import proc_text
+import proc_vid
 
 DATA_PATHS = {
         "train": "train/rgb_front/features/openpose_output/json",
@@ -140,18 +141,6 @@ def rot6d_to_aa(r6d):
     aa = []
     with Pool(processes=24) as pool:
         aa = pool.starmap( clip_rot6d_to_aa, zip(r6d) )
-
-    # for clip in range(len(r6d)):
-    #     r6d_clip = r6d[clip]
-    #     assert not np.any(np.isnan(r6d_clip))
-    #     aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
-    #     for idx in range(0, r6d_clip.shape[1], 6):
-    #         # print(f"r6d_clip.shape: {r6d_clip.shape}")
-    #         # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
-    #         assert not np.any(np.isnan(r6d_clip[:,idx:idx+6]))
-    #         assert not np.any(np.isnan(_rot6d_to_aa(r6d_clip[:,idx:idx+6])))
-    #         aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
-    #     aa.append(aa_clip)
     return aa
 
 
@@ -262,7 +251,6 @@ def get_root_bone(xyz, structure):
 
 def xyz_to_aa(xyz, structure, root_filename=None):
     xyz = _array_to_list(xyz)
-    #save_binary(get_root_bone(xyz, structure), root_filename)
     aa = []
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
@@ -498,6 +486,20 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
+def obtain_vid_feats(kp_dir, key):
+    kp_path = os.path.join(kp_dir, DATA_PATHS[key])
+    kp_dir_list = os.listdir(kp_path)
+    clip_ids_text = proc_text.get_clip_ids(key=key)
+    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id present both in kp_dir_list (IDs for which keypoints are availabe)
+                                                 # and in clip_ids_text (IDs for text sentences are availabe)
+    clip_ids_vid = proc_vid.get_vid_ids(key="train")
+    ids = _join_ids(ids, clip_ids_vid)
+    ids = sorted(ids)
+
+    hand_feats = proc_vid.obtain_feats(key, ids)
+    pass
+
+
 # returns the keypoints in the specified indexes
 def get_joints(kp, idx):
     return kp[:,idx]
@@ -704,6 +706,14 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
+    save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
+    save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
+    save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
+    
+    print()
+    print(f"obtained video features", flush=True)
+    print()
+
     # print(f"processed all H2S data in {dir}", flush=True)
 
 
@@ -724,23 +734,23 @@ if __name__ == "__main__":
 
 
     ## generating viz for qualitative assessment
-    import wandb
-    from glob import glob
-    # xyz_train = load_binary("video_data/xyz_train.pkl")[0:25]
-    # structure = skeletalModel.getSkeletalModelStructure()
-    # gifs_paths = viz.viz(xyz_train, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
-    gifs_paths = glob("viz_results_xyz_train/"+"*.gif")[0:25]
-    with wandb.init(project="B2H-H2S", name="viz_xyz_train"):
-        for path in gifs_paths:
-            wandb.save(path)
+    # import wandb
+    # from glob import glob
+    # # xyz_train = load_binary("video_data/xyz_train.pkl")[0:25]
+    # # structure = skeletalModel.getSkeletalModelStructure()
+    # # gifs_paths = viz.viz(xyz_train, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
+    # gifs_paths = glob("viz_results_xyz_train/"+"*.gif")[0:25]
+    # with wandb.init(project="B2H-H2S", name="viz_xyz_train"):
+    #     for path in gifs_paths:
+    #         wandb.save(path)
 
-    xyz_test = load_binary("video_data/xyz_test.pkl")[0:25]
-    structure = skeletalModel.getSkeletalModelStructure()
-    gifs_paths = viz.viz(xyz_test, structure, frame_rate=2, results_dir=f"viz_results_xyz_test")
-    gifs_paths = glob("viz_results_xyz_test/"+"*.gif")
-    with wandb.init(project="B2H-H2S", name="viz_xyz_test"):
-        for path in gifs_paths:
-            wandb.save(path)
+    # xyz_test = load_binary("video_data/xyz_test.pkl")[0:25]
+    # structure = skeletalModel.getSkeletalModelStructure()
+    # gifs_paths = viz.viz(xyz_test, structure, frame_rate=2, results_dir=f"viz_results_xyz_test")
+    # gifs_paths = glob("viz_results_xyz_test/"+"*.gif")
+    # with wandb.init(project="B2H-H2S", name="viz_xyz_test"):
+    #     for path in gifs_paths:
+    #         wandb.save(path)
 
     ## DONE generating viz
     ## save to wandb viz from existing folder
