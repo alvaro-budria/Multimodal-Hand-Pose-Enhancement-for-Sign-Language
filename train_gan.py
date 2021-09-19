@@ -31,6 +31,14 @@ TEXT_PATHS = {
         "test": "video_data/test_sentence_embeddings.pkl"
 }
 
+MODELS = {
+        "v1": "regressor_fcn_bn_32",
+        "b2h": "regressor_fcn_bn_32_b2h",
+        "v2": "regressor_fcn_bn_32_v2",
+        "v4": "regressor_fcn_bn_32_v4",
+        "v4_deeper": "regressor_fcn_bn_32_v4_deeper"
+}
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lastCheckpoint = ""
 
@@ -71,18 +79,14 @@ def main(args):
             train_X, train_Y, val_X, val_Y = data_tuple
             train_text, val_text = None, None
         ## DONE: load data from saved files
-    
+
         ## set up generator model
-        if config.model == "v1":
-            mod = "regressor_fcn_bn_32"
-        elif config.model == "v2":
-            mod = "regressor_fcn_bn_32_v2"
-        elif config.model == "v4":
-            mod = "regressor_fcn_bn_32_v4"
-        elif config.model == "v4_deeper":
-            mod = "regressor_fcn_bn_32_v4_deeper"
+        mod = MODELS[config.model]
         generator = getattr(modelZoo, mod)()
-        generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
+        if mod == "regressor_fcn_bn_32_b2h":
+            generator.build_net(feature_in_dim, feature_out_dim, require_image=args.require_image)
+        else:
+            generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         generator.to(device)
         g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
         if args.use_checkpoint:
@@ -399,7 +403,8 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=200, help='number of training epochs')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for training')
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
-    parser.add_argument('--require_text', action="store_true", help="use additional text feature or not")
+    parser.add_argument('--require_text', action="store_true", help="use additional text embeddings or not")
+    parser.add_argument('--require_image', action="store_true", help="use additional image features or not")
     parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "avg", use avg text embeds')
     parser.add_argument('--model_path', type=str, default="models/" , help='path for saving trained models')
     parser.add_argument('--log_step', type=int , default=25, help='step size for prining log info')
