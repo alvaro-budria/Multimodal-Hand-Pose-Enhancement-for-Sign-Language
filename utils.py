@@ -73,7 +73,7 @@ def rmv_clips_nan(X, Y, T=None):
     return x, y, t
 
 
-def _array_to_list(input):
+def array_to_list(input):
     if type(input) != type(list()):  # convert 3D array to list of 2D arrays
         input = list(input)
     return input
@@ -136,7 +136,7 @@ def clip_rot6d_to_aa(r6d_clip):
 
 
 def rot6d_to_aa(r6d):
-    r6d = _array_to_list(r6d)
+    r6d = array_to_list(r6d)
     assert not np.any(np.isnan(r6d))
     aa = []
     with Pool(processes=24) as pool:
@@ -158,7 +158,7 @@ def _aa_to_rot6d(vecs):
 
 # convert from axis angle to r6d space
 def aa_to_rot6d(aa):
-    aa = _array_to_list(aa)
+    aa = array_to_list(aa)
     r6d = []
     for clip in range(len(aa)):
         aa_clip = aa[clip]
@@ -215,11 +215,12 @@ def _retrieve_axis_angle(aa):
 
 
 def aa_to_xyz(aa, root, bone_len, structure):
-    aa = _array_to_list(aa)
+    aa = array_to_list(aa)
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
-        xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")
+        print(f"aa_clip.shape: {aa_clip.shape}")
+        xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")  # add 6 values, corresponding to two keypoints defining the root bone
         xyz_clip[:,0:6] = root
         for iBone in range(1,len(structure)):
             id_p_J, id_p_E, _, id_p_B = structure[iBone]
@@ -239,7 +240,7 @@ def aa_to_xyz(aa, root, bone_len, structure):
 
 
 def get_root_bone(xyz, structure):
-    xyz = _array_to_list(xyz)
+    xyz = array_to_list(xyz)
     root = np.array([])
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
@@ -250,7 +251,7 @@ def get_root_bone(xyz, structure):
 
 
 def xyz_to_aa(xyz, structure, root_filename=None):
-    xyz = _array_to_list(xyz)
+    xyz = array_to_list(xyz)
     aa = []
     for i in range(len(xyz)):
         xyz_clip = xyz[i]
@@ -390,7 +391,7 @@ def calc_standard(train_X, train_Y, pipeline):
 
 
 # given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
-# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=False
+# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True
 
 ## @jit ?¿?
 def retrieve_coords(keypoints, keep_confidence=False):
@@ -404,7 +405,7 @@ def retrieve_coords(keypoints, keep_confidence=False):
     return coords # [elem for singleList in coords for elem in singleList]
 
 
-def load_clip(clip_path, pipeline):
+def load_clip(clip_path, pipeline, keep_confidence=True):
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
     in_kp, out_kp = np.array([]), np.array([])
@@ -413,19 +414,18 @@ def load_clip(clip_path, pipeline):
             f = open(os.path.join(clip_path, frame))
             data = json.load(f)
             f.close()
-            if in_feat == "arm":  
-                if in_kp.shape != (0,):
-                    in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)], axis=0)
-                else:
-                    in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=True)])
-            if out_feat == "wh": 
-                temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=True),
-                        retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=True)]
-                temp = [elem for singleList in temp for elem in singleList]
-                if out_kp.shape != (0,):
-                    out_kp = np.append(out_kp, [temp], axis=0)
-                else:
-                    out_kp = np.array([temp])
+            if in_kp.shape != (0,):
+                in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)], axis=0)
+            else:
+                in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)])
+            
+            temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=keep_confidence),
+                    retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=keep_confidence)]
+            temp = [elem for singleList in temp for elem in singleList]
+            if out_kp.shape != (0,):
+                out_kp = np.append(out_kp, [temp], axis=0)
+            else:
+                out_kp = np.array([temp])
     return in_kp, out_kp
 
 
@@ -506,12 +506,15 @@ def get_joints(kp, idx):
 
 
 # selects the useful keypoints indicated by the indexes. Input is a list, each element containing the keypoints of a (video) clip
-def select_keypoints(kp, idxs):
+def select_keypoints(kp, idxs, keep_confidence=True):
     kp_cp = kp.copy()
     for i in range(len(kp)):
         new_kp_i = np.array([])
         for idx in idxs:
-            new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+3])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+3]
+            if keep_confidence:
+                new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+3])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+3]
+            else:
+                new_kp_i = np.hstack((new_kp_i, kp[i][:,idx*3:idx*3+2])) if new_kp_i.shape[0]!=0 else kp[i][:,idx*3:idx*3+2]
         kp_cp[i] = new_kp_i
     return kp_cp
 
@@ -555,7 +558,7 @@ def mkdir(dir):
         os.mkdir(dir)
 
 
-# given a list of arrays (corresponding to a clip) with varying lengths,
+# given a list of arrays (each corresponding to a clip) with varying lengths,
 # makes all of them have equal (pair) length. The result is a single array
 def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=192):
     sizes = [arr.shape[0] for arr in data]
@@ -622,14 +625,14 @@ def save_results(input, output, pipeline, base_path, tag=''):
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
-        xyz_train = load_binary("video_data/xyz_train.pkl")[:input.shape[0]]
+        xyz_train = load_binary("video_data/xyz_train.pkl")#[:input.shape[0]]
         xyz_train = make_equal_len(xyz_train, method="cutting+reflect")
         xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
         root = get_root_bone(xyz_train, structure)
         assert not np.any(np.isnan(root))
         # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
         bone_len = pose3D.get_bone_length(xyz_train, structure)
-        assert not np.any(np.isnan(root))
+        assert not np.any(np.isnan(bone_len))
         # bone_len = load_binary("video_data/lengths_train.pkl")
 
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
@@ -762,3 +765,19 @@ if __name__ == "__main__":
     # Visualize inference results
     # _inference_xyz = load_binary("results/_inference_xyz.pkl")
     # viz.viz(_inference_xyz, structure, frame_rate=1, results_dir="viz_results")
+
+
+    # testing that kp match video coordinates
+    path_json = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
+    in_kp, out_kp = load_clip(path_json, "arm2wh", keep_confidence=False)
+
+    print(type(in_kp), in_kp.shape)
+    arms = select_keypoints([in_kp], ARMS, keep_confidence=False)[0]
+    print(arms.shape)
+
+    video = proc_vid.load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
+    video_overlap = proc_vid.overlap_vid_points(np.moveaxis(video, 1, -1), arms)
+    print(video_overlap.shape)
+    video_overlap = np.moveaxis(video_overlap, -1, 1)
+    print(video_overlap.shape)
+    proc_vid.save_as_mp4(video_overlap, fps=25, filename="testing_overlap.avi")
