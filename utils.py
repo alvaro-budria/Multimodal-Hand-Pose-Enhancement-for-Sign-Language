@@ -487,7 +487,6 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     if os.path.exists(train_path):
         in_train, out_train, embeds_train = _load_H2S_dataset(train_path, pipeline=pipeline, key="train", subset=subset)
         print("LOADED RAW TRAIN DATA", flush=True)
-    print("crashing", crash)
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
@@ -651,7 +650,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
+    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
     # print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
@@ -713,10 +712,13 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
-    # save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
-    # save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
-    # save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
-    
+    save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
+    print("vid feats val")
+    save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
+    print("vid feats test")
+    save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
+    print("vid feats train")
+
     # print()
     # print(f"obtained video features", flush=True)
     # print()
@@ -736,7 +738,7 @@ if __name__ == "__main__":
     }
 
     ##
-    # process_H2S_dataset(args.dataset_path)
+    process_H2S_dataset(args.dataset_path)
     ##
 
 
