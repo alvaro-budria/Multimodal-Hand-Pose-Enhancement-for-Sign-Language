@@ -17,22 +17,42 @@ VID_PATHS = {
     "test": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/rgb_front/raw_videos/"
 }
 
+DATA_PATHS = {
+        "train": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/train/rgb_front/features/openpose_output/json/",
+        "val": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/val/rgb_front/features/openpose_output/json/",
+        "test": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/rgb_front/features/openpose_output/json/"
+}
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
+from PIL import Image
 # obtains frame-level embeddings from CxHxW numpy array
 def obtain_embeds_img(img):
     model, preprocess = clip.load("ViT-B/32", device=device)
-    #image = preprocess(Image.open("CLIP.png")).unsqueeze(0).to(device)
-    image = preprocess(img).unsqueeze(0).to(device)
+    img_8uint = img.astype(np.uint8)
+    pil_img = Image.fromarray(img_8uint, 'RGB')
+    image = preprocess(pil_img).unsqueeze(0).to(device)
     with torch.no_grad():
         image_features = model.encode_image(image)
-    return image_features
+    return image_features.cpu().detach().numpy()
+
+
+# from keras.applications.resnet50 import ResNet50
+# def obtain_embeds_img(clip):
+#     '''
+#     Crops frame to given middle point and rectangle shape.
+#     :param frame: Input frame. Dims TxCxHxW. Numpy array
+#     :return: Resnet features. Numpy array
+#     '''
+#     base_model = ResNet50(weights='imagenet', pooling=max, input_shape=(3,150,150), include_top=False)
+#     input = Input(shape=clip.shape[1:], name='image_input')
+#     x = base_model(input)
 
 
 # obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
 def obtain_embeds(clip_list):
     clip_feats = []
-    with Pool(processes=24) as pool:
+    with Pool(processes=3) as pool:
         clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
     return np.array(clip_feats)
 
@@ -50,13 +70,18 @@ def load_clip(path):
     video = np.moveaxis(video, 3, 1)  # dimensions (T, C, H, W)
     return video
 
+
 # loads the .mp4 files for the specified set/key and IDs
+# loaded files are returned in a list of numpy arrays
 def load_clips(key, ids):
     path_ims = VID_PATHS[key]
     dict_vids = {}
 
     for id in ids:
-        path = os.path.join(path_ims, id+".mp4")
+        print(f"id: {id}")
+        #path = os.path.join(path_ims, id+".mp4")
+        path = id+".mp4"
+        print(path)
         video = load_clip(path)
         dict_vids[id] = video
     video_list = [v for _, v in sorted(dict_vids.items())]
@@ -68,10 +93,6 @@ def load_clips(key, ids):
 def get_vid_ids(key="train"):
     clips_ids = [x[:-4] for x in os.listdir(VID_PATHS[key]) if x.endswith(".mp4")]
     return clips_ids
-
-
-def obtain_feats(key, ids):
-    pass
 
 
 def crop_frame(frame, middle, shape):
@@ -103,6 +124,32 @@ def crop_frame(frame, middle, shape):
     return crop
 
 
+import json
+def crop_clip(clip, clip_id, input_json_folder):
+    '''
+    Returs the cropped frames where the hands are located.
+    :param clip: size (T, C, H, W)
+    :param clip_id: used to retrieve the clip's hand keypoints
+    :param input_json_folder: the directory where the
+    :return cropped clip: (T, C, 150, 150, 2), where first position for last index is right hand, second is left hand
+    '''
+    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
+    hand = {0: "right", 1: "left"}
+    print(clip.shape[0])
+    for i in range(clip.shape[0]):
+        json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
+        input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
+        json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
+        #print(json_filename)
+        keypoints_json = json.load(open(json_filename))
+        for j in range(2):
+            center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
+            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (150, 150))
+            crop_j = np.moveaxis(crop_j, -1, 0)
+            cropped_clip[i,:,:,:,j] = crop_j
+    return cropped_clip
+
+
 # save a numpy array as a video
 def save_as_mp4(vid, fps=25, filename="testing.avi"):
     T, _, H, W = vid.shape    
@@ -110,7 +157,7 @@ def save_as_mp4(vid, fps=25, filename="testing.avi"):
     for i in range(T):
         x = np.moveaxis(vid[i,:,:,:], 0, -1)  # (C, H, W) -> (H, W, C)
         x_bgr = x[...,::-1].copy()  # from RGB to BGR
-        writer.write(x_bgr)
+        writer.write(np.uint8(x_bgr))
 
 
 # paints the specified points on the video.
@@ -127,40 +174,51 @@ def overlap_vid_points(vid, points):
     return vid_overlap
 
 
-def get_hand_center(input_json):
+def get_hand_center(input_json, hand="right"):
     '''
     Returs the computed hand center given the hand keypoints. Implemented as
     average of MP joints points
     :param input_json:
     :return:
     '''
+
     # Get right hand keypoints
-    right_hand_points = input_json["people"][0]["hand_right_keypoints_2d"]
+    hand_points = input_json["people"][0][f"hand_{hand}_keypoints_2d"]
 
     # format list shape from (N_point x 3,) to (N_points, 3)
-    right_hand_points = [right_hand_points[3 * i:3 * i + 3] for i in
-                         range(len(right_hand_points) // 3)]
+    hand_points = [hand_points[3 * i:3 * i + 3] for i in
+                   range(len(hand_points) // 3)]
 
     # Selecting only MP joints
     MP_JOINTS_INDEXES = [5, 9, 13, 17]
-    mp_joints = [right_hand_points[i] for i in MP_JOINTS_INDEXES]
-
+    mp_joints = [hand_points[i] for i in MP_JOINTS_INDEXES]
     mp_joints_coordinates = [[x[0], x[1]] for x in mp_joints]
-    #plot_points(frame_large, mp_joints_coordinates)
-
     mp_joints_coordinates_numpy = np.array(mp_joints_coordinates)
-
     mp_joints_center = np.average(mp_joints_coordinates_numpy, axis=0)
-
     return mp_joints_center
+
+
+def obtain_feats(key, ids):    
+    s_ids = sorted(ids)
+    clip_list = load_clips(key, s_ids)
+    feats_list = []
+    for i, clip in enumerate(clip_list):
+        input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
+        crop = crop_clip(clip, s_ids[i], input_json_folder)
+        embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
+        embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
+        feats_hands = np.hstack((embeds_r, embeds_l))
+        print(feats_hands.shape)
+        feats_list.append(feats_hands)
+    return feats_list
 
 
 def crop_video_main():
     import json
-    input_video_path = "G3g0-BeFN3c_17-5-rgb_front.mp4"
-    input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G3g0-BeFN3c_17-5-rgb_front"
+    input_video_path = "G42xKICVj9U_4-10-rgb_front.mp4"
+    input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
     #output_file = "utterance_level/train/rgb_front/features/hand_openpose_video/CVmyQR31Dr4_5-3-rgb_front.mp4"
-    output_file = "testing_G3g0-BeFN3c_17-5-rgb_front.mp4"
+    output_file = "testing_G42xKICVj9U_4-10-rgb_front.mp4"
     utt_id = input_video_path.split("/")[-1].replace(".mp4", "")
     print(utt_id)
     cap = cv2.VideoCapture(input_video_path)
@@ -170,7 +228,7 @@ def crop_video_main():
 
     n = 0
 
-    writer = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'PIM1'), fps, (200, 200))
+    writer = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'PIM1'), fps, (150, 150))
     while (cap.isOpened()):
         ret, frame_large = cap.read()
 
@@ -184,7 +242,7 @@ def crop_video_main():
 
         keypoints_json = json.load(open(json_filename))
         center_coords = get_hand_center(keypoints_json)
-        crop = crop_frame(frame_large, center_coords, (200, 200))
+        crop = crop_frame(frame_large, center_coords, (150, 150))
 
         writer.write(crop)
 
@@ -208,16 +266,21 @@ if __name__=="__main__":
     
     # sacuanjoje = np.array(sacuanjoje)
     # print(sacuanjoje.shape)
-    # sacuanjoje = crop_frame(sacuanjoje, (200,200), (100, 100))
+    # sacuanjoje = crop_frame(sacuanjoje, (150,150), (100, 100))
     # print(sacuanjoje.shape)
     # im = Image.fromarray(sacuanjoje)
     # im.save("sacuanjoje_original_cropped.jpeg")
 
-    crop_video_main()
+    #crop_video_main()
+
     # video = load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
+    # video = crop_clip(video, "G42xKICVj9U_4-10-rgb_front", "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front")
     # print(type(video), video.shape)
-    # save_as_mp4(video, fps=25, filename="testing.mp4")
+    # save_as_mp4(video[:,:,:,:,0], fps=25, filename="testing_crop0.mp4")
+    # save_as_mp4(video[:,:,:,:,1], fps=25, filename="testing_crop1.mp4")
     #feats_scuanj = obtain_embeds_img()
     #print(type(feats_scuanj), feats_scuanj.shape)
+
+    # obtain_feats("test", ["G42xKICVj9U_4-10-rgb_front", "G3g0-BeFN3c_17-5-rgb_front"])
 
     pass

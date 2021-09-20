@@ -445,7 +445,11 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     clip_ids_text = proc_text.get_clip_ids(key=key)
     print(f"{key} len(clip_ids_text): {len(clip_ids_text)}", flush=True)
 
+    clip_ids_vid = proc_vid.get_vid_ids(key=key)
+    print(f"{key} len(clip_ids_vid): {len(clip_ids_vid)}", flush=True)
+
     ids = _join_ids(dir_list, clip_ids_text)
+    ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print(f"{key} len(ids): {len(ids)}", flush=True)
 
@@ -483,6 +487,7 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     if os.path.exists(train_path):
         in_train, out_train, embeds_train = _load_H2S_dataset(train_path, pipeline=pipeline, key="train", subset=subset)
         print("LOADED RAW TRAIN DATA", flush=True)
+    print("crashing", crash)
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
@@ -490,9 +495,9 @@ def obtain_vid_feats(kp_dir, key):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
     clip_ids_text = proc_text.get_clip_ids(key=key)
-    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id present both in kp_dir_list (IDs for which keypoints are availabe)
+    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id that are present both in kp_dir_list (IDs for which keypoints are availabe)
                                                  # and in clip_ids_text (IDs for text sentences are availabe)
-    clip_ids_vid = proc_vid.get_vid_ids(key="train")
+    clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
 
@@ -647,7 +652,7 @@ def save_results(input, output, pipeline, base_path, tag=''):
 def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     mkdir("video_data")
 
-    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
+    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
     # print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
@@ -709,13 +714,13 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
-    save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
-    save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
-    save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
+    # save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
+    # save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
+    # save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
     
-    print()
-    print(f"obtained video features", flush=True)
-    print()
+    # print()
+    # print(f"obtained video features", flush=True)
+    # print()
 
     # print(f"processed all H2S data in {dir}", flush=True)
 
@@ -768,16 +773,16 @@ if __name__ == "__main__":
 
 
     # testing that kp match video coordinates
-    path_json = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
-    in_kp, out_kp = load_clip(path_json, "arm2wh", keep_confidence=False)
+    # path_json = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
+    # in_kp, out_kp = load_clip(path_json, "arm2wh", keep_confidence=False)
 
-    print(type(in_kp), in_kp.shape)
-    arms = select_keypoints([in_kp], ARMS, keep_confidence=False)[0]
-    print(arms.shape)
+    # print(type(in_kp), in_kp.shape)
+    # arms = select_keypoints([in_kp], ARMS, keep_confidence=False)[0]
+    # print(arms.shape)
 
-    video = proc_vid.load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
-    video_overlap = proc_vid.overlap_vid_points(np.moveaxis(video, 1, -1), arms)
-    print(video_overlap.shape)
-    video_overlap = np.moveaxis(video_overlap, -1, 1)
-    print(video_overlap.shape)
-    proc_vid.save_as_mp4(video_overlap, fps=25, filename="testing_overlap.avi")
+    # video = proc_vid.load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
+    # video_overlap = proc_vid.overlap_vid_points(np.moveaxis(video, 1, -1), arms)
+    # print(video_overlap.shape)
+    # video_overlap = np.moveaxis(video_overlap, -1, 1)
+    # print(video_overlap.shape)
+    # proc_vid.save_as_mp4(video_overlap, fps=25, filename="testing_overlap.avi")

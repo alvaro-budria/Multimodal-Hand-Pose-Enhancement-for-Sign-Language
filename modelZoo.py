@@ -21,7 +21,7 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 			if self.use_resnet:
 				self.image_resnet_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
-					nn.Linear(512*2, default_size),
+					nn.Linear(512*2, default_size),  # 512 is the size of CLIP's image embeddings, one per hand
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
