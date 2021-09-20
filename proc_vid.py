@@ -52,7 +52,7 @@ def obtain_embeds_img(img):
 # obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
 def obtain_embeds(clip_list):
     clip_feats = []
-    with Pool(processes=3) as pool:
+    with Pool(processes=24) as pool:
         clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
     return np.array(clip_feats)
 
@@ -79,8 +79,8 @@ def load_clips(key, ids):
 
     for id in ids:
         print(f"id: {id}")
-        #path = os.path.join(path_ims, id+".mp4")
-        path = id+".mp4"
+        path = os.path.join(path_ims, id+".mp4")
+        #path = id+".mp4"
         print(path)
         video = load_clip(path)
         dict_vids[id] = video
@@ -138,7 +138,7 @@ def crop_clip(clip, clip_id, input_json_folder):
     print(clip.shape[0])
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
-        input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
+        #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
         json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
         #print(json_filename)
         keypoints_json = json.load(open(json_filename))
