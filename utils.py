@@ -500,9 +500,8 @@ def obtain_vid_feats(kp_dir, key):
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
-
     hand_feats = proc_vid.obtain_feats(key, ids)
-    pass
+    return hand_feats
 
 
 # returns the keypoints in the specified indexes
