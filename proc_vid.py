@@ -50,6 +50,7 @@ def obtain_embeds_img(img):
 
 # obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
 def obtain_embeds(clip_list):
+    print(f"in obtain_embeds")
     clip_feats = []
     with Pool(processes=24) as pool:
         clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
@@ -136,7 +137,7 @@ def crop_clip(clip, clip_id, input_json_folder):
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
         json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
         keypoints_json = json.load(open(json_filename))
-        for j in range(2):
+        for j in range(2):  # for each hand
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
             crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (150, 150))
             crop_j = np.moveaxis(crop_j, -1, 0)
@@ -196,12 +197,17 @@ def get_hand_center(input_json, hand="right"):
 def obtain_feats(key, ids):    
     s_ids = sorted(ids)
     clip_list = load_clips(key, s_ids)
+    print(f"Clips loaded for {key}!")
     feats_list = []
     for i, clip in enumerate(clip_list):
+        print(f"i: {i}")
         input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
         crop = crop_clip(clip, s_ids[i], input_json_folder)
+        print(f"crop {i} done")
         embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
+        print(embeds_r.shape)
         embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
+        print(embeds_r.shape)
         feats_hands = np.hstack((embeds_r, embeds_l))
         print(feats_hands.shape)
         feats_list.append(feats_hands)
