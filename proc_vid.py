@@ -103,8 +103,6 @@ def preprocess_clip(img, preprocess):
         pil_img = Image.fromarray(img_8uint[i,:,:,:], 'RGB')
         pil_img = preprocess(pil_img)
         print(f"pil_img.shape: {pil_img.shape}")
-        pil_img = pil_img.unsqueeze(0)
-        print(f"shape after squeeze: {pil_img.shape}")
         images.append(pil_img)
     return torch.tensor(np.stack(images))
 
