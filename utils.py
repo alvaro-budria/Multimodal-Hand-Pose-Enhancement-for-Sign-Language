@@ -499,6 +499,7 @@ def obtain_vid_feats(kp_dir, key):
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
+    print("Obtained ids! Entering proc_vid.obtain_feats", flush=True)
     hand_feats = proc_vid.obtain_feats(key, ids)
     return hand_feats
 
