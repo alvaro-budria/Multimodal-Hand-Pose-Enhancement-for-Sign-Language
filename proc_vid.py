@@ -47,8 +47,6 @@ def load_clips(key, ids):
     print(f"len(ids): {len(ids)}", flush=True)
     i = 1
     for id in ids:
-        print(f"i: {i}", flush=True)
-        print(f"id: {id}", flush=True)
         path = os.path.join(path_ims, id+".mp4")
         #path = id+".mp4"
         video = load_clip(path)
@@ -76,7 +74,6 @@ def crop_clip(clip, clip_id, input_json_folder):
     '''
     cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
     hand = {0: "right", 1: "left"}
-    print(clip.shape[0], flush=True)
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
@@ -102,7 +99,6 @@ def preprocess_clip(img, preprocess):
     for i in range(img_8uint.shape[0]):
         pil_img = Image.fromarray(img_8uint[i,:,:,:], 'RGB')
         pil_img = preprocess(pil_img)
-        print(f"pil_img.shape: {pil_img.shape}")
         images.append(pil_img)
     return torch.tensor(np.stack(images))
 
@@ -116,7 +112,6 @@ def obtain_embeds_img(img, model, preprocess):
 
 # obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
 def obtain_embeds(clip_list):
-    print(f"in obtain_embeds", flush=True)
     clip_feats = []
     with Pool(processes=24) as pool:
         clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
@@ -133,11 +128,8 @@ def obtain_feats_crops(crops_list):
     feats_list = []
     for c in crops_list:  # parallelize this?¿? beware of memory overflow!
         embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
-        print(embeds_r.shape, flush=True)
         embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
-        print(embeds_l.shape, flush=True)
         feats_hands = np.hstack((embeds_r, embeds_l))
-        print(feats_hands.shape, flush=True)
         feats_list.append(feats_hands)
     return feats_list
 
@@ -193,7 +185,6 @@ def obtain_cropped_clips(clip_list, key, s_ids):
     for i, clip in enumerate(clip_list):
         input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
         crop = crop_clip(clip, s_ids[i], input_json_folder)  # parallelize this?¿?
-        print(f"crop {i} done", flush=True)
         crops_list.append(crop)
     return crops_list
 
