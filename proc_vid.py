@@ -24,38 +24,6 @@ DATA_PATHS = {
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-from PIL import Image
-# obtains frame-level embeddings from CxHxW numpy array
-def obtain_embeds_img(img):
-    model, preprocess = clip.load("ViT-B/32", device=device)
-    img_8uint = img.astype(np.uint8)
-    pil_img = Image.fromarray(img_8uint, 'RGB')
-    image = preprocess(pil_img).unsqueeze(0).to(device)
-    with torch.no_grad():
-        image_features = model.encode_image(image)
-    return image_features.cpu().detach().numpy()
-
-
-# from keras.applications.resnet50 import ResNet50
-# def obtain_embeds_img(clip):
-#     '''
-#     Crops frame to given middle point and rectangle shape.
-#     :param frame: Input frame. Dims TxCxHxW. Numpy array
-#     :return: Resnet features. Numpy array
-#     '''
-#     base_model = ResNet50(weights='imagenet', pooling=max, input_shape=(3,150,150), include_top=False)
-#     input = Input(shape=clip.shape[1:], name='image_input')
-#     x = base_model(input)
-
-
-# obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
-def obtain_embeds(clip_list):
-    print(f"in obtain_embeds", flush=True)
-    clip_feats = []
-    with Pool(processes=24) as pool:
-        clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
-    return np.array(clip_feats)
-
 
 def load_clip(path):
     frames = []
@@ -98,6 +66,149 @@ def get_vid_ids(key="train"):
     return clips_ids
 
 
+def crop_clip(clip, clip_id, input_json_folder):
+    '''
+    Returs the cropped frames where the hands are located.
+    :param clip: size (T, C, H, W)
+    :param clip_id: used to retrieve the clip's hand keypoints
+    :param input_json_folder: the directory where the
+    :return cropped clip: (T, C, 150, 150, 2), where first position for last index is right hand, second is left hand
+    '''
+    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
+    hand = {0: "right", 1: "left"}
+    print(clip.shape[0], flush=True)
+    for i in range(clip.shape[0]):
+        json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
+        #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
+        #json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
+        json_filename = os.path.join(input_json_folder, json_filename)
+        keypoints_json = json.load(open(json_filename))
+        for j in range(2):  # for each hand
+            center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
+            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (150, 150))
+            crop_j = np.moveaxis(crop_j, -1, 0)
+            cropped_clip[i,:,:,:,j] = crop_j
+    return cropped_clip
+
+
+# obtains frame-level embeddings from CxHxW numpy array
+def obtain_embeds_img(img, model, preprocess):
+    #img_8uint = img.astype(np.uint8)
+    #pil_img = Image.fromarray(img_8uint, 'RGB')
+    image = preprocess(img).unsqueeze(0).to(device)
+    with torch.no_grad():
+        image_features = model.encode_image(image)
+    return image_features.cpu().detach().numpy()
+
+
+# obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
+def obtain_embeds(clip_list):
+    print(f"in obtain_embeds", flush=True)
+    clip_feats = []
+    with Pool(processes=24) as pool:
+        clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
+    return np.array(clip_feats)
+
+
+def obtain_feats_crops(crops_list):
+    '''
+    Obtains features for the input hand crops.
+    :param crops_list: list containing arrays of dims TxCxHxWx2
+    :return feats_list: list containing the hand features for each clip
+    '''
+    model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
+    feats_list = []
+    for c in crops_list:  # parallelize this?¿? beware of memory overflow!
+        embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
+        print(embeds_r.shape, flush=True)
+        embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
+        print(embeds_l.shape, flush=True)
+        feats_hands = np.hstack((embeds_r, embeds_l))
+        print(feats_hands.shape, flush=True)
+        feats_list.append(feats_hands)
+    return feats_list
+
+
+def obtain_feats(key, ids):
+    s_ids = sorted(ids)
+    print(f"sorted s_ids", flush=True)
+    clip_list = load_clips(key, s_ids)
+    print(f"Clips loaded for {key}!", flush=True)
+    clip_list = obtain_cropped_clips(clip_list, key, s_ids)
+    clip_list = obtain_feats_crops(clip_list)
+    return clip_list
+
+
+# # returns a list containing a Tx1024 hand features array for each clip
+# def obtain_feats(key, ids):    
+#     s_ids = sorted(ids)
+#     print(f"sorted s_ids", flush=True)
+#     clip_list = load_clips(key, s_ids)
+#     print(f"Clips loaded for {key}!", flush=True)
+#     feats_list = []
+#     for i, clip in enumerate(clip_list):
+#         input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
+#         crop = crop_clip(clip, s_ids[i], input_json_folder)
+#         print(f"crop {i} done", flush=True)
+#         embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )
+#         print(f"obtained embeds right")
+#         print(embeds_r.shape, flush=True)
+#         embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
+#         print(f"obtained embeds left")
+#         print(embeds_r.shape, flush=True)
+#         feats_hands = np.hstack((embeds_r, embeds_l))
+#         print(feats_hands.shape, flush=True)
+#         feats_list.append(feats_hands)
+#     return feats_list
+
+
+# from keras.applications.resnet50 import ResNet50
+# def obtain_embeds_img(clip):
+#     '''
+#     Crops frame to given middle point and rectangle shape.
+#     :param frame: Input frame. Dims TxCxHxW. Numpy array
+#     :return: Resnet features. Numpy array
+#     '''
+#     base_model = ResNet50(weights='imagenet', pooling=max, input_shape=(3,150,150), include_top=False)
+#     input = Input(shape=clip.shape[1:], name='image_input')
+#     x = base_model(input)
+
+
+# returns a list containing cropped clips of dims TxCx150x150x2
+def obtain_cropped_clips(clip_list, key, s_ids):
+    crops_list = []
+    for i, clip in enumerate(clip_list):
+        input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
+        crop = crop_clip(clip, s_ids[i], input_json_folder)  # parallelize this?¿?
+        print(f"crop {i} done", flush=True)
+        crops_list.append(crop)
+    return crops_list
+
+
+# save a numpy array as a video
+def save_as_mp4(vid, fps=25, filename="testing.avi"):
+    T, _, H, W = vid.shape    
+    writer = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'PIM1'), fps, (W, H), True)
+    for i in range(T):
+        x = np.moveaxis(vid[i,:,:,:], 0, -1)  # (C, H, W) -> (H, W, C)
+        x_bgr = x[...,::-1].copy()  # from RGB to BGR
+        writer.write(np.uint8(x_bgr))
+
+
+# paints the specified points on the video.
+# each point is represented T frames
+def overlap_vid_points(vid, points):
+    # (T, H, W, C)
+    vid_overlap = vid.copy()
+    print(vid.shape, flush=True)
+    for t in range(vid.shape[0]):
+        p = points[t,:]
+        for i in range(0, len(p), 2):
+            vid_overlap[t,(int(p[i])-3):(int(p[i])+3), (int(p[i+1])-3):(int(p[i+1])+3),0] = 255
+            vid_overlap[t,(int(p[i])-3):(int(p[i])+3), (int(p[i+1])-3):(int(p[i+1])+3),1:] = 0
+    return vid_overlap
+
+
 def crop_frame(frame, middle, shape):
     '''
     Crops frame to given middle point and rectangle shape.
@@ -127,55 +238,6 @@ def crop_frame(frame, middle, shape):
     return crop
 
 
-def crop_clip(clip, clip_id, input_json_folder):
-    '''
-    Returs the cropped frames where the hands are located.
-    :param clip: size (T, C, H, W)
-    :param clip_id: used to retrieve the clip's hand keypoints
-    :param input_json_folder: the directory where the
-    :return cropped clip: (T, C, 150, 150, 2), where first position for last index is right hand, second is left hand
-    '''
-    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
-    hand = {0: "right", 1: "left"}
-    print(clip.shape[0], flush=True)
-    for i in range(clip.shape[0]):
-        json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
-        #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
-        #json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
-        json_filename = os.path.join(input_json_folder, json_filename)
-        keypoints_json = json.load(open(json_filename))
-        for j in range(2):  # for each hand
-            center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
-            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (150, 150))
-            crop_j = np.moveaxis(crop_j, -1, 0)
-            cropped_clip[i,:,:,:,j] = crop_j
-    return cropped_clip
-
-
-# save a numpy array as a video
-def save_as_mp4(vid, fps=25, filename="testing.avi"):
-    T, _, H, W = vid.shape    
-    writer = cv2.VideoWriter(filename, cv2.VideoWriter_fourcc(*'PIM1'), fps, (W, H), True)
-    for i in range(T):
-        x = np.moveaxis(vid[i,:,:,:], 0, -1)  # (C, H, W) -> (H, W, C)
-        x_bgr = x[...,::-1].copy()  # from RGB to BGR
-        writer.write(np.uint8(x_bgr))
-
-
-# paints the specified points on the video.
-# each point is represented T frames
-def overlap_vid_points(vid, points):
-    # (T, H, W, C)
-    vid_overlap = vid.copy()
-    print(vid.shape, flush=True)
-    for t in range(vid.shape[0]):
-        p = points[t,:]
-        for i in range(0, len(p), 2):
-            vid_overlap[t,(int(p[i])-3):(int(p[i])+3), (int(p[i+1])-3):(int(p[i+1])+3),0] = 255
-            vid_overlap[t,(int(p[i])-3):(int(p[i])+3), (int(p[i+1])-3):(int(p[i+1])+3),1:] = 0
-    return vid_overlap
-
-
 def get_hand_center(input_json, hand="right"):
     '''
     Returs the computed hand center given the hand keypoints. Implemented as
@@ -198,29 +260,6 @@ def get_hand_center(input_json, hand="right"):
     mp_joints_coordinates_numpy = np.array(mp_joints_coordinates)
     mp_joints_center = np.average(mp_joints_coordinates_numpy, axis=0)
     return mp_joints_center
-
-
-# returns a list containing a Tx1024 hand features array for each clip
-def obtain_feats(key, ids):    
-    s_ids = sorted(ids)
-    print(f"sorted s_ids", flush=True)
-    clip_list = load_clips(key, s_ids)
-    print(f"Clips loaded for {key}!", flush=True)
-    feats_list = []
-    for i, clip in enumerate(clip_list):
-        input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
-        crop = crop_clip(clip, s_ids[i], input_json_folder)
-        print(f"crop {i} done", flush=True)
-        embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
-        print(f"obtained embeds right")
-        print(embeds_r.shape, flush=True)
-        embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
-        print(f"obtained embeds left")
-        print(embeds_r.shape, flush=True)
-        feats_hands = np.hstack((embeds_r, embeds_l))
-        print(feats_hands.shape, flush=True)
-        feats_list.append(feats_hands)
-    return feats_list
 
 
 def crop_video_main():
