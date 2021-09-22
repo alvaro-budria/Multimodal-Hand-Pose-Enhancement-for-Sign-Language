@@ -500,7 +500,7 @@ def obtain_vid_feats(kp_dir, key):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_feats", flush=True)
-    size = 10
+    size = 200
     for subset in range(0, len(ids), size):
         hand_feats = proc_vid.obtain_feats(key, ids[subset:subset+size])
         save_binary(hand_feats, f"video_data/{key}_vid_feats_{subset}-{subset+size}.pkl")
