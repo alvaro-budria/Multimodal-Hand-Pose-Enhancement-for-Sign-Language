@@ -91,11 +91,12 @@ def crop_clip(clip, clip_id, input_json_folder):
     return cropped_clip
 
 
+from PIL import Image
 # obtains frame-level embeddings from CxHxW numpy array
 def obtain_embeds_img(img, model, preprocess):
-    #img_8uint = img.astype(np.uint8)
-    #pil_img = Image.fromarray(img_8uint, 'RGB')
-    image = preprocess(img).unsqueeze(0).to(device)
+    img_8uint = img.astype(np.uint8)
+    pil_img = Image.fromarray(img_8uint, 'RGB')
+    image = preprocess(pil_img).unsqueeze(0).to(device)
     with torch.no_grad():
         image_features = model.encode_image(image)
     return image_features.cpu().detach().numpy()
