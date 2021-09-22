@@ -1,7 +1,6 @@
 import os
+import json
 import argparse
-import pickle
-import glob
 from multiprocessing import Pool
 from re import S
 
@@ -76,12 +75,9 @@ def load_clip(path):
 def load_clips(key, ids):
     path_ims = VID_PATHS[key]
     dict_vids = {}
-
     for id in ids:
-        print(f"id: {id}")
         path = os.path.join(path_ims, id+".mp4")
         #path = id+".mp4"
-        print(path)
         video = load_clip(path)
         dict_vids[id] = video
     video_list = [v for _, v in sorted(dict_vids.items())]
@@ -124,7 +120,6 @@ def crop_frame(frame, middle, shape):
     return crop
 
 
-import json
 def crop_clip(clip, clip_id, input_json_folder):
     '''
     Returs the cropped frames where the hands are located.
@@ -140,7 +135,6 @@ def crop_clip(clip, clip_id, input_json_folder):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
         json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
-        #print(json_filename)
         keypoints_json = json.load(open(json_filename))
         for j in range(2):
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
@@ -198,6 +192,7 @@ def get_hand_center(input_json, hand="right"):
     return mp_joints_center
 
 
+# returns a list containing a Tx1024 hand features array for each clip
 def obtain_feats(key, ids):    
     s_ids = sorted(ids)
     clip_list = load_clips(key, s_ids)
@@ -281,6 +276,6 @@ if __name__=="__main__":
     #feats_scuanj = obtain_embeds_img()
     #print(type(feats_scuanj), feats_scuanj.shape)
 
-    # obtain_feats("test", ["G42xKICVj9U_4-10-rgb_front", "G3g0-BeFN3c_17-5-rgb_front"])
+    obtain_feats("test", ["G42xKICVj9U_4-10-rgb_front", "G3g0-BeFN3c_17-5-rgb_front"])
 
     pass
