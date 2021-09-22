@@ -77,6 +77,7 @@ def load_clips(key, ids):
     path_ims = VID_PATHS[key]
     dict_vids = {}
     for id in ids:
+        print(f"id: {id}", flush=True)
         path = os.path.join(path_ims, id+".mp4")
         #path = id+".mp4"
         video = load_clip(path)
@@ -196,6 +197,7 @@ def get_hand_center(input_json, hand="right"):
 # returns a list containing a Tx1024 hand features array for each clip
 def obtain_feats(key, ids):    
     s_ids = sorted(ids)
+    print(f"sorted s_ids", flush=True)
     clip_list = load_clips(key, s_ids)
     print(f"Clips loaded for {key}!", flush=True)
     feats_list = []
