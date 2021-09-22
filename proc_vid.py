@@ -78,15 +78,17 @@ def load_clips(key, ids):
     dict_vids = {}
     print(f"len(ids): {len(ids)}", flush=True)
     i = 1
-    for id in ids:
-        print(f"i: {i}", flush=True)
-        print(f"id: {id}", flush=True)
-        path = os.path.join(path_ims, id+".mp4")
-        #path = id+".mp4"
-        video = load_clip(path)
-        dict_vids[id] = video
+    for subset in range(0, len(ids), 300):
+        print(f"subset: {subset} ******")
+        for id in ids[subset:subset+300]:
+            print(f"i: {i}", flush=True)
+            print(f"id: {id}", flush=True)
+            path = os.path.join(path_ims, id+".mp4")
+            #path = id+".mp4"
+            video = load_clip(path)
+            dict_vids[id] = video
 
-        i += 1
+            i += 1
 
     video_list = [v for _, v in sorted(dict_vids.items())]
     print(f"len(video_list): {len(video_list)}", flush=True)
