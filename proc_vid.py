@@ -208,6 +208,7 @@ def obtain_feats(key, ids):
     print(f"Clips loaded for {key}!", flush=True)
     feats_list = []
     for subset in range(0, len(clip_list), 300):
+        print(f"subset: {subset} ******")
         for i, clip in enumerate(clip_list[subset:subset+300]):
             print(f"i: {i*subset}", flush=True)
             input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
