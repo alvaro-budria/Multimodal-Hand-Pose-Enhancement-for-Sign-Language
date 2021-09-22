@@ -212,8 +212,10 @@ def obtain_feats(key, ids):
         crop = crop_clip(clip, s_ids[i], input_json_folder)
         print(f"crop {i} done", flush=True)
         embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
+        print(f"obtained embeds right")
         print(embeds_r.shape, flush=True)
         embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
+        print(f"obtained embeds left")
         print(embeds_r.shape, flush=True)
         feats_hands = np.hstack((embeds_r, embeds_l))
         print(feats_hands.shape, flush=True)
