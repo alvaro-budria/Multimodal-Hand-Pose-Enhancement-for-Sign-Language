@@ -500,8 +500,11 @@ def obtain_vid_feats(kp_dir, key):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_feats", flush=True)
-    hand_feats = proc_vid.obtain_feats(key, ids)
-    return hand_feats
+    size = 200
+    for subset in range(0, len(ids), size):
+        hand_feats = proc_vid.obtain_feats(key, ids[subset:subset+size])
+        save_binary(hand_feats, f"video_data/{key}_vid_feats_{subset}-{subset+size}.pkl")
+    #return hand_feats
 
 
 # returns the keypoints in the specified indexes
@@ -713,11 +716,11 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
-    save_binary(obtain_vid_feats(kp_dir=dir, key="val"), "video_data/val_vid_feats.pkl")
+    obtain_vid_feats(kp_dir=dir, key="val")
     print("vid feats val")
-    save_binary(obtain_vid_feats(kp_dir=dir, key="test"), "video_data/test_vid_feats.pkl")
+    obtain_vid_feats(kp_dir=dir, key="test")
     print("vid feats test")
-    save_binary(obtain_vid_feats(kp_dir=dir, key="train"), "video_data/train_vid_feats.pkl")
+    obtain_vid_feats(kp_dir=dir, key="train")
     print("vid feats train")
 
     # print()

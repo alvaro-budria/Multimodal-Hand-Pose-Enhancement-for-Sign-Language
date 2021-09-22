@@ -78,17 +78,14 @@ def load_clips(key, ids):
     dict_vids = {}
     print(f"len(ids): {len(ids)}", flush=True)
     i = 1
-    for subset in range(0, len(ids), 300):
-        print(f"subset: {subset} ******")
-        for id in ids[subset:subset+300]:
-            print(f"i: {i}", flush=True)
-            print(f"id: {id}", flush=True)
-            path = os.path.join(path_ims, id+".mp4")
-            #path = id+".mp4"
-            video = load_clip(path)
-            dict_vids[id] = video
-
-            i += 1
+    for id in ids:
+        print(f"i: {i}", flush=True)
+        print(f"id: {id}", flush=True)
+        path = os.path.join(path_ims, id+".mp4")
+        #path = id+".mp4"
+        video = load_clip(path)
+        dict_vids[id] = video
+        i += 1
 
     video_list = [v for _, v in sorted(dict_vids.items())]
     print(f"len(video_list): {len(video_list)}", flush=True)
@@ -209,20 +206,17 @@ def obtain_feats(key, ids):
     clip_list = load_clips(key, s_ids)
     print(f"Clips loaded for {key}!", flush=True)
     feats_list = []
-    for subset in range(0, len(clip_list), 300):
-        print(f"subset: {subset} ******")
-        for i, clip in enumerate(clip_list[subset:subset+300]):
-            print(f"i: {i*subset}", flush=True)
-            input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
-            crop = crop_clip(clip, s_ids[i], input_json_folder)
-            print(f"crop {i*subset} done", flush=True)
-            embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
-            print(embeds_r.shape, flush=True)
-            embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
-            print(embeds_r.shape, flush=True)
-            feats_hands = np.hstack((embeds_r, embeds_l))
-            print(feats_hands.shape, flush=True)
-            feats_list.append(feats_hands)
+    for i, clip in enumerate(clip_list):
+        input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
+        crop = crop_clip(clip, s_ids[i], input_json_folder)
+        print(f"crop {i} done", flush=True)
+        embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
+        print(embeds_r.shape, flush=True)
+        embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
+        print(embeds_r.shape, flush=True)
+        feats_hands = np.hstack((embeds_r, embeds_l))
+        print(feats_hands.shape, flush=True)
+        feats_list.append(feats_hands)
     return feats_list
 
 
