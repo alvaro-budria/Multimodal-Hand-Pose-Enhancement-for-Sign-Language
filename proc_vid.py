@@ -76,12 +76,17 @@ def load_clip(path):
 def load_clips(key, ids):
     path_ims = VID_PATHS[key]
     dict_vids = {}
+    print(f"len(ids): {len(ids)}", flush=True)
+    i = 1
     for id in ids:
+        print(f"i: {i}", flush=True)
         print(f"id: {id}", flush=True)
         path = os.path.join(path_ims, id+".mp4")
         #path = id+".mp4"
         video = load_clip(path)
         dict_vids[id] = video
+
+        i += 1
     video_list = [v for _, v in sorted(dict_vids.items())]
     print(f"len(video_list): {len(video_list)}", flush=True)
     return video_list
