@@ -50,7 +50,7 @@ def obtain_embeds_img(img):
 
 # obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
 def obtain_embeds(clip_list):
-    print(f"in obtain_embeds")
+    print(f"in obtain_embeds", flush=True)
     clip_feats = []
     with Pool(processes=24) as pool:
         clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
@@ -131,7 +131,7 @@ def crop_clip(clip, clip_id, input_json_folder):
     '''
     cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
     hand = {0: "right", 1: "left"}
-    print(clip.shape[0])
+    print(clip.shape[0], flush=True)
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
@@ -160,7 +160,7 @@ def save_as_mp4(vid, fps=25, filename="testing.avi"):
 def overlap_vid_points(vid, points):
     # (T, H, W, C)
     vid_overlap = vid.copy()
-    print(vid.shape)
+    print(vid.shape, flush=True)
     for t in range(vid.shape[0]):
         p = points[t,:]
         for i in range(0, len(p), 2):
@@ -197,19 +197,19 @@ def get_hand_center(input_json, hand="right"):
 def obtain_feats(key, ids):    
     s_ids = sorted(ids)
     clip_list = load_clips(key, s_ids)
-    print(f"Clips loaded for {key}!")
+    print(f"Clips loaded for {key}!", flush=True)
     feats_list = []
     for i, clip in enumerate(clip_list):
-        print(f"i: {i}")
+        print(f"i: {i}", flush=True)
         input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
         crop = crop_clip(clip, s_ids[i], input_json_folder)
-        print(f"crop {i} done")
+        print(f"crop {i} done", flush=True)
         embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )  ##!###
-        print(embeds_r.shape)
+        print(embeds_r.shape, flush=True)
         embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
-        print(embeds_r.shape)
+        print(embeds_r.shape, flush=True)
         feats_hands = np.hstack((embeds_r, embeds_l))
-        print(feats_hands.shape)
+        print(feats_hands.shape, flush=True)
         feats_list.append(feats_hands)
     return feats_list
 
@@ -221,7 +221,7 @@ def crop_video_main():
     #output_file = "utterance_level/train/rgb_front/features/hand_openpose_video/CVmyQR31Dr4_5-3-rgb_front.mp4"
     output_file = "testing_G42xKICVj9U_4-10-rgb_front.mp4"
     utt_id = input_video_path.split("/")[-1].replace(".mp4", "")
-    print(utt_id)
+    print(utt_id, flush=True)
     cap = cv2.VideoCapture(input_video_path)
 
     length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -251,7 +251,7 @@ def crop_video_main():
 
     cap.release()
     cv2.destroyAllWindows()
-    print("DONE crop_video_main")
+    print("DONE crop_video_main", flush=True)
 
 
 if __name__=="__main__":
