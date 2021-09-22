@@ -141,7 +141,8 @@ def crop_clip(clip, clip_id, input_json_folder):
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
-        json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
+        #json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
+        json_filename = os.path.join(input_json_folder, json_filename)
         keypoints_json = json.load(open(json_filename))
         for j in range(2):  # for each hand
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
