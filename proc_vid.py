@@ -91,14 +91,28 @@ def crop_clip(clip, clip_id, input_json_folder):
     return cropped_clip
 
 
-# obtains frame-level embeddings from CxHxW numpy array
-def obtain_embeds_img(img, model, preprocess):
+from PIL import Image
+def preprocess_clip(img, preprocess):
+    '''
+    :param img: numpy array of dims TxCxHxW
+    :return preproc_list: preprocessed data as torch tensor of dims TxCxHxW
+    '''
     img_8uint = img.astype(np.uint8)
-    #pil_img = Image.fromarray(img_8uint, 'RGB')
-    img_8uint = torch.from_numpy(img_8uint)
-    image = preprocess(img_8uint).unsqueeze(0).to(device)
+    images = []
+    for i in range(img_8uint.shape[0]):
+        pil_img = Image.fromarray(img_8uint[i,:,:,:], 'RGB')
+        pil_img = preprocess(pil_img)
+        print(f"pil_img.shape: {pil_img.shape}")
+        pil_img = pil_img.unsqueeze(0)
+        print(f"shape after squeeze: {pil_img.shape}")
+        images.append(pil_img)
+    return torch.tensor(np.stack(images))
+
+# obtains frame-level embeddings from TxCxHxW numpy array
+def obtain_embeds_img(img, model, preprocess):
+    img_tensor = preprocess_clip(img, preprocess)
     with torch.no_grad():
-        image_features = model.encode_image(image)
+        image_features = model.encode_image(img_tensor)
     return image_features.cpu().detach().numpy()
 
 
