@@ -4,6 +4,7 @@ import argparse
 from multiprocessing import Pool
 from re import S
 
+from PIL import Image
 import cv2
 import clip  # to obtain CLIP embeddings
 
@@ -88,7 +89,6 @@ def crop_clip(clip, clip_id, input_json_folder):
     return cropped_clip
 
 
-from PIL import Image
 def preprocess_clip(img, preprocess):
     '''
     :param img: numpy array of dims TxCxHxW
@@ -182,10 +182,13 @@ def obtain_feats(key, ids):
 # returns a list containing cropped clips of dims TxCx150x150x2
 def obtain_cropped_clips(clip_list, key, s_ids):
     crops_list = []
-    for i, clip in enumerate(clip_list):
-        input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
-        crop = crop_clip(clip, s_ids[i], input_json_folder)  # parallelize this?¿?
-        crops_list.append(crop)
+    # for i, clip in enumerate(clip_list):
+    #     input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
+    #     crop = crop_clip(clip, s_ids[i], input_json_folder)  # parallelize this?¿?
+    #     crops_list.append(crop)
+    input_json_folder_list = [os.path.join(DATA_PATHS[key], s_ids[i]) for i in range(len(clip_list))]
+    with Pool(processes=24) as pool:
+        crops_list = pool.starmap( crop_clip, zip(clip_list, s_ids, input_json_folder_list) )
     return crops_list
 
 

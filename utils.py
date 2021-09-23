@@ -1,4 +1,5 @@
 import os
+import glob
 import sys
 import json
 import pickle
@@ -504,6 +505,14 @@ def obtain_vid_feats(kp_dir, key):
     for subset in range(0, len(ids), size):
         hand_feats = proc_vid.obtain_feats(key, ids[subset:subset+size])
         save_binary(hand_feats, f"video_data/{key}_vid_feats_{subset}-{subset+size}.pkl")
+
+    # store all embeddings into a single file
+    hand_feats = []
+    vid_feats_files = glob.glob(f"video_data/{key}_vid_feats_*.pkl")
+    for file in vid_feats_files:
+        hand_feats += load_binary(file)
+        os.remove(file)  # remove batch files, leave only single whole file
+    save_binary(hand_feats, f"video_data/{key}_vid_feats.pkl")
     #return hand_feats
 
 
