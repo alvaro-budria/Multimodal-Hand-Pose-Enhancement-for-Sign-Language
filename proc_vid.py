@@ -2,7 +2,6 @@ import os
 import json
 import argparse
 from multiprocessing import Pool
-from re import S
 
 from PIL import Image
 import cv2
@@ -133,14 +132,25 @@ def obtain_feats_crops(crops_list):
         feats_list.append(feats_hands)
     return feats_list
 
-
+import time
 def obtain_feats(key, ids):
     s_ids = sorted(ids)
     print(f"sorted s_ids", flush=True)
+
+    start = time.time()
     clip_list = load_clips(key, s_ids)
+    print(time.time() - start, flush=True)
     print(f"Clips loaded for {key}!", flush=True)
+
+    start = time.time()
     clip_list = obtain_cropped_clips(clip_list, key, s_ids)
+    print(time.time() - start, flush=True)
+    print(f"Obtained cropped clips!", flush=True)
+
+    start = time.time()
     clip_list = obtain_feats_crops(clip_list)
+    print(time.time() - start, flush=True)
+    print(f"Obtained features from crops!", flush=True)
     return clip_list
 
 
@@ -187,6 +197,7 @@ def obtain_cropped_clips(clip_list, key, s_ids):
     #     crop = crop_clip(clip, s_ids[i], input_json_folder)  # parallelize this?¿?
     #     crops_list.append(crop)
     input_json_folder_list = [os.path.join(DATA_PATHS[key], s_ids[i]) for i in range(len(clip_list))]
+    print(len(clip_list), len(s_ids), len(input_json_folder_list), flush=True)
     with Pool(processes=24) as pool:
         crops_list = pool.starmap( crop_clip, zip(clip_list, s_ids, input_json_folder_list) )
     return crops_list
