@@ -102,22 +102,14 @@ def preprocess_clip(img, preprocess):
     return torch.tensor(np.stack(images))
 
 # obtains frame-level embeddings from TxCxHxW numpy array
-def obtain_embeds_img(img, model, preprocess):
+def obtain_embeds_img(img):
     img_tensor = preprocess_clip(img, preprocess)
     with torch.no_grad():
         image_features = model.encode_image(img_tensor)
     return image_features.cpu().detach().numpy()
 
-
-# obtains frame-level embeddings from the given clip (list containing T CxHxW arrays)
-def obtain_embeds(clip_list):
-    clip_feats = []
-    with Pool(processes=24) as pool:
-        clip_feats = pool.starmap(obtain_embeds_img, zip(clip_list))
-    return np.array(clip_feats)
-
-
-def _obtain_feats_crops(c, model, preprocess):
+def _obtain_feats_crops(c):
+    model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
     embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
     feats_hands = np.hstack((embeds_r, embeds_l))
@@ -129,7 +121,7 @@ def obtain_feats_crops(crops_list):
     :param crops_list: list containing arrays of dims TxCxHxWx2
     :return feats_list: list containing the hand features for each clip
     '''
-    model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
+    # model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
     # feats_list = []
     # for c in crops_list:  # parallelize this?¿? beware of memory overflow!
     #     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
@@ -138,10 +130,10 @@ def obtain_feats_crops(crops_list):
     #     feats_list.append(feats_hands)
     
     feats_list = []
-    model_list = [model for _ in range(len(crops_list))]
-    preproc_list = [preprocess for _ in range(len(crops_list))]
+    # model_list = [model for _ in range(len(crops_list))]
+    # preproc_list = [preprocess for _ in range(len(crops_list))]
     with Pool(processes=24) as pool:
-        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list, model_list, preproc_list))
+        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
 
     return feats_list
 
