@@ -102,7 +102,7 @@ def preprocess_clip(img, preprocess):
     return torch.tensor(np.stack(images))
 
 # obtains frame-level embeddings from TxCxHxW numpy array
-def obtain_embeds_img(img):
+def obtain_embeds_img(img, model, preprocess):
     img_tensor = preprocess_clip(img, preprocess)
     with torch.no_grad():
         image_features = model.encode_image(img_tensor)
