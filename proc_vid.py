@@ -117,6 +117,12 @@ def obtain_embeds(clip_list):
     return np.array(clip_feats)
 
 
+def _obtain_feats_crops(c, model, preprocess):
+    embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
+    embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
+    feats_hands = np.hstack((embeds_r, embeds_l))
+    return feats_hands
+
 def obtain_feats_crops(crops_list):
     '''
     Obtains features for the input hand crops.
@@ -124,12 +130,19 @@ def obtain_feats_crops(crops_list):
     :return feats_list: list containing the hand features for each clip
     '''
     model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
+    # feats_list = []
+    # for c in crops_list:  # parallelize this?¿? beware of memory overflow!
+    #     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
+    #     embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
+    #     feats_hands = np.hstack((embeds_r, embeds_l))
+    #     feats_list.append(feats_hands)
+    
     feats_list = []
-    for c in crops_list:  # parallelize this?¿? beware of memory overflow!
-        embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
-        embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
-        feats_hands = np.hstack((embeds_r, embeds_l))
-        feats_list.append(feats_hands)
+    model_list = [model for _ in range(len(crops_list))]
+    preproc_list = [preprocess for _ in range(len(crops_list))]
+    with Pool(processes=24) as pool:
+        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list, model_list, preproc_list))
+
     return feats_list
 
 import time
