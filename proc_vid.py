@@ -109,12 +109,10 @@ def obtain_embeds_img(img, model, preprocess):
     return image_features.cpu().detach().numpy()
 
 def _obtain_feats_crops(c):
-    print(f"c.shape: {c.shape}")
     model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
     embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
     feats_hands = np.hstack((embeds_r, embeds_l))
-    print(f"feats_hands.shape: {feats_hands.shape}")
     return feats_hands
 
 def obtain_feats_crops(crops_list):
@@ -124,20 +122,19 @@ def obtain_feats_crops(crops_list):
     :return feats_list: list containing the hand features for each clip
     '''
 
-    # feats_list = []
-    # # model_list = [model for _ in range(len(crops_list))]
-    # # preproc_list = [preprocess for _ in range(len(crops_list))]
-    # with Pool(processes=24) as pool:
-    #     feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
-    # return feats_list
-    
-    Tsize_list = [crop.shape[0] for crop in crops_list]
-    print(f"Tsize_list: {Tsize_list}")
-    crops_list = _obtain_feats_crops( np.concatenate(crops_list, axis=0) )
-    print("after _obtain_feats_crops")
-    crops_list = np.split(crops_list, Tsize_list, axis=0)
-    print("after split")
-    return crops_list
+    feats_list = []
+    # model_list = [model for _ in range(len(crops_list))]
+    # preproc_list = [preprocess for _ in range(len(crops_list))]
+    with Pool(processes=24) as pool:
+        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
+    return feats_list    
+    # Tsize_list = [crop.shape[0] for crop in crops_list]
+    # print(f"Tsize_list: {Tsize_list}")
+    # crops_list = _obtain_feats_crops( np.concatenate(crops_list, axis=0) )
+    # print("after _obtain_feats_crops")
+    # crops_list = np.split(crops_list, Tsize_list, axis=0)
+    # print("after split")
+    # return crops_list
 
 
 import time
