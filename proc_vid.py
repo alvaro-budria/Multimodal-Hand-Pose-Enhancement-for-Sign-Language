@@ -123,7 +123,7 @@ def obtain_feats_crops(crops_list):
     :param crops_list: list containing arrays of dims TxCxHxWx2
     :return feats_list: list containing the hand features for each clip
     '''
-    
+
     # feats_list = []
     # # model_list = [model for _ in range(len(crops_list))]
     # # preproc_list = [preprocess for _ in range(len(crops_list))]
@@ -132,9 +132,11 @@ def obtain_feats_crops(crops_list):
     # return feats_list
     
     Tsize_list = [crop.shape[0] for crop in crops_list]
-    crops_list = _obtain_feats_crops( np.concatenate(crops_list, axis=0) )
     print(f"Tsize_list: {Tsize_list}")
+    crops_list = _obtain_feats_crops( np.concatenate(crops_list, axis=0) )
+    print("after _obtain_feats_crops")
     crops_list = np.split(crops_list, Tsize_list, axis=0)
+    print("after split")
     return crops_list
 
 
