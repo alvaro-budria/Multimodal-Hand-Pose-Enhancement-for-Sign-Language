@@ -725,16 +725,16 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
-    obtain_vid_feats(kp_dir=dir, key="val")
-    print("vid feats val")
+    # obtain_vid_feats(kp_dir=dir, key="val")
+    # print("vid feats val")
     obtain_vid_feats(kp_dir=dir, key="test")
     print("vid feats test")
     obtain_vid_feats(kp_dir=dir, key="train")
     print("vid feats train")
 
-    # print()
-    # print(f"obtained video features", flush=True)
-    # print()
+    print()
+    print(f"obtained video features", flush=True)
+    print()
 
     # print(f"processed all H2S data in {dir}", flush=True)
 

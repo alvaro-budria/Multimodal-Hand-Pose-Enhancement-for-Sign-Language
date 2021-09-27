@@ -109,10 +109,12 @@ def obtain_embeds_img(img, model, preprocess):
     return image_features.cpu().detach().numpy()
 
 def _obtain_feats_crops(c):
+    print(f"c.shape: {c.shape}")
     model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
     embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
     feats_hands = np.hstack((embeds_r, embeds_l))
+    print(f"feats_hands.shape: {feats_hands.shape}")
     return feats_hands
 
 def obtain_feats_crops(crops_list):
@@ -121,21 +123,20 @@ def obtain_feats_crops(crops_list):
     :param crops_list: list containing arrays of dims TxCxHxWx2
     :return feats_list: list containing the hand features for each clip
     '''
-    # model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
-    # feats_list = []
-    # for c in crops_list:  # parallelize this?¿? beware of memory overflow!
-    #     embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
-    #     embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
-    #     feats_hands = np.hstack((embeds_r, embeds_l))
-    #     feats_list.append(feats_hands)
     
-    feats_list = []
-    # model_list = [model for _ in range(len(crops_list))]
-    # preproc_list = [preprocess for _ in range(len(crops_list))]
-    with Pool(processes=24) as pool:
-        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
+    # feats_list = []
+    # # model_list = [model for _ in range(len(crops_list))]
+    # # preproc_list = [preprocess for _ in range(len(crops_list))]
+    # with Pool(processes=24) as pool:
+    #     feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
+    # return feats_list
+    
+    Tsize_list = [crop.shape[0] for crop in crops_list]
+    crops_list = _obtain_feats_crops( np.concatenate(crops_list, axis=0) )
+    print(f"Tsize_list: {Tsize_list}")
+    crops_list = np.split(crops_list, Tsize_list, axis=0)
+    return crops_list
 
-    return feats_list
 
 import time
 def obtain_feats(key, ids):
@@ -157,41 +158,6 @@ def obtain_feats(key, ids):
     print(time.time() - start, flush=True)
     print(f"Obtained features from crops!", flush=True)
     return clip_list
-
-
-# # returns a list containing a Tx1024 hand features array for each clip
-# def obtain_feats(key, ids):    
-#     s_ids = sorted(ids)
-#     print(f"sorted s_ids", flush=True)
-#     clip_list = load_clips(key, s_ids)
-#     print(f"Clips loaded for {key}!", flush=True)
-#     feats_list = []
-#     for i, clip in enumerate(clip_list):
-#         input_json_folder = os.path.join(DATA_PATHS[key], s_ids[i])
-#         crop = crop_clip(clip, s_ids[i], input_json_folder)
-#         print(f"crop {i} done", flush=True)
-#         embeds_r = np.squeeze( obtain_embeds(list(crop[:,:,:,:,0])) )
-#         print(f"obtained embeds right")
-#         print(embeds_r.shape, flush=True)
-#         embeds_l = np.squeeze( obtain_embeds(list(crop[:,:,:,:,1])) )
-#         print(f"obtained embeds left")
-#         print(embeds_r.shape, flush=True)
-#         feats_hands = np.hstack((embeds_r, embeds_l))
-#         print(feats_hands.shape, flush=True)
-#         feats_list.append(feats_hands)
-#     return feats_list
-
-
-# from keras.applications.resnet50 import ResNet50
-# def obtain_embeds_img(clip):
-#     '''
-#     Crops frame to given middle point and rectangle shape.
-#     :param frame: Input frame. Dims TxCxHxW. Numpy array
-#     :return: Resnet features. Numpy array
-#     '''
-#     base_model = ResNet50(weights='imagenet', pooling=max, input_shape=(3,150,150), include_top=False)
-#     input = Input(shape=clip.shape[1:], name='image_input')
-#     x = base_model(input)
 
 
 # returns a list containing cropped clips of dims TxCx150x150x2
