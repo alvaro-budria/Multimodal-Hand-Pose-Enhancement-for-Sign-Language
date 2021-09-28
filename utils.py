@@ -491,6 +491,30 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
+def obtain_vid_crops(kp_dir, key):
+    kp_path = os.path.join(kp_dir, DATA_PATHS[key])
+    kp_dir_list = os.listdir(kp_path)
+    clip_ids_text = proc_text.get_clip_ids(key=key)
+    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id that are present both in kp_dir_list (IDs for which keypoints are availabe)
+                                                 # and in clip_ids_text (IDs for text sentences are availabe)
+    clip_ids_vid = proc_vid.get_vid_ids(key=key)
+    ids = _join_ids(ids, clip_ids_vid)
+    ids = sorted(ids)
+    print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
+    size = 500
+    for subset in range(0, len(ids), size):
+        hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
+        save_binary(hand_feats, f"video_data/{key}_vid_crops_{subset}-{subset+size}.pkl")
+
+    # store all crops into a single file
+    hand_feats = []
+    vid_feats_files = glob.glob(f"video_data/{key}_vid_crops_*.pkl")
+    for file in vid_feats_files:
+        hand_feats += load_binary(file)
+        os.remove(file)  # remove batch files, leave only single whole file
+    save_binary(hand_feats, f"video_data/{key}_vid_crops.pkl")
+
+
 def obtain_vid_feats(kp_dir, key):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
@@ -725,16 +749,27 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # print("saved r6d data", flush=True)
     # print()
 
-    # obtain_vid_feats(kp_dir=dir, key="val")
-    # print("vid feats val")
-    obtain_vid_feats(kp_dir=dir, key="test")
-    print("vid feats test")
-    obtain_vid_feats(kp_dir=dir, key="train")
-    print("vid feats train")
+    obtain_vid_crops(kp_dir=dir, key="val")
+    print("vid crops val")
+    obtain_vid_crops(kp_dir=dir, key="test")
+    print("vid crops test")
+    # obtain_vid_crops(kp_dir=dir, key="train")
+    # print("vid feats train")
 
     print()
-    print(f"obtained video features", flush=True)
+    print(f"obtained video crops", flush=True)
     print()
+
+    # obtain_vid_feats(kp_dir=dir, key="val")
+    # print("vid feats val")
+    # obtain_vid_feats(kp_dir=dir, key="test")
+    # print("vid feats test")
+    # obtain_vid_feats(kp_dir=dir, key="train")
+    # print("vid feats train")
+
+    # print()
+    # print(f"obtained video features", flush=True)
+    # print()
 
     # print(f"processed all H2S data in {dir}", flush=True)
 

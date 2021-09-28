@@ -138,6 +138,22 @@ def obtain_feats_crops(crops_list):
 
 
 import time
+def obtain_crops(key, ids):
+    s_ids = sorted(ids)
+    print(f"sorted s_ids", flush=True)
+
+    start = time.time()
+    clip_list = load_clips(key, s_ids)
+    print(time.time() - start, flush=True)
+    print(f"Clips loaded for {key}!", flush=True)
+
+    start = time.time()
+    clip_list = obtain_cropped_clips(clip_list, key, s_ids)
+    print(time.time() - start, flush=True)
+    print(f"Obtained cropped clips!", flush=True)
+    return clip_list
+
+
 def obtain_feats(key, ids):
     s_ids = sorted(ids)
     print(f"sorted s_ids", flush=True)
