@@ -26,7 +26,7 @@ DATA_PATHS = {
         "train": "train/rgb_front/features/openpose_output/json",
         "val": "val/rgb_front/features/openpose_output/json",
         "test": "test/rgb_front/features/openpose_output/json"
-    }
+}
 
 FEATURE_MAP = {
     'arm2wh': ((6*6), 42*6),
@@ -491,35 +491,35 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
-def obtain_vid_crops(kp_dir, key):
+def obtain_vid_crops(kp_dir, key, data_dir):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
     clip_ids_text = proc_text.get_clip_ids(key=key)
     ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id that are present both in kp_dir_list (IDs for which keypoints are availabe)
-                                                 # and in clip_ids_text (IDs for text sentences are availabe)
+                                                 # and in clip_ids_text (IDs for which text sentences are availabe)
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
     size = 200
-    start = 600
+    start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}")
         hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
-        save_binary(hand_feats, f"video_data/{key}_vid_crops_{subset}-{subset+size}.pkl")
+        save_binary(hand_feats, f"{data_dir}/{key}_vid_crops_{subset}-{subset+size}.pkl")
 
     # store all crops into a single file
     print("storing all crops into a single file...")
     hand_feats = []
-    vid_feats_files = glob.glob(f"video_data/{key}_vid_crops_*.pkl")
+    vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_crops_*.pkl")
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
-    save_binary(hand_feats, f"video_data/{key}_vid_crops.pkl")
+    save_binary(hand_feats, f"{data_dir}/{key}_vid_crops.pkl")
     print("stored all crops into a single file")
 
 
-def obtain_vid_feats(kp_dir, key):
+def obtain_vid_feats(kp_dir, key, data_dir):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
     clip_ids_text = proc_text.get_clip_ids(key=key)
@@ -532,15 +532,15 @@ def obtain_vid_feats(kp_dir, key):
     size = 500
     for subset in range(0, len(ids), size):
         hand_feats = proc_vid.obtain_feats(key, ids[subset:subset+size])
-        save_binary(hand_feats, f"video_data/{key}_vid_feats_{subset}-{subset+size}.pkl")
+        save_binary(hand_feats, f"{data_dir}/{key}_vid_feats_{subset}-{subset+size}.pkl")
 
     # store all embeddings into a single file
     hand_feats = []
-    vid_feats_files = glob.glob(f"video_data/{key}_vid_feats_*.pkl")
+    vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
-    save_binary(hand_feats, f"video_data/{key}_vid_feats.pkl")
+    save_binary(hand_feats, f"{data_dir}/{key}_vid_feats.pkl")
     #return hand_feats
 
 
@@ -651,7 +651,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
 
 
 ## utility to save results
-def save_results(input, output, pipeline, base_path, tag=''):
+def save_results(input, output, pipeline, base_path, data_dir, tag=''):
     feats = pipeline.split('2')
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
@@ -669,15 +669,15 @@ def save_results(input, output, pipeline, base_path, tag=''):
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
-        xyz_train = load_binary("video_data/xyz_train.pkl")#[:input.shape[0]]
+        xyz_train = load_binary(f"{data_dir}/xyz_train.pkl")#[:input.shape[0]]
         xyz_train = make_equal_len(xyz_train, method="cutting+reflect")
         xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
         root = get_root_bone(xyz_train, structure)
         assert not np.any(np.isnan(root))
-        # root = load_binary("video_data/xyz_train_root.pkl")  # use the bone lengths and root references from training
+        # root = load_binary(f"{data_dir}/xyz_train_root.pkl")  # use the bone lengths and root references from training
         bone_len = pose3D.get_bone_length(xyz_train, structure)
         assert not np.any(np.isnan(bone_len))
-        # bone_len = load_binary("video_data/lengths_train.pkl")
+        # bone_len = load_binary(f"{data_dir}/lengths_train.pkl")
 
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
         assert not np.any(np.isnan(input_output_aa))
@@ -688,8 +688,8 @@ def save_results(input, output, pipeline, base_path, tag=''):
         save_binary(input_output_xyz, filename)  # save in xyz format
 
 
-def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
-    mkdir("video_data")
+def process_H2S_dataset(dir, data_dir):
+    mkdir(data_dir)
 
     # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
     # print("Loaded raw data from disk", flush=True)
@@ -704,71 +704,71 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
     # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
-    # save_binary(feats_train, "video_data/xy_train.pkl", append=False)
-    # save_binary(feats_test, "video_data/xy_test.pkl", append=False)
-    # save_binary(feats_val, "video_data/xy_val.pkl", append=False)
+    # save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
+    # save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
+    # save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
 
-    # save_binary(embeds_train, "video_data/train_sentence_embeddings.pkl", append=False)
-    # save_binary(embeds_test, "video_data/test_sentence_embeddings.pkl", append=False)
-    # save_binary(embeds_val, "video_data/val_sentence_embeddings.pkl", append=False)
-    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), "video_data/average_val_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), "video_data/average_test_sentence_embeddings.pkl")
+    # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    # lift_2d_to_3d(load_binary("video_data/xy_train.pkl"), "video_data/xyz_train.pkl")
+    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_train.pkl"), f"{data_dir}/xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_val.pkl"), "video_data/xyz_val.pkl")
+    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_val.pkl"), f"{data_dir}/xyz_val.pkl")
     # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary("video_data/xy_test.pkl"), "video_data/xyz_test.pkl")
+    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_test.pkl"), f"{data_dir}/xyz_test.pkl")
     # print("lifted test to 3d", flush=True)
  
     # print()
     # print("saved lifted xyz", flush=True)
     # print()
 
-    # train_3d = load_binary("video_data/xyz_train.pkl")
-    # val_3d = load_binary("video_data/xyz_val.pkl")
-    # test_3d = load_binary("video_data/xyz_test.pkl")
+    # train_3d = load_binary(f"{data_dir}/xyz_train.pkl")
+    # val_3d = load_binary(f"{data_dir}/xyz_val.pkl")
+    # test_3d = load_binary(f"{data_dir}/xyz_test.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # lengths = pose3D.get_bone_length(train_3d, structure)
-    # save_binary(lengths, "video_data/lengths_train.pkl")
+    # save_binary(lengths, f"{data_dir}/lengths_train.pkl")
     # print("Obtained bone lengths.", flush=True)
 
-    # train_aa = xyz_to_aa(train_3d, structure, root_filename="video_data/xyz_train_root.pkl")
-    # save_binary(aa_to_rot6d(train_aa), "video_data/r6d_train.pkl")
+    # train_aa = xyz_to_aa(train_3d, structure, root_filename=f"{data_dir}/xyz_train_root.pkl")
+    # save_binary(aa_to_rot6d(train_aa), f"{data_dir}/r6d_train.pkl")
     # print("Train xyz to r6d.", flush=True)
-    # val_aa = xyz_to_aa(val_3d, structure, root_filename="video_data/xyz_val_root.pkl")
-    # save_binary(aa_to_rot6d(val_aa), "video_data/r6d_val.pkl")
+    # val_aa = xyz_to_aa(val_3d, structure, root_filename=f"{data_dir}/xyz_val_root.pkl")
+    # save_binary(aa_to_rot6d(val_aa), f"{data_dir}/r6d_val.pkl")
     # print("Val xyz to r6d.", flush=True)
-    # test_aa = xyz_to_aa(test_3d, structure, root_filename="video_data/xyz_test_root.pkl")
-    # save_binary(aa_to_rot6d(test_aa), "video_data/r6d_test.pkl")
+    # test_aa = xyz_to_aa(test_3d, structure, root_filename=f"{data_dir}/xyz_test_root.pkl")
+    # save_binary(aa_to_rot6d(test_aa), f"{data_dir}/r6d_test.pkl")
     # print("Test xyz to r6d.", flush=True)
 
     # print()
     # print("saved r6d data", flush=True)
     # print()
 
-    obtain_vid_crops(kp_dir=dir, key="val")
+    obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir)
     print("vid crops val")
-    obtain_vid_crops(kp_dir=dir, key="test")
+    obtain_vid_crops(kp_dir=dir, key="test", data_dir=data_dir)
     print("vid crops test")
-    # obtain_vid_crops(kp_dir=dir, key="train")
+    # obtain_vid_crops(kp_dir=dir, key="train", data_dir=data_dir)
     # print("vid feats train")
 
     print()
     print(f"obtained video crops", flush=True)
     print()
 
-    # obtain_vid_feats(kp_dir=dir, key="val")
+    # obtain_vid_feats(kp_dir=dir, key="val", data_dir=data_dir)
     # print("vid feats val")
-    # obtain_vid_feats(kp_dir=dir, key="test")
+    # obtain_vid_feats(kp_dir=dir, key="test", data_dir=data_dir)
     # print("vid feats test")
-    # obtain_vid_feats(kp_dir=dir, key="train")
+    # obtain_vid_feats(kp_dir=dir, key="train", data_dir=data_dir)
     # print("vid feats train")
 
     # print()
@@ -781,6 +781,7 @@ def process_H2S_dataset(dir="./Green Screen RGB clips* (frontal view)"):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_path', type=str, default="/mnt/gpid07/datasets/How2Sign/How2Sign/utterance_level/", help="path to the directory where the dataset is located")
+    parser.add_argument('--data_dir', type=str, default="video_data", help="directory where results should be stored")
     args = parser.parse_args()
     if args.dataset_path=="Green Screen RGB clips* (frontal view)":
         DATA_PATHS = {
@@ -790,14 +791,14 @@ if __name__ == "__main__":
     }
 
     ##
-    process_H2S_dataset(args.dataset_path)
+    process_H2S_dataset(args.dataset_path, data_dir=args.data_dir)
     ##
 
 
     ## generating viz for qualitative assessment
     # import wandb
     # from glob import glob
-    # # xyz_train = load_binary("video_data/xyz_train.pkl")[0:25]
+    # # xyz_train = load_binary(f"{data_dir}/xyz_train.pkl")[0:25]
     # # structure = skeletalModel.getSkeletalModelStructure()
     # # gifs_paths = viz.viz(xyz_train, structure, frame_rate=2, results_dir=f"viz_results_xyz_train")
     # gifs_paths = glob("viz_results_xyz_train/"+"*.gif")[0:25]
@@ -805,7 +806,7 @@ if __name__ == "__main__":
     #     for path in gifs_paths:
     #         wandb.save(path)
 
-    # xyz_test = load_binary("video_data/xyz_test.pkl")[0:25]
+    # xyz_test = load_binary(f"{data_dir}/xyz_test.pkl")[0:25]
     # structure = skeletalModel.getSkeletalModelStructure()
     # gifs_paths = viz.viz(xyz_test, structure, frame_rate=2, results_dir=f"viz_results_xyz_test")
     # gifs_paths = glob("viz_results_xyz_test/"+"*.gif")
@@ -817,7 +818,7 @@ if __name__ == "__main__":
     ## save to wandb viz from existing folder
 
     # # obtain array where each row is the average sentence embedding
-    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), "video_data/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # Visualize inference results
