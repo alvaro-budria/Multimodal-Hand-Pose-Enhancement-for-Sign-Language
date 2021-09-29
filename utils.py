@@ -502,17 +502,21 @@ def obtain_vid_crops(kp_dir, key):
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
     size = 500
-    for subset in range(0, len(ids), size):
+    start = 500
+    for subset in range(start, len(ids), size):
+        print(f"subset: {subset}")
         hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
         save_binary(hand_feats, f"video_data/{key}_vid_crops_{subset}-{subset+size}.pkl")
 
     # store all crops into a single file
+    print("storing all crops into a single file...")
     hand_feats = []
     vid_feats_files = glob.glob(f"video_data/{key}_vid_crops_*.pkl")
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
     save_binary(hand_feats, f"video_data/{key}_vid_crops.pkl")
+    print("stored all crops into a single file")
 
 
 def obtain_vid_feats(kp_dir, key):

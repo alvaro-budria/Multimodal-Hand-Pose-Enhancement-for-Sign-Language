@@ -121,7 +121,6 @@ def obtain_feats_crops(crops_list):
     :param crops_list: list containing arrays of dims TxCxHxWx2
     :return feats_list: list containing the hand features for each clip
     '''
-
     feats_list = []
     # model_list = [model for _ in range(len(crops_list))]
     # preproc_list = [preprocess for _ in range(len(crops_list))]
