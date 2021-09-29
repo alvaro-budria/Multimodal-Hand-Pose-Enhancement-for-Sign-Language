@@ -238,7 +238,9 @@ def crop_frame(frame, middle, shape):
     # frame_ = cv2.circle(frame_, (x_1, y_1),
     #                     radius=4, color=(0, 255, 0), thickness=-1)
 
-    return crop
+
+    return np.pad( crop, ((0, shape[0]-crop.shape[0]), (0, shape[1]-crop.shape[1]), (0,0)) )
+    # return crop
 
 
 def get_hand_center(input_json, hand="right"):
