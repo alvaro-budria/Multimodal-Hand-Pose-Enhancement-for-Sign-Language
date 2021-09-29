@@ -239,7 +239,7 @@ def crop_frame(frame, middle, shape):
     #                     radius=4, color=(0, 255, 0), thickness=-1)
 
 
-    return np.pad( crop, ((0, shape[0]-crop.shape[0]), (0, shape[1]-crop.shape[1]), (0,0)) )
+    return np.pad( crop, ((0, max(0, shape[0]-crop.shape[0])), (0, max(0, shape[1]-crop.shape[1])), (0,0)) )
     # return crop
 
 
