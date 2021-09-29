@@ -501,8 +501,8 @@ def obtain_vid_crops(kp_dir, key):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
-    size = 500
-    start = 0
+    size = 200
+    start = 600
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}")
         hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
