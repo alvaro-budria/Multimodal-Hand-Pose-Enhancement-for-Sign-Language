@@ -280,7 +280,7 @@ def crop_video_main():
 
     n = 0
 
-    writer = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'PIM1'), fps, (150, 150))
+    writer = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc(*'PIM1'), fps, (100, 100))
     while (cap.isOpened()):
         ret, frame_large = cap.read()
 
