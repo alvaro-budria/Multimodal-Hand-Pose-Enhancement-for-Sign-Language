@@ -70,9 +70,9 @@ def crop_clip(clip, clip_id, input_json_folder):
     :param clip: size (T, C, H, W)
     :param clip_id: used to retrieve the clip's hand keypoints
     :param input_json_folder: the directory where the
-    :return cropped clip: (T, C, 150, 150, 2), where first position for last index is right hand, second is left hand
+    :return cropped clip: (T, C, 100, 100, 2), where first position for last index is right hand, second is left hand
     '''
-    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 150, 150, 2))
+    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 100, 100, 2))
     hand = {0: "right", 1: "left"}
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
@@ -82,10 +82,10 @@ def crop_clip(clip, clip_id, input_json_folder):
         keypoints_json = json.load(open(json_filename))
         for j in range(2):  # for each hand
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
-            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (150, 150))
+            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (100, 100))
             crop_j = np.moveaxis(crop_j, -1, 0)
             cropped_clip[i,:,:,:,j] = crop_j
-    return cropped_clip
+    return cropped_clip.astype(np.uint8)
 
 
 def preprocess_clip(img, preprocess):
@@ -174,7 +174,7 @@ def obtain_feats(key, ids):
     return clip_list
 
 
-# returns a list containing cropped clips of dims TxCx150x150x2
+# returns a list containing cropped clips of dims TxCx100x100x2
 def obtain_cropped_clips(clip_list, key, s_ids):
     crops_list = []
     # for i, clip in enumerate(clip_list):
@@ -294,7 +294,7 @@ def crop_video_main():
 
         keypoints_json = json.load(open(json_filename))
         center_coords = get_hand_center(keypoints_json)
-        crop = crop_frame(frame_large, center_coords, (150, 150))
+        crop = crop_frame(frame_large, center_coords, (100, 100))
 
         writer.write(crop)
 
