@@ -414,18 +414,17 @@ def compute_mean_std(clips_list_path, data_dir):
     # placeholders
     psum    = np.array([0.0, 0.0, 0.0])
     psum_sq = np.array([0.0, 0.0, 0.0])
+    pixel_count = 0
 
     # loop through images
     for clip in clip_list:
-        psum    += np.sum(clip[:,:,:,:,0], axis = [0, 2, 3]) + np.sum(clip[:,:,:,:,0], axis = [0, 2, 3])
-        psum_sq += (clip[:,:,:,:,0] ** 2).sum(axis = [0, 2, 3]) + (clip[:,:,:,:,1] ** 2).sum(axis = [0, 2, 3])
-
-    # pixel count
-    count = 2 * sum([len(clip) for clip in clip_list]) * clip_list[0].shape[2] * clip_list[0].shape[3]
+        psum        += np.sum(clip[:,:,:,:,0], axis=(0, 2, 3)) + np.sum(clip[:,:,:,:,1], axis=(0, 2, 3))
+        psum_sq     += np.sum(clip[:,:,:,:,0]**2, axis=(0, 2, 3)) + np.sum(clip[:,:,:,:,1]**2, axis=(0, 2, 3))
+        pixel_count += clip.shape[0]*clip.shape[2]*clip.shape[3]*clip.shape[4]  # T*H*W*2
 
     # mean and std
-    total_mean = psum / count
-    total_var  = (psum_sq / count) - (total_mean ** 2)
+    total_mean = psum / pixel_count
+    total_var  = (psum_sq / pixel_count) - (total_mean ** 2)
     total_std  = np.sqrt(total_var)
 
     # output
