@@ -419,7 +419,7 @@ def compute_mean_std(clips_list_path, data_dir):
     # loop through images
     for clip in clip_list:
         psum        += np.sum(clip[:,:,:,:,0], axis=(0, 2, 3)) + np.sum(clip[:,:,:,:,1], axis=(0, 2, 3))
-        psum_sq     += np.sum(clip[:,:,:,:,0]**2, axis=(0, 2, 3)) + np.sum(clip[:,:,:,:,1]**2, axis=(0, 2, 3))
+        psum_sq     += np.sum(clip[:,:,:,:,0].astype(np.float)**2, axis=(0, 2, 3)) + np.sum(clip[:,:,:,:,1].astype(np.float)**2, axis=(0, 2, 3))
         pixel_count += clip.shape[0]*clip.shape[2]*clip.shape[3]*clip.shape[4]  # T*H*W*2
 
     # mean and std
@@ -428,11 +428,11 @@ def compute_mean_std(clips_list_path, data_dir):
     total_std  = np.sqrt(total_var)
 
     # output
-    print(f"mean: {total_mean}")
-    print(f"std:  {total_std}")
+    print(f"mean: {total_mean}", flush=True)
+    print(f"std:  {total_std}", flush=True)
 
     with open(f'{data_dir}/mean_std.npy', 'wb') as f:
-        np.save(f, np.vstack(total_mean, total_std))
+        np.save(f, np.vstack((total_mean, total_std)))
 
 
 def load_clip(clip_path, pipeline, keep_confidence=True):
@@ -804,12 +804,12 @@ def process_H2S_dataset(dir, data_dir):
     compute_mean_std("train_vid_crops.pkl", data_dir)
     print(f"saved mean and std for vids in train_vid_crops.pkl")
 
-    obtain_vid_feats("val", data_dir)
-    print("vid feats val")
-    obtain_vid_feats("test", data_dir)
-    print("vid feats test")
-    obtain_vid_feats("train", data_dir)
-    print("vid feats train")
+    # obtain_vid_feats("val", data_dir)
+    # print("vid feats val")
+    # obtain_vid_feats("test", data_dir)
+    # print("vid feats test")
+    # obtain_vid_feats("train", data_dir)
+    # print("vid feats train")
 
     # print()
     # print(f"obtained video features", flush=True)
