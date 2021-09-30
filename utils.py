@@ -287,7 +287,7 @@ def _lift_2d_to_3d(inputSequence_2D):
 
     # Delete frames in which skeletal models have a lot of missing parts.
 
-    ##### watchThis ?? per què (0, 1, 2, 3, 4, 5, 6, 7) ?
+    ##### watchThis ?? per que (0, 1, 2, 3, 4, 5, 6, 7) ?
     Xx, Xy, Xw = pose2D.prune(Xx, Xy, Xw, (0, 1, 2, 3, 4, 5, 6, 7), 0.3, dtype)
 
     # Initial 3D pose estimation
@@ -394,7 +394,7 @@ def calc_standard(train_X, train_Y, pipeline):
 # given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
 # returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True
 
-## @jit ?¿?
+## @jit
 def retrieve_coords(keypoints, keep_confidence=False):
     coords = []
     for i in range(0, len(keypoints), 3):
@@ -408,7 +408,7 @@ def retrieve_coords(keypoints, keep_confidence=False):
 
 # loads a list of clips and computes the mean and standard deviation
 def compute_mean_std(clips_list_path, data_dir):
-    clip_list = load_binary(clips_list_path)  # clip_list is expected to contain a list of TxCxHxWx2 arrays
+    clip_list = load_binary(os.path.join(clips_list_path))  # clip_list is expected to contain a list of TxCxHxWx2 arrays
     ####### COMPUTE MEAN / STD
 
     # placeholders
@@ -532,7 +532,7 @@ def obtain_vid_crops(kp_dir, key, data_dir):
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
     size = 200
-    start = 2000
+    start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}")
         hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
