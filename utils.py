@@ -408,7 +408,7 @@ def retrieve_coords(keypoints, keep_confidence=False):
 
 # loads a list of clips and computes the mean and standard deviation
 def compute_mean_std(clips_list_path, data_dir):
-    clip_list = load_binary(os.path.join(clips_list_path))  # clip_list is expected to contain a list of TxCxHxWx2 arrays
+    clip_list = load_binary(os.path.join(data_dir, clips_list_path))  # clip_list is expected to contain a list of TxCxHxWx2 arrays
     ####### COMPUTE MEAN / STD
 
     # placeholders
