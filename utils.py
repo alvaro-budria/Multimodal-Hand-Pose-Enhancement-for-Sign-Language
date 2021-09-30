@@ -406,6 +406,37 @@ def retrieve_coords(keypoints, keep_confidence=False):
     return coords # [elem for singleList in coords for elem in singleList]
 
 
+# loads a list of clips and computes the mean and standard deviation
+def compute_mean_std(clips_list_path, data_dir):
+    clip_list = load_binary(clips_list_path)  # clip_list is expected to contain a list of TxCxHxWx2 arrays
+    ####### COMPUTE MEAN / STD
+
+    # placeholders
+    psum    = np.array([0.0, 0.0, 0.0])
+    psum_sq = np.array([0.0, 0.0, 0.0])
+
+    # loop through images
+    for clip in clip_list:
+        psum    += np.sum(clip[:,:,:,:,0], axis = [0, 2, 3]) + np.sum(clip[:,:,:,:,0], axis = [0, 2, 3])
+        psum_sq += (clip[:,:,:,:,0] ** 2).sum(axis = [0, 2, 3]) + (clip[:,:,:,:,1] ** 2).sum(axis = [0, 2, 3])
+
+    # pixel count
+    count = 2 * sum([len(clip) for clip in clip_list]) * clip_list[0].shape[2] * clip_list[0].shape[3]
+
+    # mean and std
+    total_mean = psum / count
+    total_var  = (psum_sq / count) - (total_mean ** 2)
+    total_std  = np.sqrt(total_var)
+
+    # output
+    print(f"mean: {total_mean}")
+    print(f"std:  {total_std}")
+
+    with open(f'{data_dir}/mean_std.npy', 'wb') as f:
+        np.save(f, np.vstack(total_mean, total_std))
+    #return total_mean, total_std
+    
+
 def load_clip(clip_path, pipeline, keep_confidence=True):
     feats = pipeline.split('2')
     in_feat, out_feat = feats[0], feats[1]
@@ -542,6 +573,14 @@ def obtain_vid_feats(kp_dir, key, data_dir):
         os.remove(file)  # remove batch files, leave only single whole file
     save_binary(hand_feats, f"{data_dir}/{key}_vid_feats.pkl")
     #return hand_feats
+
+
+# obtains features from the image crops contained in data_dir
+def obtain_vid_feats(kp_dir, key, data_dir):
+    hand_crops_list = load_binary(f"{data_dir}/{key}_vid_crops.pkl")
+    print(f"loaded {data_dir}/{key}_vid_crops.pkl")
+    feats_list = proc_vid.obtain_feats_crops(hand_crops_list)
+    save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
 
 # returns the keypoints in the specified indexes

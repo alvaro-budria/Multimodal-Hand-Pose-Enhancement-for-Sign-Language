@@ -9,6 +9,8 @@ import clip  # to obtain CLIP embeddings
 
 import numpy as np
 import torch
+import torchvision.models as models
+import torchvision.transforms as transforms
 
 VID_PATHS = {
     "train": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/train/rgb_front/raw_videos/",
@@ -79,13 +81,16 @@ def crop_clip(clip, clip_id, input_json_folder):
         #input_json_folder = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json"
         #json_filename = os.path.join(input_json_folder, clip_id) + "/" + json_filename
         json_filename = os.path.join(input_json_folder, json_filename)
-        keypoints_json = json.load(open(json_filename))
+        try:
+            keypoints_json = json.load(open(json_filename))
+        except:  # could not load keypoints from json file
+            keypoints_json = None
         for j in range(2):  # for each hand
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
             crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (100, 100))
             crop_j = np.moveaxis(crop_j, -1, 0)
             cropped_clip[i,:,:,:,j] = crop_j
-    return cropped_clip.astype(np.uint8)
+        return cropped_clip.astype(np.uint8)
 
 
 def preprocess_clip(img, preprocess):
@@ -102,20 +107,20 @@ def preprocess_clip(img, preprocess):
     return torch.tensor(np.stack(images))
 
 # obtains frame-level embeddings from TxCxHxW numpy array
-def obtain_embeds_img(img, model, preprocess):
+def obtain_embeds_img_CLIP(img, model, preprocess):
     img_tensor = preprocess_clip(img, preprocess)
     with torch.no_grad():
         image_features = model.encode_image(img_tensor)
     return image_features.cpu().detach().numpy()
 
-def _obtain_feats_crops(c):
+def _obtain_feats_crops_CLIP(c):
     model, preprocess = clip.load("ViT-B/32", device=device, jit=True)
-    embeds_r = obtain_embeds_img(c[:,:,:,:,0], model, preprocess)
-    embeds_l = obtain_embeds_img(c[:,:,:,:,1], model, preprocess)
+    embeds_r = obtain_embeds_img_CLIP(c[:,:,:,:,0], model, preprocess)
+    embeds_l = obtain_embeds_img_CLIP(c[:,:,:,:,1], model, preprocess)
     feats_hands = np.hstack((embeds_r, embeds_l))
     return feats_hands
 
-def obtain_feats_crops(crops_list):
+def obtain_feats_crops_CLIP(crops_list):
     '''
     Obtains features for the input hand crops.
     :param crops_list: list containing arrays of dims TxCxHxWx2
@@ -125,7 +130,7 @@ def obtain_feats_crops(crops_list):
     # model_list = [model for _ in range(len(crops_list))]
     # preproc_list = [preprocess for _ in range(len(crops_list))]
     with Pool(processes=24) as pool:
-        feats_list = pool.starmap(_obtain_feats_crops, zip(crops_list))
+        feats_list = pool.starmap(_obtain_feats_crops_CLIP, zip(crops_list))
     return feats_list    
     # Tsize_list = [crop.shape[0] for crop in crops_list]
     # print(f"Tsize_list: {Tsize_list}")
@@ -134,6 +139,39 @@ def obtain_feats_crops(crops_list):
     # crops_list = np.split(crops_list, Tsize_list, axis=0)
     # print("after split")
     # return crops_list
+
+
+# clip is a TxCxHxWx2
+# output is a Tx1024 tensor (512 for each hand)
+def _obtain_feats_crops_ResNet(clip, model, transf):
+    print(f"clip.shape: {clip.shape}")
+
+    t_clip_r = transf(clip[:,:,:,:,0])
+    t_clip_l = transf(clip[:,:,:,:,1])
+
+    embed_r = model(t_clip_r)
+    embed_l = model(t_clip_l)
+
+    feats_hands = np.hstack((embed_r, embed_l))
+    return feats_hands
+
+
+def obtain_feats_crops_ResNet(crops_list, data_dir):
+    model_ft = models.resnet50(pretrained=True)
+    feature_extractor = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
+    feature_extractor.eval()
+    feature_extractor.to(device)
+
+    mean_std = np.load(f"{data_dir}/mean_std.npy")
+    normalize = transforms.Normalize(mean=mean_std[0],
+                                     std=mean_std[1])
+
+    feats_list = []
+    for crop in crops_list:
+        feats = _obtain_feats_crops_ResNet(crop, model_ft, normalize)
+        print(f"feats.shape {feats.shape}")
+        feats_list.append(feats)
+    return feats_list
 
 
 import time
@@ -250,6 +288,9 @@ def get_hand_center(input_json, hand="right"):
     :param input_json:
     :return:
     '''
+
+    if input_json is None:
+        return np.array([700, 700])
 
     # Get right hand keypoints
     hand_points = input_json["people"][0][f"hand_{hand}_keypoints_2d"]
