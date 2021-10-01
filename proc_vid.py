@@ -2,6 +2,7 @@ import os
 import json
 import argparse
 from multiprocessing import Pool
+from re import I
 
 from PIL import Image
 import cv2
@@ -141,35 +142,54 @@ def obtain_feats_crops_CLIP(crops_list):
     # return crops_list
 
 
+def extract_feats_ResNet(tensor, model, batch_size=128):
+    out_feats = torch.empty((tensor.shape[0], 1000)).cpu().numpy()
+    for batch in range(0, tensor.shape[0], batch_size):
+        model_out = model(tensor[batch:batch+batch_size,:,:,:])
+        print(f"model_out.shape {model_out.shape}", flush=True)
+        out_feats[batch:batch+batch_size,:] = model(tensor[batch:batch+batch_size,:,:,:]).detach().cpu().numpy()
+    return out_feats
+
 # clip is a TxCxHxWx2
 # output is a Tx1024 tensor (512 for each hand)
 def _obtain_feats_crops_ResNet(clip, model, transf):
-    print(f"clip.shape: {clip.shape}")
+    print(f"clip.shape: {clip.shape}", flush=True)
 
-    t_clip_r = transf(clip[:,:,:,:,0])
-    t_clip_l = transf(clip[:,:,:,:,1])
+    t_clip_r = transf(torch.from_numpy(clip[:,:,:,:,0]).to(dtype=torch.float))
+    print(f"transf r", flush=True)
+    t_clip_l = transf(torch.from_numpy(clip[:,:,:,:,1]).to(dtype=torch.float))
+    print(f"transf l", flush=True)
 
-    embed_r = model(t_clip_r)
-    embed_l = model(t_clip_l)
+    embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=128)
+    # embed_r = model(t_clip_r.to(device))
+    print(f"feats r", flush=True)
+    embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=128)
+    # embed_l = model(t_clip_l.to(device))
+    print(f"feats l", flush=True)
 
     feats_hands = np.hstack((embed_r, embed_l))
     return feats_hands
 
 
 def obtain_feats_crops_ResNet(crops_list, data_dir):
-    model_ft = models.resnet50(pretrained=True)
-    feature_extractor = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
-    feature_extractor.eval()
-    feature_extractor.to(device)
+    model_ft = models.resnet50(pretrained=False)
+    model_ft.load_state_dict(torch.load('./models/resnet50-0676ba61.pth'))
+    #model_ft = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
+    model_ft.eval()
+    model_ft.cuda()#to(device)
+    #print(f"Using {device} as computation device", flush=True)
+    print(f"torch.cuda.is_available() {torch.cuda.is_available()}", flush=True)
 
-    mean_std = np.load(f"{data_dir}/mean_std.npy")
-    normalize = transforms.Normalize(mean=mean_std[0],
-                                     std=mean_std[1])
+    # mean_std = np.load(f"{data_dir}/mean_std.npy")
+    # normalize = transforms.Normalize(mean=mean_std[0],
+    #                                  std=mean_std[1])  # H2S mean and std
+    normalize = transforms.Normalize(mean=[123.68, 116.779, 103.939 ],
+                                     std=[58.393, 57.12, 57.375])  # ImageNet mean and std
 
     feats_list = []
     for crop in crops_list:
         feats = _obtain_feats_crops_ResNet(crop, model_ft, normalize)
-        print(f"feats.shape {feats.shape}")
+        print(f"feats.shape {feats.shape}", flush=True)
         feats_list.append(feats)
     return feats_list
 

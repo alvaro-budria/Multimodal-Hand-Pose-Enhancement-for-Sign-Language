@@ -220,7 +220,7 @@ def aa_to_xyz(aa, root, bone_len, structure):
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
-        print(f"aa_clip.shape: {aa_clip.shape}")
+        print(f"aa_clip.shape: {aa_clip.shape}", flush=True)
         xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")  # add 6 values, corresponding to two keypoints defining the root bone
         xyz_clip[:,0:6] = root
         for iBone in range(1,len(structure)):
@@ -348,7 +348,7 @@ def _lift_2d_to_3d(inputSequence_2D):
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
     feats_3d = []
     if os.path.exists(filename):
-        print(f" -> Found file with name {filename}. Appending results to this file.")
+        print(f" -> Found file with name {filename}. Appending results to this file.", flush=True)
         feats_3d = load_binary(filename)
     idx = len(feats) // nPartitions + 1
     min_i = 0
@@ -533,19 +533,19 @@ def obtain_vid_crops(kp_dir, key, data_dir):
     size = 200
     start = 0
     for subset in range(start, len(ids), size):
-        print(f"subset: {subset}")
+        print(f"subset: {subset}", flush=True)
         hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
         save_binary(hand_feats, f"{data_dir}/{key}_vid_crops_{subset}-{subset+size}.pkl")
 
     # store all crops into a single file
-    print("storing all crops into a single file...")
+    print("storing all crops into a single file...", flush=True)
     hand_feats = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_crops_*.pkl")
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
     save_binary(hand_feats, f"{data_dir}/{key}_vid_crops.pkl")
-    print("stored all crops into a single file")
+    print("stored all crops into a single file", flush=True)
 
 
 # def obtain_vid_feats(kp_dir, key, data_dir):
@@ -576,7 +576,7 @@ def obtain_vid_crops(kp_dir, key, data_dir):
 # obtains features from the image crops contained in data_dir
 def obtain_vid_feats(key, data_dir):
     hand_crops_list = load_binary(f"{data_dir}/{key}_vid_crops.pkl")
-    print(f"loaded {data_dir}/{key}_vid_crops.pkl")
+    print(f"loaded {data_dir}/{key}_vid_crops.pkl", flush=True)
     feats_list = proc_vid.obtain_feats_crops_ResNet(hand_crops_list, data_dir)
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
@@ -615,7 +615,7 @@ def save_binary(obj, filename, append=False):
         filename = filename + ".pkl"
 
     if os.path.exists(filename) and append:
-        print(f"Found file with name {filename}. Appending results to this file.")
+        print(f"Found file with name {filename}. Appending results to this file.", flush=True)
         contents = load_binary(filename)
         if append=="embeds":
             obj = np.vstack((contents,obj))
@@ -692,7 +692,7 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
     feats = pipeline.split('2')
     out_feat = feats[1]
     mkdir(os.path.join(base_path, 'results/'))
-    print(f"input.shape, output.shape: {input.shape}, {output.shape}")
+    print(f"input.shape, output.shape: {input.shape}, {output.shape}", flush=True)
     assert not np.any(np.isnan(input))
     assert not np.any(np.isnan(output))
     if pipeline in list(FEATURE_MAP.keys()) or out_feat == 'wh' or out_feat == 'fingerL':
@@ -700,7 +700,7 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
-        print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}")
+        print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
@@ -801,15 +801,15 @@ def process_H2S_dataset(dir, data_dir):
     # print(f"obtained video crops", flush=True)
     # print()
 
-    compute_mean_std("train_vid_crops.pkl", data_dir)
-    print(f"saved mean and std for vids in train_vid_crops.pkl")
+    # compute_mean_std("train_vid_crops.pkl", data_dir)
+    # print(f"saved mean and std for vids in train_vid_crops.pkl")
 
-    # obtain_vid_feats("val", data_dir)
-    # print("vid feats val")
-    # obtain_vid_feats("test", data_dir)
-    # print("vid feats test")
-    # obtain_vid_feats("train", data_dir)
-    # print("vid feats train")
+    obtain_vid_feats("val", data_dir)
+    print("vid feats val", flush=True)
+    obtain_vid_feats("test", data_dir)
+    print("vid feats test", flush=True)
+    obtain_vid_feats("train", data_dir)
+    print("vid feats train", flush=True)
 
     # print()
     # print(f"obtained video features", flush=True)
