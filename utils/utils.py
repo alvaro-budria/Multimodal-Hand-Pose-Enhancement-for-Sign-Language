@@ -9,14 +9,15 @@ from multiprocessing import Pool
 
 import numpy as np
 
-sys.path.append('../3DposeEstimator')
+sys.path.append('./3DposeEstimator')
+print(sys.path)
 # 2D to 3D lifting
 import skeletalModel
 import pose2D
 import pose2Dto3D
 import pose3D
 
-sys.path.append('../')
+sys.path.append('./')
 import viz.viz_3d as viz
 
 import proc_text
@@ -33,7 +34,6 @@ def get_root_bone(xyz, structure):
     xyz = array_to_list(xyz)
     root = np.array([])
     for i in range(len(xyz)):
-        xyz_clip = xyz[i]
         id_p_J, id_p_E, _, _ = structure[0]  # get initial and end joints indexes of root bone
         bone_points = np.hstack((xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_E*3:id_p_E*3+3]))
         root = np.vstack( (root, bone_points) ) if root.shape!=(0,) else bone_points
@@ -350,20 +350,20 @@ def process_H2S_dataset(dir, data_dir):
     hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
     print("Selected HANDS keypoints", flush=True)
 
-    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    #feats_train = hconcat_feats(neck_train, arms_train, hands_train)
     feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    #feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
-    save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
-    save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
+    #save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
+    #save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
     save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
 
-    save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
-    save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
-    save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
-    save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
-    save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
-    save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
+    #save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
+    #save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
+    #save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
+    #save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
+    #save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
+    #save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
 
     print()
     print("saved xy original and text embeddings", flush=True)
@@ -443,8 +443,6 @@ if __name__ == "__main__":
         "test": "test_2D_keypoints/openpose_output/json"
     }
 
-    if args.data_dir[:3] != "../":
-        args.data_dir = "../" + args.data_dir
     ##
     process_H2S_dataset(args.dataset_path, data_dir=args.data_dir)
     ##
