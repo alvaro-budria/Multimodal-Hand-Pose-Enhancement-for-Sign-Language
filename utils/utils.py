@@ -10,7 +10,6 @@ from multiprocessing import Pool
 import numpy as np
 
 sys.path.append('./3DposeEstimator')
-print(sys.path)
 # 2D to 3D lifting
 import skeletalModel
 import pose2D
