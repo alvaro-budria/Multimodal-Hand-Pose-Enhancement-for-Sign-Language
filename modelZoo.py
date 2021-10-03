@@ -59,39 +59,39 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 			nn.BatchNorm1d(embed_size),
 		)
 
-		self.conv8 = nn.Sequential(
-			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
-			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
-		)
+		# self.conv8 = nn.Sequential(
+		# 	nn.Dropout(0.5),
+		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
+		# 	nn.LeakyReLU(0.2, True),
+		# 	nn.BatchNorm1d(embed_size),
+		# )
 
-		self.conv9 = nn.Sequential(
-			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
-			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
-		)
+		# self.conv9 = nn.Sequential(
+		# 	nn.Dropout(0.5),
+		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
+		# 	nn.LeakyReLU(0.2, True),
+		# 	nn.BatchNorm1d(embed_size),
+		# )
 
-		self.conv10 = nn.Sequential(
-			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
-			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
-		)
+		# self.conv10 = nn.Sequential(
+		# 	nn.Dropout(0.5),
+		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
+		# 	nn.LeakyReLU(0.2, True),
+		# 	nn.BatchNorm1d(embed_size),
+		# )
 
-		self.skip1 = nn.Sequential(
-			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
-			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
-		)
-		self.skip2 = nn.Sequential(
-			nn.Dropout(0.5),
-			nn.Conv1d(embed_size,embed_size,3,padding=1),
-			nn.LeakyReLU(0.2, True),
-			nn.BatchNorm1d(embed_size),
-		)
+		# self.skip1 = nn.Sequential(
+		# 	nn.Dropout(0.5),
+		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
+		# 	nn.LeakyReLU(0.2, True),
+		# 	nn.BatchNorm1d(embed_size),
+		# )
+		# self.skip2 = nn.Sequential(
+		# 	nn.Dropout(0.5),
+		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
+		# 	nn.LeakyReLU(0.2, True),
+		# 	nn.BatchNorm1d(embed_size),
+		# )
 		self.skip4 = nn.Sequential(
 			nn.Dropout(0.5),
 			nn.Conv1d(embed_size,embed_size,3,padding=1),
@@ -125,7 +125,7 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 	def process_image(self, image_):
 		B, T, _ = image_.shape 
 		image_ = image_.view(-1, 1000*2)
-		print(f"image_.shape {image_.shape}")
+		print(f"image_.shape {image_.shape}", flush=True)
 		feat = self.image_resnet_postprocess(image_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
@@ -150,15 +150,15 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 		fifth_block = self.conv5(fourth_block)
 		sixth_block = self.conv6(fifth_block)
 		seventh_block = self.conv7(sixth_block)
-		eighth_block = self.conv8(seventh_block)
-		ninth_block = self.conv9(eighth_block)
-		tenth_block = self.conv10(ninth_block)
+		# eighth_block = self.conv8(seventh_block)
+		# ninth_block = self.conv9(eighth_block)
+		# tenth_block = self.conv10(ninth_block)
 
-		ninth_block = tenth_block + ninth_block
-		ninth_block = self.skip1(ninth_block)
+		# ninth_block = tenth_block + ninth_block
+		# ninth_block = self.skip1(ninth_block)
 
-		eighth_block = ninth_block + eighth_block
-		eighth_block = self.skip2(eighth_block)
+		# eighth_block = ninth_block + eighth_block
+		# eighth_block = self.skip2(eighth_block)
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
 		sixth_block = self.skip4(sixth_block)
