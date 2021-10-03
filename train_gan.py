@@ -54,7 +54,7 @@ def main(args):
 
         ## load data from saved files
         data_tuple = load_data(args, rng, config.data_dir)
-        if args.require_text:
+        if args.require_text or args.require_image:
             print("Using text as input to the model.")
             train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
         else:
@@ -152,14 +152,16 @@ def load_data(args, rng, data_dir):
             text_path = f"{data_dir}/{set}_sentence_embeddings.pkl"
         elif args.embeds_type == "average":
             text_path = f"{data_dir}/average_{set}_sentence_embeddings.pkl"
+        image_path = f"{data_dir}/{set}_vid_feats.pkl"
         
         data_path = os.path.join(args.base_path, path)
-        curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
-        if args.require_text:
-            text = curr_p0[1]
+        curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path,
+                                        require_image=args.require_image, image_path=image_path)
+        if args.require_text or args.require_image:
+            feats = curr_p0[1]
             curr_p0 = curr_p0[0]
             #return curr_p0[:args.batch_size], curr_p1[:args.batch_size], text[:args.batch_size]
-            return curr_p0, curr_p1, text
+            return curr_p0, curr_p1, feats
         return curr_p0, curr_p1, None
 
     train_X, train_Y, train_text = fetch_data("train")

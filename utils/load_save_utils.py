@@ -35,8 +35,8 @@ def mkdir(dir):
         os.mkdir(dir)
 
 
-def load_windows(data_path, pipeline, require_text=False, text_path=None, require_audio=False,
-                 hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
+def load_windows(data_path, pipeline, require_text=False, text_path=None, require_image=False, image_path=None,
+                 require_audio=False, hand3d_image=False, use_lazy=False, test_smpl=False, temporal=False):
     feats = pipeline.split('2')
     p0_size, p1_size = FEATURE_MAP[pipeline]
     if os.path.exists(data_path):
@@ -46,7 +46,10 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
         if pipeline=="arm2wh" or pipeline[:13]=="arm_wh2finger":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
-        if require_text:
+        if require_text and not require_image:
             text_windows = load_binary(text_path)
             p0_windows = (p0_windows, text_windows)
+        elif require_image and not require_text:
+            image_windows = load_binary(image_path)
+            p0_windows = (p0_windows, image_windows)
         return p0_windows, p1_windows
