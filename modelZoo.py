@@ -8,7 +8,7 @@ from torch import nn
 
 class regressor_fcn_bn_32_b2h(nn.Module):
 	def __init__(self):
-		super(regressor_fcn_bn_32, self).__init__()
+		super(regressor_fcn_bn_32_b2h, self).__init__()
 
 	def build_net(self, feature_in_dim, feature_out_dim, require_image=False, default_size=256):
 		self.require_image = require_image

@@ -7,7 +7,6 @@ def rmv_clips_nan(X, Y, T=None):
     y = []
     t = []
     for sample in range(X.shape[0]):
-        print(f"sample: {sample}")
         if T is None:
             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
                 x.append(X[sample,:,:])
