@@ -5,6 +5,7 @@ import numpy as np
 from postprocess_utils import *
 from constants import *
 
+
 def save_binary(obj, filename, append=False):
     if filename[-4:] != ".pkl":
         print("Adding .pkl extension as it was not found.", flush=True)
@@ -51,5 +52,6 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
             p0_windows = (p0_windows, text_windows)
         elif require_image and not require_text:
             image_windows = load_binary(image_path)
+            image_windows = make_equal_len(image_windows, method="cutting+reflect")
             p0_windows = (p0_windows, image_windows)
         return p0_windows, p1_windows

@@ -155,7 +155,7 @@ def load_data(args, rng, data_dir):
         elif args.embeds_type == "average":
             text_path = f"{data_dir}/average_{set}_sentence_embeddings.pkl"
         image_path = f"{data_dir}/{set}_vid_feats.pkl"
-        
+
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path,
                                         require_image=args.require_image, image_path=image_path)
