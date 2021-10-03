@@ -13,9 +13,11 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append('./viz')
 from track_grads import plot_grad_flow
 import modelZoo
-from utils.constants import *
-from utils.load_save_utils import *
-from utils.standardization_utils import *
+
+sys.path.append("./utils")
+from constants import *
+from load_save_utils import *
+from standardization_utils import *
 
 # experiment logging
 import wandb
