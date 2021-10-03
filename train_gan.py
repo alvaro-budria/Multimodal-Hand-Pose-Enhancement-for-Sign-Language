@@ -166,18 +166,18 @@ def load_data(args, rng, data_dir):
             return curr_p0, curr_p1, feats
         return curr_p0, curr_p1, None
 
-    train_X, train_Y, train_text = fetch_data("train")
-    val_X, val_Y, val_text = fetch_data("val")
+    train_X, train_Y, train_feats = fetch_data("train")
+    val_X, val_Y, val_feats = fetch_data("val")
 
     print(train_X.shape, train_Y.shape, flush=True)
-    if args.require_text:
-        print(train_text.shape)
-    train_X, train_Y, train_text = rmv_clips_nan(train_X, train_Y, train_text)
-    val_X, val_Y, val_text = rmv_clips_nan(val_X, val_Y, val_text)
+    if args.require_text or args.require_image:
+        print(f"train_feats.shape: {train_feats.shape}")
+    train_X, train_Y, train_feats = rmv_clips_nan(train_X, train_Y, train_feats)
+    val_X, val_Y, val_feats = rmv_clips_nan(val_X, val_Y, val_feats)
     assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
     print(train_X.shape, train_Y.shape, flush=True)
     if args.require_text:
-        print(train_text.shape)
+        print(train_feats.shape)
 
     print("-"*20 + "train" + "-"*20, flush=True)
     print('===> in/out', train_X.shape, train_Y.shape, flush=True)
@@ -185,7 +185,7 @@ def load_data(args, rng, data_dir):
     print("-"*20 + "val" + "-"*20, flush=True)
     print('===> in/out', val_X.shape, val_Y.shape, flush=True)
     if args.require_text:
-        print("===> text", train_text.shape, flush=True)
+        print("===> text", train_feats.shape, flush=True)
     ## DONE load from external files
 
     train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
@@ -193,7 +193,7 @@ def load_data(args, rng, data_dir):
     val_X = np.swapaxes(val_X, 1, 2).astype(np.float32)
     val_Y = np.swapaxes(val_Y, 1, 2).astype(np.float32)
     body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
-    
+
     mkdir(args.model_path)
     np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
                         body_mean_X=body_mean_X, body_std_X=body_std_X,
@@ -201,7 +201,7 @@ def load_data(args, rng, data_dir):
 
     print(f"train_X: {train_X.shape}; val_X: {val_X.shape}", flush=True)
     print(f"body_mean_X: {body_mean_X.shape}; body_std_X: {body_std_X.shape}", flush=True)
-    
+
     train_X = (train_X - body_mean_X) / body_std_X
     val_X = (val_X - body_mean_X) / body_std_X
     train_Y = (train_Y - body_mean_Y) / body_std_Y
@@ -213,9 +213,9 @@ def load_data(args, rng, data_dir):
     rng.shuffle(I)
     train_X = train_X[I]
     train_Y = train_Y[I]
-    if args.require_text:
-        train_text = train_text[I]
-        return (train_X, train_Y, val_X, val_Y, train_text, val_text)
+    if args.require_text or args.require_image:
+        train_feats = train_feats[I]
+        return (train_X, train_Y, val_X, val_Y, train_feats, val_feats)
     ## DONE shuffle and set train/validation
     return (train_X, train_Y, val_X, val_Y)
 
