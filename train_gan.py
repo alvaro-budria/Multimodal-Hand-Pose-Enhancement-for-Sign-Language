@@ -339,7 +339,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
         featsData = None
-        if args.require_text:
+        if args.require_text or args.require_image:
             featsData_np = val_feats[idxStart:(idxStart + val_batch_size), :]
             featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
