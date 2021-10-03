@@ -124,7 +124,8 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 	## create image embedding
 	def process_image(self, image_):
 		B, T, _ = image_.shape 
-		image_ = image_.view(-1, 512*2)
+		image_ = image_.view(-1, 1000*2)
+		print(f"image_.shape {image_.shape}")
 		feat = self.image_resnet_postprocess(image_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()
