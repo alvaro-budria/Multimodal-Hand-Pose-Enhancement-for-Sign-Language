@@ -138,12 +138,12 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, image_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		B, T = input_.shape[0], input_.shape[2]
 
 		fourth_block = self.encoder(input_)
 		if self.require_image:
-			feat = self.process_image(image_)
+			feat = self.process_image(feats_)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
@@ -299,13 +299,13 @@ class regressor_fcn_bn_32(nn.Module):
 		return tensor.repeat_interleave(2, dim=2)[:,:,:shape[2]] 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		# print(f"input_.shape: {input_.shape}")
 		fourth_block = self.encoder(input_)
 		if self.require_text:  # "v1"
 			# print(text_.shape)
-			feat = self.process_text(text_, T)
+			feat = self.process_text(feats_, T)
 			fourth_block = torch.cat((fourth_block, feat), dim=1)
 
 		fifth_block = self.conv5(fourth_block)
@@ -612,7 +612,7 @@ class regressor_fcn_bn_32_v4(nn.Module):
 		return tensor.repeat_interleave(2, dim=2)[:,:,:shape[2]] 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
 
@@ -631,7 +631,7 @@ class regressor_fcn_bn_32_v4(nn.Module):
 
 		if self.require_text:
 			T = seventh_block.shape[2]
-			feat = self.process_text(text_, T)
+			feat = self.process_text(feats_, T)
 			seventh_block = torch.cat((seventh_block, feat), dim=1)
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
@@ -769,7 +769,7 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 		return tensor.repeat_interleave(2, dim=2)[:,:,:shape[2]] 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		fourth_block = self.encoder(input_)
 
 		fifth_block = self.conv5(fourth_block)
@@ -783,7 +783,7 @@ class regressor_fcn_bn_32_v4_deeper(nn.Module):
 		ninth_block = tenth_block + ninth_block
 		if self.require_text:
 			T = ninth_block.shape[2]
-			feat = self.process_text(text_, T)
+			feat = self.process_text(feats_, T)
 			ninth_block = torch.cat((ninth_block, feat), dim=1)
 		ninth_block = self.skip1(ninth_block)
 
@@ -843,7 +843,7 @@ class decoder_embed2pose(nn.Module):
 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		# print(f"input_.shape: {input_.shape}")
 		output = None

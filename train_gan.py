@@ -294,7 +294,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
-        output = generator(inputData, text_=textData)
+        output = generator(inputData, feats_=textData)
         fake_motion = calc_motion(output)
         with torch.no_grad():
             fake_score = discriminator(fake_motion)
