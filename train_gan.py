@@ -13,31 +13,12 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append('./viz')
 from track_grads import plot_grad_flow
 import modelZoo
-from utils import *
+from utils.constants import *
+from utils.load_save_utils import *
+from utils.standardization_utils import *
 
 # experiment logging
 import wandb
-
-
-DATA_PATHS = {
-        "train": "video_data/r6d_train.pkl",
-        "val": "video_data/r6d_val.pkl",
-        "test": "video_data/r6d_test.pkl"
-}
-
-TEXT_PATHS = {
-        "train": "video_data/train_sentence_embeddings.pkl",
-        "val": "video_data/val_sentence_embeddings.pkl",
-        "test": "video_data/test_sentence_embeddings.pkl"
-}
-
-MODELS = {
-        "v1": "regressor_fcn_bn_32",
-        "b2h": "regressor_fcn_bn_32_b2h",
-        "v2": "regressor_fcn_bn_32_v2",
-        "v4": "regressor_fcn_bn_32_v4",
-        "v4_deeper": "regressor_fcn_bn_32_v4_deeper"
-}
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 lastCheckpoint = ""
@@ -56,7 +37,8 @@ def main(args):
         model = args.model,
         pipeline = args.pipeline,
         epochs_train_disc = args.epochs_train_disc,
-        disc_label_smooth = args.disc_label_smooth)
+        disc_label_smooth = args.disc_label_smooth,
+        data_dir=args.data_dir)
 
     ## DONE variables
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
@@ -71,7 +53,7 @@ def main(args):
         torch.cuda.manual_seed(23456)
 
         ## load data from saved files
-        data_tuple = load_data(args, rng)
+        data_tuple = load_data(args, rng, config.data_dir)
         if args.require_text:
             print("Using text as input to the model.")
             train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
@@ -159,19 +141,17 @@ def main(args):
 #######################################################
 
 ## function to load data from external files
-def load_data(args, rng):
+def load_data(args, rng, data_dir):
 
     def fetch_data(set="train"):
         ## load from external files
-        path = DATA_PATHS[set]
+        path = os.path.join(data_dir, DATA_PATHS_r6d[set])
         
         text_path = None
         if args.embeds_type == "normal":
-            text_path = f"video_data/{set}_sentence_embeddings.pkl"
+            text_path = f"{data_dir}/{set}_sentence_embeddings.pkl"
         elif args.embeds_type == "average":
-            text_path = f"video_data/average_{set}_sentence_embeddings.pkl"
-        #text_path = TEXT_PATHS[set]
-        #text_path = "video_data/average_train_sentence_embeddings.pkl"
+            text_path = f"{data_dir}/average_{set}_sentence_embeddings.pkl"
         
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path)
@@ -415,6 +395,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs_train_disc', type=int , default=3, help='train the discriminator every epochs_train_disc epochs')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
     parser.add_argument('--disc_label_smooth', action="store_true", help="if True, use label smoothing for the discriminator")
+    parser.add_argument('--data_dir', type=str, default="video_data" , help='directory where results should be stored and loaded from')
 
     args = parser.parse_args()
     print(args, flush=True)

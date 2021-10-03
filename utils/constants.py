@@ -26,3 +26,20 @@ ARMS = [2, 3, 4, 5, 6, 7]  # arms in Open Pose 25
 HANDS = list(range(21*2))  # hands in Open Pose
 
 EPSILON = 1e-10
+
+DATA_PATHS_r6d = {
+        "train": "r6d_train.pkl",
+        "val": "r6d_val.pkl",
+        "test": "r6d_test.pkl"
+        # "train": "video_data/r6d_train.pkl",
+        # "val": "video_data/r6d_val.pkl",
+        # "test": "video_data/r6d_test.pkl"
+}
+
+MODELS = {
+        "v1": "regressor_fcn_bn_32",
+        "b2h": "regressor_fcn_bn_32_b2h",
+        "v2": "regressor_fcn_bn_32_v2",
+        "v4": "regressor_fcn_bn_32_v4",
+        "v4_deeper": "regressor_fcn_bn_32_v4_deeper"
+}
