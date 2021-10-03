@@ -57,7 +57,7 @@ def main(args):
         ## load data from saved files
         data_tuple = load_data(args, rng, config.data_dir)
         if args.require_text or args.require_image:
-            print("Using text as input to the model.")
+            print("Using text/image embeds as input to the model.", flush=True)
             train_X, train_Y, val_X, val_Y, train_feats, val_feats = data_tuple
         else:
             train_X, train_Y, val_X, val_Y = data_tuple
@@ -150,7 +150,6 @@ def load_data(args, rng, data_dir):
         ## load from external files
         path = os.path.join(data_dir, DATA_PATHS_r6d[set])
         
-        text_path = None
         if args.embeds_type == "normal":
             text_path = f"{data_dir}/{set}_sentence_embeddings.pkl"
         elif args.embeds_type == "average":
@@ -243,14 +242,14 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         inputData = Variable(torch.from_numpy(inputData_np)).to(device)
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        textData = None
+        featsData = None
         if args.require_text:
-            textData_np = train_feats[idxStart:(idxStart + args.batch_size), :]
-            textData = Variable(torch.from_numpy(textData_np)).to(device)
+            featsData_np = train_feats[idxStart:(idxStart + args.batch_size), :]
+            featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
 
         with torch.no_grad():
-            fake_data = generator(inputData, text_=textData).detach()
+            fake_data = generator(inputData, feats_=featsData).detach()
 
         fake_motion = calc_motion(fake_data)
         real_motion = calc_motion(outputGT)
@@ -322,7 +321,8 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
 
 ## validating generator function
-def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=None):
+def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler,
+                  val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
@@ -338,13 +338,13 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         inputData = Variable(torch.from_numpy(inputData_np)).to(device)
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        textData = None
+        featsData = None
         if args.require_text:
-            textData_np = val_feats[idxStart:(idxStart + val_batch_size), :]
-            textData = Variable(torch.from_numpy(textData_np)).to(device)
+            featsData_np = val_feats[idxStart:(idxStart + val_batch_size), :]
+            featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
         
-        output = generator(inputData, text_=textData)
+        output = generator(inputData, feats_=featsData)
         g_loss = reg_criterion(output, outputGT)
         testLoss += g_loss.item() * val_batch_size
 
