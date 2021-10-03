@@ -243,7 +243,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
         featsData = None
-        if args.require_text:
+        if args.require_text or args.require_image:
             featsData_np = train_feats[idxStart:(idxStart + args.batch_size), :]
             featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
