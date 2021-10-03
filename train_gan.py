@@ -58,14 +58,15 @@ def main(args):
         data_tuple = load_data(args, rng, config.data_dir)
         if args.require_text or args.require_image:
             print("Using text as input to the model.")
-            train_X, train_Y, val_X, val_Y, train_text, val_text = data_tuple
+            train_X, train_Y, val_X, val_Y, train_feats, val_feats = data_tuple
         else:
             train_X, train_Y, val_X, val_Y = data_tuple
-            train_text, val_text = None, None
+            train_feats, val_feats = None, None
         ## DONE: load data from saved files
 
         ## set up generator model
         mod = MODELS[config.model]
+        print(f"mod: {mod}")
         generator = getattr(modelZoo, mod)()
         if mod == "regressor_fcn_bn_32_b2h":
             generator.build_net(feature_in_dim, feature_out_dim, require_image=args.require_image)
@@ -120,17 +121,17 @@ def main(args):
                 break
 
             if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0) :
-                train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=train_text)
+                train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_feats=train_feats)
             else:
-                train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_text=train_text)
-                currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=val_text)
+                train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_feats=train_feats)
+                currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=val_feats)
                 # Data shuffle
                 I = np.arange(len(train_X))
                 rng.shuffle(I)
                 train_X = train_X[I]
                 train_Y = train_Y[I]
                 if args.require_text:
-                    train_text = train_text[I]
+                    train_feats = train_feats[I]
 
     shutil.copyfile(lastCheckpoint, args.model_path + f"/lastCheckpoint_{args.exp_name}.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
@@ -227,7 +228,7 @@ def calc_motion(tensor):
 
 
 ## training discriminator function
-def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_text=None):
+def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_feats=None):
     generator.eval()
     discriminator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size)   # integer division so drop last incomplete minibatch
@@ -244,7 +245,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
         textData = None
         if args.require_text:
-            textData_np = train_text[idxStart:(idxStart + args.batch_size), :]
+            textData_np = train_feats[idxStart:(idxStart + args.batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
 
@@ -272,7 +273,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
 
 ## training generator function
 def train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer,
-                    train_X, train_Y, epoch, train_summary_writer, clip_grad=False, train_text=None):
+                    train_X, train_Y, epoch, train_summary_writer, clip_grad=False, train_feats=None):
     discriminator.eval()
     generator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size)
@@ -288,13 +289,13 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         inputData = Variable(torch.from_numpy(inputData_np)).to(device)
         outputGT = Variable(torch.from_numpy(outputData_np)).to(device)
 
-        textData = None
-        if args.require_text:
-            textData_np = train_text[idxStart:(idxStart + args.batch_size), :]
-            textData = Variable(torch.from_numpy(textData_np)).to(device)
+        featsData = None
+        if args.require_text or args.require_image:
+            featsData_np = train_feats[idxStart:(idxStart + args.batch_size), :]
+            featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
 
-        output = generator(inputData, feats_=textData)
+        output = generator(inputData, feats_=featsData)
         fake_motion = calc_motion(output)
         with torch.no_grad():
             fake_score = discriminator(fake_motion)
@@ -321,7 +322,7 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
 
 
 ## validating generator function
-def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_text=None):
+def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
@@ -339,7 +340,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
 
         textData = None
         if args.require_text:
-            textData_np = val_text[idxStart:(idxStart + val_batch_size), :]
+            textData_np = val_feats[idxStart:(idxStart + val_batch_size), :]
             textData = Variable(torch.from_numpy(textData_np)).to(device)
         ## DONE setting batch data
         
