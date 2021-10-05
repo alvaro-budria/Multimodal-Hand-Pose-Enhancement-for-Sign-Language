@@ -10,7 +10,12 @@ import wandb
 
 sys.path.append('./3DposeEstimator')
 import skeletalModel
-from utils import *
+
+sys.path.append("./utils")
+from constants import *
+from load_save_utils import *
+from utils import save_results, load_binary
+from postprocess_utils import *
 import modelZoo
 import viz.viz_3d as viz
 
@@ -27,16 +32,12 @@ def main(args):
     ## DONE variable initializations
 
     ## set up model / load pretrained model
-    if args.model == "v1":
-        args.model = "regressor_fcn_bn_32"
-    elif args.model == "v2":
-        args.model = "regressor_fcn_bn_32_v2"
-    elif args.model == "v4":
-        args.model = "regressor_fcn_bn_32_v4"
-    elif args.model == "v4_deeper":
-        args.model = "regressor_fcn_bn_32_v4_deeper"
+    args.model = MODELS[args.model]
     model = getattr(modelZoo,args.model)()
-    model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
+    if args.model == "regressor_fcn_bn_32_b2h":
+        model.build_net(feature_in_dim, feature_out_dim, require_image=args.require_image)
+    else:
+        model.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
     pretrained_model = args.checkpoint
     loaded_state = torch.load(pretrained_model, map_location=lambda storage, loc: storage)
     model.load_state_dict(loaded_state['state_dict'], strict=False)
@@ -48,19 +49,22 @@ def main(args):
     ## load/prepare data from external files
     args.data_dir = f"video_data/r6d_{args.infer_set}.pkl"
     if args.embeds_type == "normal":
-        text_path = f"video_data/{args.infer_set}_sentence_embeddings.pkl"
+        text_path = f"{args.data_dir}/{args.infer_set}_sentence_embeddings.pkl"
     elif args.embeds_type == "average":
-        text_path = f"video_data/average_{args.infer_set}_sentence_embeddings.pkl"
-    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path=text_path)
+        text_path = f"{args.data_dir}/average_{args.infer_set}_sentence_embeddings.pkl"
+    image_path = f"{args.data_dir}/{args.infer_set}_vid_feats.pkl"
 
-    test_text = None
-    if args.require_text:
-        test_text = test_X[1]
+    test_X, test_Y = load_windows(args.data_dir, args.pipeline, require_text=args.require_text, text_path=text_path,
+                                  require_image=args.require_image, image_path=image_path)
+
+    test_feats = None
+    if args.require_text or args.require_image:
+        test_feats = test_X[1]
         test_X = test_X[0]
     print(test_X.shape, test_Y.shape, flush=True)
-    if args.require_text:
-        print(test_text.shape)
-    test_X, test_Y, test_text = rmv_clips_nan(test_X, test_Y, test_text)
+    if args.require_text or args.require_image:
+        print(test_feats.shape, flush=True)
+    test_X, test_Y, test_feats = rmv_clips_nan(test_X, test_Y, test_feats)
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
     print(test_X.shape, test_Y.shape, flush=True)
     input_feats = test_X.copy()
@@ -70,8 +74,7 @@ def main(args):
 
     # standardize
     checkpoint_dir = os.path.split(pretrained_model)[0]
-    model_tag = os.path.basename(args.checkpoint).split(args.pipeline)[0]
-    preprocess = np.load(os.path.join(checkpoint_dir,'{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)))
+    preprocess = np.load(os.path.join(checkpoint_dir,'{}{}_preprocess_core.npz'.format(args.exp_name, args.pipeline)))
     body_mean_X = preprocess['body_mean_X']
     body_std_X = preprocess['body_std_X']
     body_mean_Y = preprocess['body_mean_Y']
@@ -83,8 +86,8 @@ def main(args):
     ## pass loaded data into inference
     test_X, test_Y = torch.from_numpy(test_X), torch.from_numpy(test_Y)
     assert not torch.isnan(test_X).any() and not torch.isnan(test_Y).any()
-    if args.require_text:
-        test_text = torch.from_numpy(test_text)
+    if args.require_text or args.require_image:
+        test_feats = torch.from_numpy(test_feats)
     error = 0
     output = None
     model.eval()
@@ -103,12 +106,12 @@ def main(args):
         outputGT = Variable(outputData_np).to(device)
         assert not torch.isnan(inputData).any() and not torch.isnan(outputGT).any()
 
-        textData = None
-        if args.require_text:
-            textData_np = test_text[idxStart:(idxStart + args.batch_size), :]
-            textData = Variable(textData_np).to(device)
+        featsData = None
+        if args.require_text or args.require_image:
+            featsData_np = test_feats[idxStart:(idxStart + args.batch_size), :]
+            featsData = Variable(torch.from_numpy(featsData_np)).to(device)
         ## DONE setting batch data
-        output_local = model(inputData, text_=textData)
+        output_local = model(inputData, feats_=featsData)
         assert not torch.isnan(output_local).any()
         print(f"output_local.shape, outputGT.shape: {output_local.shape, outputGT.shape}")
         g_loss = criterion(output_local, outputGT)
@@ -134,8 +137,8 @@ def main(args):
     output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
-    print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}")
-    print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}")
+    print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
+    print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}", flush=True)
     save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
@@ -157,6 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_dir', type=str, default="video_data/r6d_test.pkl", help='path to test data directory')
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
+    parser.add_argument('--require_image', action="store_true", help="use additional image features or not")
     parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "average", use average text embeds')
     parser.add_argument('--infer_set', type=str, default="test" , help='if "test", infer using test set; if "train", infer using train set')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
@@ -165,6 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
     parser.add_argument('--num_samples', type=int, default=3000, help='number of sequences to predict')
+    parser.add_argument('--data_dir', type=str, default="video_data" , help='directory where results should be stored and loaded from')
 
 
     args = parser.parse_args()

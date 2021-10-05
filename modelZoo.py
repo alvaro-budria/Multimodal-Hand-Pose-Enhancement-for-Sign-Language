@@ -1,7 +1,4 @@
 import numpy as np
-
-rng = np.random.RandomState(23456)
-
 import torch
 from torch import nn
 
@@ -125,7 +122,6 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 	def process_image(self, image_):
 		B, T, _ = image_.shape 
 		image_ = image_.view(-1, 1000*2)
-		print(f"image_.shape {image_.shape}", flush=True)
 		feat = self.image_resnet_postprocess(image_)
 		feat = feat.view(B, T, self.default_size)
 		feat = feat.permute(0, 2, 1).contiguous()

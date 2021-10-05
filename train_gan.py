@@ -103,8 +103,8 @@ def main(args):
 
         ## setup results logger
         mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
-        train_log_dir = 'logs/train/' + args.tag
-        val_log_dir   = 'logs/val/' + args.tag
+        train_log_dir = 'logs/train/' + args.exp_name
+        val_log_dir   = 'logs/val/' + args.exp_name
         train_summary_writer = SummaryWriter(train_log_dir)
         val_summary_writer   = SummaryWriter(val_log_dir)
         mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
@@ -195,7 +195,7 @@ def load_data(args, rng, data_dir):
     body_mean_X, body_std_X, body_mean_Y, body_std_Y = calc_standard(train_X, train_Y, args.pipeline)
 
     mkdir(args.model_path)
-    np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.tag, args.pipeline)), 
+    np.savez_compressed(os.path.join(args.model_path, '{}{}_preprocess_core.npz'.format(args.exp_name, args.pipeline)), 
                         body_mean_X=body_mean_X, body_std_X=body_std_X,
                         body_mean_Y=body_mean_Y, body_std_Y=body_std_Y)
 
