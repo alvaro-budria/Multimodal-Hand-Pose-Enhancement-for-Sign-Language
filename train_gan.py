@@ -30,7 +30,7 @@ lastCheckpoint = ""
 #######################################################
 def main(args):
     wandb.login()
-    
+
     ## variables
     config = dict(
         epochs = args.num_epochs,
@@ -313,6 +313,10 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         avgLoss += g_loss.item() * args.batch_size
         if bii % args.log_step == 0 or bii ==len(batchinds):
             print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
+                                                                                                  avgLoss / (totalSteps * args.batch_size), 
+                                                                                                  np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
+    
+    print('Epoch [{}/{}], Step [{}/{}], Tr. Loss: {:.4f}, Tr. Perplexity: {:5.4f}'.format(args.epoch, args.num_epochs-1, bii+1, totalSteps,
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
                                                                                                   np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
     wandb.log({"epoch": epoch, "loss_train_gen": avgLoss / (totalSteps * args.batch_size)})
