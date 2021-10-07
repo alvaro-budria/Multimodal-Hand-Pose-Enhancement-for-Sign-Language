@@ -6,6 +6,7 @@ DATA_PATHS = {
 
 FEATURE_MAP = {
     'arm2wh': ((6*6), 42*6),
+    "arm_wh2wh": ( ((6+42)*6), (42*6) ), # predict hands, including wrists, given arms and hands
     "arm_wh2finger1": ( ((6+38)*6), (4*6) ),  # predict 5th finger of left hand given arms and rest of fingers
     "arm_wh2finger2": ( ((6+34)*6), (8*6) ),  # predict 4th and 5th fingers of left hand given arms and rest of fingers
     "arm_wh2finger3": ( ((6+30)*6), (12*6) ),

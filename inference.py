@@ -139,7 +139,8 @@ def main(args):
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
     print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}", flush=True)
-    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path, tag=args.exp_name+"_"+args.infer_set)
+    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
+                 data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 

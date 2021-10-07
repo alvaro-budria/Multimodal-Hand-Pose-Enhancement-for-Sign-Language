@@ -312,6 +312,8 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
+        if pipeline == "arm_wh2wh":
+            input_aa = input_aa[:,:,:6*6]  # keep arms
         print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
@@ -335,6 +337,8 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         assert not np.any(np.isnan(input_output_xyz))
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
+    
+
 
 
 def process_H2S_dataset(dir, data_dir):

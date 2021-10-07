@@ -44,7 +44,10 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
         data = make_equal_len(data, method="cutting+reflect")
-        if pipeline=="arm2wh" or pipeline[:13]=="arm_wh2finger":
+        if pipeline=="arm_wh2wh":
+            p0_windows = data[:,:,:]
+            p1_windows = data[:,:,6*6:]
+        elif pipeline=="arm2wh" or pipeline[:13]=="arm_wh2finger":
             p0_windows = data[:,:,:p0_size]
             p1_windows = data[:,:,p0_size:p0_size+p1_size]
         if require_text and not require_image:
