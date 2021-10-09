@@ -108,8 +108,7 @@ def main(args):
 
         featsData = None
         if args.require_text or args.require_image:
-            featsData_np = test_feats[idxStart:(idxStart + args.batch_size), :]
-            featsData = Variable(torch.from_numpy(featsData_np)).to(device)
+            featsData = test_feats[idxStart:(idxStart + args.batch_size), :]
         ## DONE setting batch data
         output_local = model(inputData, feats_=featsData)
         assert not torch.isnan(output_local).any()
