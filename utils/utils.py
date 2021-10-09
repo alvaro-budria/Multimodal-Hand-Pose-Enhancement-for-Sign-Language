@@ -308,6 +308,7 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
     assert not np.any(np.isnan(input))
     assert not np.any(np.isnan(output))
     if pipeline in list(FEATURE_MAP.keys()) or out_feat == 'wh' or out_feat == 'fingerL':
+        print(f"inside save_results first if")
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
