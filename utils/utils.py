@@ -325,10 +325,14 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
         root = get_root_bone(xyz_train, structure)
         assert not np.any(np.isnan(root))
-        # root = load_binary(f"{data_dir}/xyz_train_root.pkl")  # use the bone lengths and root references from training
+        with open('root.pkl', 'wb') as handle:
+            pickle.dump(root, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        
         bone_len = pose3D.get_bone_length(xyz_train, structure)
         assert not np.any(np.isnan(bone_len))
-        # bone_len = load_binary(f"{data_dir}/lengths_train.pkl")
+        with open('bone_len.pkl', 'wb') as handle:
+            pickle.dump(bone_len, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
         assert not np.any(np.isnan(input_output_aa))
@@ -338,8 +342,6 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
     
-
-
 
 def process_H2S_dataset(dir, data_dir):
     mkdir(data_dir)
