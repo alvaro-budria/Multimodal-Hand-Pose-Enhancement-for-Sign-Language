@@ -33,6 +33,7 @@ def get_root_bone(xyz, structure):
     xyz = array_to_list(xyz)
     root = np.array([])
     for i in range(len(xyz)):
+        xyz_clip = xyz[i]
         id_p_J, id_p_E, _, _ = structure[0]  # get initial and end joints indexes of root bone
         bone_points = np.hstack((xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_E*3:id_p_E*3+3]))
         root = np.vstack( (root, bone_points) ) if root.shape!=(0,) else bone_points
