@@ -8,10 +8,10 @@ from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
 sys.path.append(os.getcwd())
-sys.path.append("../utils")
+sys.path.append("./utils")
 from load_save_utils import *
 
-sys.path.append("../3DposeEstimator")
+sys.path.append("./3DposeEstimator")
 import skeletalModel
 
 
