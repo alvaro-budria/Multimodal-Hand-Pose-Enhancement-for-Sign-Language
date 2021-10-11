@@ -2,14 +2,17 @@ import os
 import argparse
 import os.path
 import sys
+import shutil
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
 
 sys.path.append(os.getcwd())
-sys.path.append("../")
-import utils
-import shutil
+sys.path.append("../utils")
+from load_save_utils import *
+
+sys.path.append("../3DposeEstimator")
+import skeletalModel
 
 
 # plots the
@@ -35,8 +38,8 @@ def plot_3d_lines(frame, structure, show=False):
 
 
 def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_results"):
-    utils.mkdir(results_dir)
-    utils.mkdir(f"{results_dir}/{clip_idx}")
+    mkdir(results_dir)
+    mkdir(f"{results_dir}/{clip_idx}")
     files = []
     for frame_idx in range(clip.shape[0]):
         fig, ax = plot_3d_lines(clip[frame_idx,:], structure, show=False)
@@ -76,7 +79,6 @@ if __name__ == '__main__':
     parser.add_argument('--seqs_to_viz', type=str, default="20", help='number of sequences to visualize')
     parser.add_argument('--results_dir', type=str, default="viz_results", help="directory where visualizations should be stored")
     args = parser.parse_args()
-    _inference_xyz = utils.load_binary(args.file_path)[0:args.seqs_to_viz]
-    import skeletalModel
+    _inference_xyz = load_binary(args.file_path)[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
     viz(_inference_xyz, structure, frame_rate=2, results_dir=args.results_dir)
