@@ -73,8 +73,10 @@ if __name__ == '__main__':
     # Visualize inference results 
     parser = argparse.ArgumentParser()
     parser.add_argument('--file_path', type=str, default="results/_inference_xyz.pkl", help='path to the .pkl file containing results to visualize')
+    parser.add_argument('--seqs_to_viz', type=str, default="20", help='number of sequences to visualize')
+    parser.add_argument('--results_dir', type=str, default="viz_results", help="directory where visualizations should be stored")
     args = parser.parse_args()
-    _inference_xyz = utils.load_binary(args.file_path)
+    _inference_xyz = utils.load_binary(args.file_path)[0:args.seqs_to_viz]
     import skeletalModel
     structure = skeletalModel.getSkeletalModelStructure()
-    viz(_inference_xyz, structure, frame_rate=25, results_dir="viz_results")
+    viz(_inference_xyz, structure, frame_rate=2, results_dir=args.results_dir)
