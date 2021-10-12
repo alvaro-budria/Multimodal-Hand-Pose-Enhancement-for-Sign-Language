@@ -99,7 +99,7 @@ def viz_GT(args):
     print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}", flush=True)
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
-    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name):
         for path in gifs_paths:
             wandb.save(path)
     ## DONE generating viz
