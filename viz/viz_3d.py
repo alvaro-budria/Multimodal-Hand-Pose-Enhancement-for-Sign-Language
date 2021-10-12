@@ -89,7 +89,7 @@ def viz_GT(args):
         test_X = test_X[0]
     test_X, test_Y, test_feats = rmv_clips_nan(test_X, test_Y, test_feats)
 
-    save_results(test_X[:test_Y.shape[0],:,:], test_Y, args.pipeline, args.base_path,
+    save_results(test_X[:args.seqs_to_viz,:,:], test_Y[:args.seqs_to_viz,:,:], args.pipeline, args.base_path,
                  data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
