@@ -138,13 +138,14 @@ def main(args):
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
     print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}", flush=True)
-    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
-                 data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
+    # save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
+    #              data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_{args.infer_set}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}")
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):

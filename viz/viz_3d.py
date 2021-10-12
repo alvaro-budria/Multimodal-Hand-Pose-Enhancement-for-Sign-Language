@@ -81,4 +81,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     _inference_xyz = load_binary(args.file_path)[0:args.seqs_to_viz]
     structure = skeletalModel.getSkeletalModelStructure()
+    print(f"_inference_xyz[0].shape {_inference_xyz[0].shape}")
     viz(_inference_xyz, structure, frame_rate=2, results_dir=args.results_dir)
