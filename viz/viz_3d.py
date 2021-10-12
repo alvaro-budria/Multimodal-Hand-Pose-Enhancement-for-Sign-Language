@@ -10,9 +10,14 @@ from PIL import Image
 sys.path.append(os.getcwd())
 sys.path.append("./utils")
 from load_save_utils import *
+from postprocess_utils import *
+from utils import *
+from load_save_utils import *
 
 sys.path.append("./3DposeEstimator")
 import skeletalModel
+
+import  wandb
 
 
 # plots the
@@ -72,14 +77,46 @@ def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
     return gifs_paths
 
 
+def viz_GT(args):
+    r6d_path = f"{args.data_dir}/r6d_{args.infer_set}.pkl"
+    image_path = f"{args.data_dir}/{args.infer_set}_vid_feats.pkl"
+    test_X, test_Y = load_windows(r6d_path, args.pipeline, require_text=args.require_text, text_path=text_path,
+                                  require_image=args.require_image, image_path=image_path)
+    test_feats = None
+    if args.require_text or args.require_image:
+        test_feats = test_X[1]
+        test_X = test_X[0]
+    test_X, test_Y, test_feats = rmv_clips_nan(test_X, test_Y, test_feats)
+
+    save_results(test_X[:test_Y.shape[0],:,:], test_Y, args.pipeline, args.base_path,
+                 data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
+    print("Saved results.", flush=True)
+    ## DONE preparing output for saving
+
+    ## generating viz for qualitative assessment
+    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_{args.infer_set}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}", flush=True)
+    structure = skeletalModel.getSkeletalModelStructure()
+    gifs_paths = viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
+    with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
+        for path in gifs_paths:
+            wandb.save(path)
+    ## DONE generating viz
+
+
 if __name__ == '__main__':
     # Visualize inference results
     parser = argparse.ArgumentParser()
+    parser.add_argument('--base_path', type=str, default="./", help='absolute path to the base directory where all of the data is stored')
     parser.add_argument('--file_path', type=str, default="results/_inference_xyz.pkl", help='path to the .pkl file containing results to visualize')
     parser.add_argument('--seqs_to_viz', type=int, default=20, help='number of sequences to visualize')
+    parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--results_dir', type=str, default="viz_results", help="directory where visualizations should be stored")
+    parser.add_argument('--data_dir', type=str, default="video_data" , help='directory where results should be stored and loaded from')
+    parser.add_argument('--infer_set', type=str, default="test" , help='if "test", infer using test set; if "train", infer using train set')
+    parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
+    parser.add_argument('--require_image', action="store_true", help="use additional image features or not")
+    parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     args = parser.parse_args()
-    _inference_xyz = load_binary(args.file_path)[0:args.seqs_to_viz]
-    structure = skeletalModel.getSkeletalModelStructure()
-    print(f"_inference_xyz[0].shape {_inference_xyz[0].shape}", flush=True)
-    viz(_inference_xyz, structure, frame_rate=2, results_dir=args.results_dir)
+
+    viz_GT(args)
