@@ -80,6 +80,7 @@ def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
 def viz_GT(args):
     r6d_path = f"{args.data_dir}/r6d_{args.infer_set}.pkl"
     image_path = f"{args.data_dir}/{args.infer_set}_vid_feats.pkl"
+    text_path = f"{args.data_dir}/{args.infer_set}_sentence_embeddings.pkl"
     test_X, test_Y = load_windows(r6d_path, args.pipeline, require_text=args.require_text, text_path=text_path,
                                   require_image=args.require_image, image_path=image_path)
     test_feats = None
