@@ -145,7 +145,7 @@ def main(args):
 
     ## generating viz for qualitative assessment
     _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_{args.infer_set}_inference_xyz.pkl"))[0:args.seqs_to_viz]
-    print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}")
+    print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}", flush=True)
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, resume="must"):
