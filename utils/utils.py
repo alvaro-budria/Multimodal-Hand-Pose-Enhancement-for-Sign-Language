@@ -312,13 +312,13 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         print(f"inside save_results first if")
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
-        filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
         if pipeline == "arm_wh2wh":
-            input_aa = input_aa[:,:,:6*6]  # keep arms
+            input_aa = input_aa[:,:,:3*6]  # keep arms
         print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
+        filename = os.path.join(base_path, f"results/{tag}_inference_aa")
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
