@@ -68,6 +68,8 @@ def main(args):
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
     print(test_X.shape, test_Y.shape, flush=True)
     input_feats = test_X.copy()
+    if pipeline=="wh2wh":
+        test_X = test_X[:,:,6*6:]  # keep hands; input_feats still contains both hands and arms for saving purposes
 
     test_X = np.swapaxes(test_X, 1, 2).astype(np.float32)
     test_Y = np.swapaxes(test_Y, 1, 2).astype(np.float32)
@@ -138,8 +140,8 @@ def main(args):
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
     print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}", flush=True)
-    # save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
-    #              data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
+    save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
+                 data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 

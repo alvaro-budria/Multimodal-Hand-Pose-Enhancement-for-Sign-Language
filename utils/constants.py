@@ -19,6 +19,7 @@ FEATURE_MAP = {
     "arm_wh2finger10": ( ((6+5)*6), (37*6) ),
     "arm_wh2finger11": ( ((6+1)*6), (41*6) ), 
     "arm_wh2finger12": ( ((6+0)*6), (42*6) ), # predict hands, including wrists, given arms
+    "wh2wh":  ( (42*6), (42*6) )  # hand to hand
 }
 
 NECK = [0, 1]  # neck in Open Pose 25

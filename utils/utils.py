@@ -335,7 +335,6 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         with open('bone_len.pkl', 'wb') as handle:
             pickle.dump(bone_len, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-
         input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
         assert not np.any(np.isnan(input_output_aa))
         #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)

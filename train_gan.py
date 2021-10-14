@@ -168,6 +168,8 @@ def load_data(args, rng, data_dir):
 
     train_X, train_Y, train_feats = fetch_data("train")
     val_X, val_Y, val_feats = fetch_data("val")
+    if args.pipeline == "wh2wh":
+        train_X, val_X = train_X[:,:,6*6:], val_X[:,:,6*6:]  # keep hands for training
 
     print(train_X.shape, train_Y.shape, flush=True)
     if args.require_text or args.require_image:
