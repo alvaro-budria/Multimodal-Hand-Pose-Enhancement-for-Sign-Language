@@ -10,7 +10,6 @@ def save_binary(obj, filename, append=False):
     if filename[-4:] != ".pkl":
         print("Adding .pkl extension as it was not found.", flush=True)
         filename = filename + ".pkl"
-
     if os.path.exists(filename) and append:
         print(f"Found file with name {filename}. Appending results to this file.", flush=True)
         contents = load_binary(filename)
@@ -18,7 +17,6 @@ def save_binary(obj, filename, append=False):
             obj = np.vstack((contents,obj))
         elif append:  # contents of filename are assumed to be contained in the form of a list. obj is assumed to be a list
             obj = contents + obj
-
     with open(filename, 'wb') as outfile:
         pickle.dump(obj, outfile, pickle.HIGHEST_PROTOCOL)
 
@@ -44,7 +42,7 @@ def load_windows(data_path, pipeline, require_text=False, text_path=None, requir
         print('using super quick load', data_path, flush=True)
         data = load_binary(data_path)
         data = make_equal_len(data, method="cutting+reflect")
-        if pipeline=="arm_wh2wh":
+        if pipeline in ["arm_wh2wh", "wh2wh"]:
             p0_windows = data[:,:,:]
             p1_windows = data[:,:,6*6:]
         elif pipeline=="arm2wh" or pipeline[:13]=="arm_wh2finger":

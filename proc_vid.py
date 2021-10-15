@@ -10,6 +10,7 @@ import clip  # to obtain CLIP embeddings
 
 import numpy as np
 import torch
+import torch.nn as nn
 import torchvision.models as models
 import torchvision.transforms as transforms
 
@@ -73,7 +74,7 @@ def crop_clip(clip, clip_id, input_json_folder):
     :param clip: size (T, C, H, W)
     :param clip_id: used to retrieve the clip's hand keypoints
     :param input_json_folder: the directory where the
-    :return cropped clip: (T, C, 100, 100, 2), where first position for last index is right hand, second is left hand
+    :return cropped clip: (T, C, 120, 120, 2), where first position for last index is right hand, second is left hand
     '''
     cropped_clip = np.empty((clip.shape[0], clip.shape[1], 100, 100, 2))
     hand = {0: "right", 1: "left"}
@@ -88,7 +89,7 @@ def crop_clip(clip, clip_id, input_json_folder):
             keypoints_json = None
         for j in range(2):  # for each hand
             center_coords_j = get_hand_center(keypoints_json, hand=hand[j])
-            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (100, 100))
+            crop_j = crop_frame(np.moveaxis(clip[i,:,:,:], 0, -1), center_coords_j, (120, 120))
             crop_j = np.moveaxis(crop_j, -1, 0)
             cropped_clip[i,:,:,:,j] = crop_j
         return cropped_clip.astype(np.uint8)
@@ -142,7 +143,7 @@ def obtain_feats_crops_CLIP(crops_list):
     # return crops_list
 
 
-def extract_feats_ResNet(tensor, model, batch_size=128):
+def extract_feats_ResNet(tensor, model, batch_size=192):
     out_feats = torch.empty((tensor.shape[0], 1000)).cpu().numpy()
     for batch in range(0, tensor.shape[0], batch_size):
         model_out = model(tensor[batch:batch+batch_size,:,:,:])
@@ -151,40 +152,46 @@ def extract_feats_ResNet(tensor, model, batch_size=128):
     return out_feats
 
 # clip is a TxCxHxWx2
-# output is a Tx1024 tensor (512 for each hand)
+# output is a Tx2000 tensor (1000 for each hand)
 def _obtain_feats_crops_ResNet(clip, model, transf):
     print(f"clip.shape: {clip.shape}", flush=True)
 
+    start = time.time()
     t_clip_r = transf(torch.from_numpy(clip[:,:,:,:,0]).to(dtype=torch.float))
     print(f"transf r", flush=True)
     t_clip_l = transf(torch.from_numpy(clip[:,:,:,:,1]).to(dtype=torch.float))
     print(f"transf l", flush=True)
+    print(f"Time to transform inputs for ResNet: {time.time() - start}", flush=True)
 
-    embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=128)
+    start = time.time()
+    embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=1024)
     # embed_r = model(t_clip_r.to(device))
     print(f"feats r", flush=True)
-    embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=128)
+    embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=1024)
     # embed_l = model(t_clip_l.to(device))
     print(f"feats l", flush=True)
+    print(f"Time to extract feats from ResNet: {time.time() - start}", flush=True)
 
     feats_hands = np.hstack((embed_r, embed_l))
     return feats_hands
 
-
+import time
 def obtain_feats_crops_ResNet(crops_list, data_dir):
     model_ft = models.resnet50(pretrained=False)
     model_ft.load_state_dict(torch.load('./models/resnet50-0676ba61.pth'))
-    #model_ft = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model_ft = nn.DataParallel(model_ft)
     model_ft.eval()
-    model_ft.cuda()#to(device)
-    #print(f"Using {device} as computation device", flush=True)
-    print(f"torch.cuda.is_available() {torch.cuda.is_available()}", flush=True)
+    model_ft.cuda()
+    
+    #model_ft = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
 
     # mean_std = np.load(f"{data_dir}/mean_std.npy")
     # normalize = transforms.Normalize(mean=mean_std[0],
     #                                  std=mean_std[1])  # H2S mean and std
     normalize = transforms.Normalize(mean=[123.68, 116.779, 103.939 ],
-                                     std=[58.393, 57.12, 57.375])  # ImageNet mean and std
+                                     std= [58.393, 57.12,   57.375])  # ImageNet mean and std
 
     feats_list = []
     for crop in crops_list:
@@ -194,7 +201,6 @@ def obtain_feats_crops_ResNet(crops_list, data_dir):
     return feats_list
 
 
-import time
 def obtain_crops(key, ids):
     s_ids = sorted(ids)
     print(f"sorted s_ids", flush=True)
@@ -296,7 +302,7 @@ def crop_frame(frame, middle, shape):
     # frame_ = cv2.circle(frame_, (x_1, y_1),
     #                     radius=4, color=(0, 255, 0), thickness=-1)
 
-
+    # if the crop falls (partially) outside of the image frame, pad the crop to the desired size
     crop = np.pad( crop, ((0, max(0, shape[0]-crop.shape[0])), (0, max(0, shape[1]-crop.shape[1])), (0,0)) )
     return crop[:shape[0], :shape[1], :]
 

@@ -236,17 +236,17 @@ def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text
     return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
 
 
-def obtain_vid_crops(kp_dir, key, data_dir):
+def obtain_vid_crops(kp_dir, key, data_dir, return_crops=False):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
     clip_ids_text = proc_text.get_clip_ids(key=key)
-    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id that are present both in kp_dir_list (IDs for which keypoints are availabe)
+    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id's that are present both in kp_dir_list (IDs for which keypoints are availabe)
                                                  # and in clip_ids_text (IDs for which text sentences are availabe)
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops", flush=True)
-    size = 200
+    size = 500
     start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)
@@ -254,20 +254,24 @@ def obtain_vid_crops(kp_dir, key, data_dir):
         save_binary(hand_feats, f"{data_dir}/{key}_vid_crops_{subset}-{subset+size}.pkl")
 
     # store all crops into a single file
-    print("storing all crops into a single file...", flush=True)
+    print("gathering all crops into a single object...", flush=True)
     hand_feats = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_crops_*.pkl")
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
+    if return_crops:
+        print("returning all crops", flush=True)
+        return hand_feats
     save_binary(hand_feats, f"{data_dir}/{key}_vid_crops.pkl")
     print("stored all crops into a single file", flush=True)
 
 
 # obtains features from the image crops contained in data_dir
-def obtain_vid_feats(key, data_dir):
-    hand_crops_list = load_binary(f"{data_dir}/{key}_vid_crops.pkl")
-    print(f"loaded {data_dir}/{key}_vid_crops.pkl", flush=True)
+def obtain_vid_feats(key, hand_crops_list=None, data_dir=None):
+    if hand_crops_list is None:
+        hand_crops_list = load_binary(f"{data_dir}/{key}_vid_crops.pkl")
+        print(f"loaded {data_dir}/{key}_vid_crops.pkl", flush=True)
     feats_list = proc_vid.obtain_feats_crops_ResNet(hand_crops_list, data_dir)
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
@@ -342,41 +346,41 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         assert not np.any(np.isnan(input_output_xyz))
         filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
         save_binary(input_output_xyz, filename)  # save in xyz format
-    
+
 
 def process_H2S_dataset(dir, data_dir):
     mkdir(data_dir)
 
-    (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
-    print("Loaded raw data from disk", flush=True)
-    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    print("Selected NECK keypoints", flush=True)
-    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    print("Selected ARMS keypoints", flush=True)
-    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    print("Selected HANDS keypoints", flush=True)
+    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
+    # print("Loaded raw data from disk", flush=True)
+    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    # print("Selected NECK keypoints", flush=True)
+    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    # print("Selected ARMS keypoints", flush=True)
+    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    # print("Selected HANDS keypoints", flush=True)
 
     #feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     #feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
     #save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
     #save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
-    save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
+    # save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
 
-    #save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
-    #save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
-    #save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
-    #save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
-    #save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
-    #save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
+    # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
 
-    print()
-    print("saved xy original and text embeddings", flush=True)
-    print()
+    # print()
+    # print("saved xy original and text embeddings", flush=True)
+    # print()
 
-    lift_2d_to_3d(load_binary(f"{data_dir}/xy_train.pkl"), f"{data_dir}/xyz_train.pkl")
-    print("lifted train to 3d", flush=True)
+    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_train.pkl"), f"{data_dir}/xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
     # lift_2d_to_3d(load_binary(f"{data_dir}/xy_val.pkl"), f"{data_dir}/xyz_val.pkl")
     # print("lifted val to 3d", flush=True)
     # lift_2d_to_3d(load_binary(f"{data_dir}/xy_test.pkl"), f"{data_dir}/xyz_test.pkl")
@@ -409,7 +413,7 @@ def process_H2S_dataset(dir, data_dir):
     # print("saved r6d data", flush=True)
     # print()
 
-    obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir)
+    crops_val = obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir, return_crops=True)
     print("vid crops val")
     # obtain_vid_crops(kp_dir=dir, key="test", data_dir=data_dir)
     # print("vid crops test")
@@ -423,7 +427,7 @@ def process_H2S_dataset(dir, data_dir):
     # compute_mean_std("train_vid_crops.pkl", data_dir)
     # print(f"saved mean and std for vids in train_vid_crops.pkl")
 
-    obtain_vid_feats("val", data_dir)
+    obtain_vid_feats("val", hand_crops_list=crops_val, data_dir=data_dir)
     print("vid feats val", flush=True)
     # obtain_vid_feats("test", data_dir)
     # print("vid feats test", flush=True)
