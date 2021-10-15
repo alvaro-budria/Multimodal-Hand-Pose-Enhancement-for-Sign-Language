@@ -295,9 +295,9 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
                                                  # and in clip_ids_text (IDs for which text sentences are availabe)
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
-    ids = sorted(ids)[:30]
+    ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 15 ###
+    size = 500 ###
     start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)

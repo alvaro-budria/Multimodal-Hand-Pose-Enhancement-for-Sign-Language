@@ -147,29 +147,29 @@ def extract_feats_ResNet(tensor, model, batch_size=192):
     out_feats = torch.empty((tensor.shape[0], 1000)).cpu().numpy()
     for batch in range(0, tensor.shape[0], batch_size):
         model_out = model(tensor[batch:batch+batch_size,:,:,:])
-        print(f"model_out.shape {model_out.shape}", flush=True)
+        # print(f"model_out.shape {model_out.shape}", flush=True)
         out_feats[batch:batch+batch_size,:] = model(tensor[batch:batch+batch_size,:,:,:]).detach().cpu().numpy()
     return out_feats
 
 # clip is a TxCxHxWx2
 # output is a Tx2000 tensor (1000 for each hand)
 def _obtain_feats_crops_ResNet(clip, model, transf):
-    print(f"clip.shape: {clip.shape}", flush=True)
+    # print(f"clip.shape: {clip.shape}", flush=True)
 
     start = time.time()
     t_clip_r = transf(torch.from_numpy(clip[:,:,:,:,0]).to(dtype=torch.float))
-    print(f"transf r", flush=True)
+    # print(f"transf r", flush=True)
     t_clip_l = transf(torch.from_numpy(clip[:,:,:,:,1]).to(dtype=torch.float))
-    print(f"transf l", flush=True)
+    # print(f"transf l", flush=True)
     print(f"Time to transform inputs for ResNet: {time.time() - start}", flush=True)
 
     start = time.time()
     embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=1024)
     # embed_r = model(t_clip_r.to(device))
-    print(f"feats r", flush=True)
+    # print(f"feats r", flush=True)
     embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=1024)
     # embed_l = model(t_clip_l.to(device))
-    print(f"feats l", flush=True)
+    # print(f"feats l", flush=True)
     print(f"Time to extract feats from ResNet: {time.time() - start}", flush=True)
 
     feats_hands = np.hstack((embed_r, embed_l))
@@ -196,7 +196,7 @@ def obtain_feats_crops_ResNet(crops_list, data_dir):
     feats_list = []
     for crop in crops_list:
         feats = _obtain_feats_crops_ResNet(crop, model_ft, normalize)
-        print(f"feats.shape {feats.shape}", flush=True)
+        # print(f"feats.shape {feats.shape}", flush=True)
         feats_list.append(feats)
     return feats_list
 
