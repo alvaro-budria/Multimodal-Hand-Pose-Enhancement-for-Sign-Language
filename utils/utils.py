@@ -250,20 +250,20 @@ def obtain_vid_crops(kp_dir, key, data_dir, return_crops=False):
     start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)
-        hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
-        save_binary(hand_feats, f"{data_dir}/{key}_vid_crops_{subset}-{subset+size}.pkl")
+        hand_crops = proc_vid.obtain_crops(key, ids[subset:subset+size])
+        save_binary(hand_crops, f"{data_dir}/{key}_vid_crops_{subset}-{subset+size}.pkl")
 
     # store all crops into a single file
     print("gathering all crops into a single object...", flush=True)
-    hand_feats = []
+    hand_crops = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_crops_*.pkl")
     for file in vid_feats_files:
-        hand_feats += load_binary(file)
+        hand_crops += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
     if return_crops:
         print("returning all crops", flush=True)
-        return hand_feats
-    save_binary(hand_feats, f"{data_dir}/{key}_vid_crops.pkl")
+        return hand_crops
+    save_binary(hand_crops, f"{data_dir}/{key}_vid_crops.pkl")
     print("stored all crops into a single file", flush=True)
 
 
@@ -274,6 +274,49 @@ def obtain_vid_feats(key, hand_crops_list=None, data_dir=None):
         print(f"loaded {data_dir}/{key}_vid_crops.pkl", flush=True)
     feats_list = proc_vid.obtain_feats_crops_ResNet(hand_crops_list, data_dir)
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
+
+
+import re
+def atof(text):
+    try:
+        retval = float(text)
+    except ValueError:
+        retval = text
+    return retval
+
+def natural_keys(text):
+    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+
+def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
+    kp_path = os.path.join(kp_dir, DATA_PATHS[key])
+    kp_dir_list = os.listdir(kp_path)
+    clip_ids_text = proc_text.get_clip_ids(key=key)
+    ids = _join_ids(kp_dir_list, clip_ids_text)  # keep id's that are present both in kp_dir_list (IDs for which keypoints are availabe)
+                                                 # and in clip_ids_text (IDs for which text sentences are availabe)
+    clip_ids_vid = proc_vid.get_vid_ids(key=key)
+    ids = _join_ids(ids, clip_ids_vid)
+    ids = sorted(ids)[:40]
+    print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
+    size = 10 ###
+    start = 0
+    for subset in range(start, len(ids), size):
+        print(f"subset: {subset}", flush=True)
+        hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
+        feats_list = proc_vid.obtain_feats_crops_ResNet(hand_feats, data_dir)
+        save_binary(feats_list, f"{data_dir}/{key}_vid_feats_{subset}-{subset+size}.pkl")
+
+    # store all feats into a single file
+    print("gathering all feats into a single object...", flush=True)
+    hand_feats = []
+    vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl").sort(key=natural_keys)
+    for file in vid_feats_files:
+        hand_feats += load_binary(file)
+        os.remove(file)  # remove batch files, leave only single whole file
+    if return_feats:
+        print("returning all feats", flush=True)
+        return hand_feats
+    save_binary(hand_feats, f"{data_dir}/{key}_vid_feats.pkl")
+    print("stored all feats into a single file", flush=True)
 
 
 # returns the keypoints in the specified indexes
@@ -413,8 +456,11 @@ def process_H2S_dataset(dir, data_dir):
     # print("saved r6d data", flush=True)
     # print()
 
-    crops_val = obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir, return_crops=True)
-    print("vid crops val")
+    obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
+    print("vid crops & feats val")
+
+    # crops_val = obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir, return_crops=True)
+    # print("vid crops val")
     # obtain_vid_crops(kp_dir=dir, key="test", data_dir=data_dir)
     # print("vid crops test")
     # obtain_vid_crops(kp_dir=dir, key="train", data_dir=data_dir)
@@ -427,8 +473,8 @@ def process_H2S_dataset(dir, data_dir):
     # compute_mean_std("train_vid_crops.pkl", data_dir)
     # print(f"saved mean and std for vids in train_vid_crops.pkl")
 
-    obtain_vid_feats("val", hand_crops_list=crops_val, data_dir=data_dir)
-    print("vid feats val", flush=True)
+    # obtain_vid_feats("val", hand_crops_list=crops_val, data_dir=data_dir)
+    # print("vid feats val", flush=True)
     # obtain_vid_feats("test", data_dir)
     # print("vid feats test", flush=True)
     # obtain_vid_feats("train", data_dir)
