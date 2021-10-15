@@ -76,7 +76,7 @@ def crop_clip(clip, clip_id, input_json_folder):
     :param input_json_folder: the directory where the
     :return cropped clip: (T, C, 120, 120, 2), where first position for last index is right hand, second is left hand
     '''
-    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 100, 100, 2))
+    cropped_clip = np.empty((clip.shape[0], clip.shape[1], 120, 120, 2))
     hand = {0: "right", 1: "left"}
     for i in range(clip.shape[0]):
         json_filename = clip_id + "_" + '{:012d}'.format(i) + "_keypoints.json"
