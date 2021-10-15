@@ -309,8 +309,11 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     print("gathering all feats into a single object...", flush=True)
     hand_feats = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
+    print(f"vid_feats_files {vid_feats_files}", flush=True)
     vid_feats_files.sort(key=natural_keys)
+    print(f"vid_feats_files {vid_feats_files}", flush=True)
     for file in vid_feats_files:
+        print(file, flush=True)
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
     if return_feats:
