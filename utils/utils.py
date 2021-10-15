@@ -295,9 +295,9 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
                                                  # and in clip_ids_text (IDs for which text sentences are availabe)
     clip_ids_vid = proc_vid.get_vid_ids(key=key)
     ids = _join_ids(ids, clip_ids_vid)
-    ids = sorted(ids)[:40]
+    ids = sorted(ids)[:30]
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 10 ###
+    size = 15 ###
     start = 0
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)
@@ -308,7 +308,8 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     # store all feats into a single file
     print("gathering all feats into a single object...", flush=True)
     hand_feats = []
-    vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl").sort(key=natural_keys)
+    vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
+    vid_feats_files.sort(key=natural_keys)
     for file in vid_feats_files:
         hand_feats += load_binary(file)
         os.remove(file)  # remove batch files, leave only single whole file
