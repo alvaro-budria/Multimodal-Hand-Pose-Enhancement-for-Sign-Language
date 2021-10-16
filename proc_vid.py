@@ -177,6 +177,7 @@ def _obtain_feats_crops_ResNet(clip, model, transf):
 
 import time
 def obtain_feats_crops_ResNet(crops_list, data_dir):
+    start = time.time()
     model_ft = models.resnet50(pretrained=False)
     model_ft.load_state_dict(torch.load('./models/resnet50-0676ba61.pth'))
     if torch.cuda.device_count() > 1:
@@ -198,6 +199,7 @@ def obtain_feats_crops_ResNet(crops_list, data_dir):
         feats = _obtain_feats_crops_ResNet(crop, model_ft, normalize)
         # print(f"feats.shape {feats.shape}", flush=True)
         feats_list.append(feats)
+    print(f"Time to extract vid feats: {time.time() - start}", flush=True)
     return feats_list
 
 
