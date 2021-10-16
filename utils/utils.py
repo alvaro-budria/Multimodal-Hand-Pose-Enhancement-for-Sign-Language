@@ -461,8 +461,12 @@ def process_H2S_dataset(dir, data_dir):
     # print("saved r6d data", flush=True)
     # print()
 
-    obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
-    print("vid crops & feats val")
+    # obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
+    # print("vid crops & feats val")
+    obtain_vid_crops_and_feats(kp_dir=dir, key="train", data_dir=data_dir, return_feats=False)
+    print("vid crops & feats train")
+    # obtain_vid_crops_and_feats(kp_dir=dir, key="test", data_dir=data_dir, return_feats=False)
+    # print("vid crops & feats test")
 
     # crops_val = obtain_vid_crops(kp_dir=dir, key="val", data_dir=data_dir, return_crops=True)
     # print("vid crops val")
