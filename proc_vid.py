@@ -185,7 +185,7 @@ def obtain_feats_crops_ResNet(crops_list, data_dir):
         model_ft = nn.DataParallel(model_ft)
     model_ft.eval()
     model_ft.cuda()
-    
+    print("Sent model to CUDA", flush=True)
     #model_ft = torch.nn.Sequential(*list(model_ft.children())[:-1])  # keep feature extractor
 
     # mean_std = np.load(f"{data_dir}/mean_std.npy")
@@ -196,6 +196,7 @@ def obtain_feats_crops_ResNet(crops_list, data_dir):
 
     feats_list = []
     for crop in crops_list:
+        print(f"crop.shape {crop.shape}", flush=True)
         feats = _obtain_feats_crops_ResNet(crop, model_ft, normalize)
         # print(f"feats.shape {feats.shape}", flush=True)
         feats_list.append(feats)
