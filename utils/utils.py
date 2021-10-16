@@ -297,12 +297,12 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 500 ###
-    start = 0
+    size = 400 ###
+    start = 8500
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)
-        hand_feats = proc_vid.obtain_crops(key, ids[subset:subset+size])
-        feats_list = proc_vid.obtain_feats_crops_ResNet(hand_feats, data_dir)
+        hand_crops = proc_vid.obtain_crops(key, ids[subset:subset+size])
+        feats_list = proc_vid.obtain_feats_crops_ResNet(hand_crops, data_dir)
         save_binary(feats_list, f"{data_dir}/{key}_vid_feats_{subset}-{subset+size}.pkl")
 
     # store all feats into a single file
