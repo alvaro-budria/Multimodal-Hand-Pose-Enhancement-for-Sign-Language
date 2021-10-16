@@ -299,6 +299,7 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
     size = 400 ###
     start = 8500
+    print(f"(start, len(ids), size) {start, len(ids), size}", flush=True)
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)
         hand_crops = proc_vid.obtain_crops(key, ids[subset:subset+size])
