@@ -59,7 +59,7 @@ def getSkeletalModelStructure():
   
     # right hand - wrist
     (4, 8, 4, 3),
-  
+
     # right hand - 1st finger
     (8, 9, 5, 4),
     (9, 10, 6, 8),
