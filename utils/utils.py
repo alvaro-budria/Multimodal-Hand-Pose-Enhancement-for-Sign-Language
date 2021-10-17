@@ -297,8 +297,8 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 300 ###
-    start = 8500
+    size = 500 ###
+    start = 18500
     print(f"(start, len(ids), size) {start, len(ids), size}", flush=True)
     for subset in range(start, len(ids), size):
         print(f"subset: {subset}", flush=True)

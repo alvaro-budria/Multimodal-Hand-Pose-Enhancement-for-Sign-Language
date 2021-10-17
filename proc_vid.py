@@ -164,10 +164,10 @@ def _obtain_feats_crops_ResNet(clip, model, transf):
     print(f"Time to transform inputs for ResNet: {time.time() - start}", flush=True)
 
     start = time.time()
-    embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=1)
+    embed_r = extract_feats_ResNet(t_clip_r.to(device), model, batch_size=256)
     # embed_r = model(t_clip_r.to(device))
     # print(f"feats r", flush=True)
-    embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=1)
+    embed_l = extract_feats_ResNet(t_clip_l.to(device), model, batch_size=256)
     # embed_l = model(t_clip_l.to(device))
     # print(f"feats l", flush=True)
     print(f"Time to extract feats from ResNet: {time.time() - start}", flush=True)
