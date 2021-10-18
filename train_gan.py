@@ -66,7 +66,7 @@ def main(args):
 
         ## set up generator model
         mod = MODELS[config.model]
-        print(f"mod: {mod}")
+        print(f"mod: {mod}", flush=True)
         generator = getattr(modelZoo, mod)()
         if mod == "regressor_fcn_bn_32_b2h":
             generator.build_net(feature_in_dim, feature_out_dim, require_image=args.require_image)
@@ -149,12 +149,13 @@ def load_data(args, rng, data_dir):
     def fetch_data(set="train"):
         ## load from external files
         path = os.path.join(data_dir, DATA_PATHS_r6d[set])
-        
+
         if args.embeds_type == "normal":
             text_path = f"{data_dir}/{set}_sentence_embeddings.pkl"
         elif args.embeds_type == "average":
             text_path = f"{data_dir}/average_{set}_sentence_embeddings.pkl"
         image_path = f"{data_dir}/{set}_vid_feats.pkl"
+        print(f"image_path {image_path}", flush=True)
 
         data_path = os.path.join(args.base_path, path)
         curr_p0, curr_p1 = load_windows(data_path, args.pipeline, require_text=args.require_text, text_path=text_path,
@@ -168,6 +169,7 @@ def load_data(args, rng, data_dir):
 
     train_X, train_Y, train_feats = fetch_data("train")
     val_X, val_Y, val_feats = fetch_data("val")
+    print(f"val_feats {val_feats}", flush=True)
     if args.pipeline == "wh2wh":
         train_X, val_X = train_X[:,:,6*6:], val_X[:,:,6*6:]  # keep hands for training
 
@@ -268,7 +270,7 @@ def train_discriminator(args, rng, generator, discriminator, gan_criterion, d_op
         d_optimizer.step()
         avgLoss += d_loss.item() * args.batch_size
 
-    print(f'Epoch [{epoch}/{args.num_epochs-1}], Tr. Disc. Loss: {avgLoss / (totalSteps * args.batch_size)}')
+    print(f'Epoch [{epoch}/{args.num_epochs-1}], Tr. Disc. Loss: {avgLoss / (totalSteps * args.batch_size)}', flush=True)
     wandb.log({"epoch": epoch, "loss_train_disc": avgLoss / (totalSteps * args.batch_size)})
 
 
