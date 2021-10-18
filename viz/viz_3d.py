@@ -6,6 +6,7 @@ import shutil
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from PIL import Image
+import numpy as np
 
 sys.path.append(os.getcwd())
 sys.path.append("./utils")
@@ -20,7 +21,6 @@ import skeletalModel
 import  wandb
 
 
-# plots the
 # "frame" is a Numpy array containing the keypoints for a single frame
 def plot_3d_lines(frame, structure, show=False):
     s = frame.shape
@@ -42,7 +42,7 @@ def plot_3d_lines(frame, structure, show=False):
         return fig, ax
 
 
-def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_results"):
+def viz_clip(clip, clip_idx, structure, frame_rate=2, results_dir="viz_results"):
     mkdir(results_dir)
     mkdir(f"{results_dir}/{clip_idx}")
     files = []
@@ -68,8 +68,8 @@ def viz_clip(clip, clip_idx, structure, frame_rate=27.5, results_dir="viz_result
     shutil.rmtree(f"{results_dir}/{clip_idx}")
     return f"{results_dir}/{clip_idx}.gif"  # return animation filename
 
-import numpy as np ########
-def viz(xyz, structure, frame_rate=27.5, results_dir="viz_results"):
+
+def viz(xyz, structure, frame_rate=2, results_dir="viz_results"):
     gifs_paths = []
     for clip_idx in range(len(xyz)):
         assert not np.any(np.isnan(xyz[clip_idx]))

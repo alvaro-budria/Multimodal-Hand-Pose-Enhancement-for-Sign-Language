@@ -463,8 +463,8 @@ def process_H2S_dataset(dir, data_dir):
 
     # obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
     # print("vid crops & feats val")
-    obtain_vid_crops_and_feats(kp_dir=dir, key="train", data_dir=data_dir, return_feats=False)
-    print("vid crops & feats train")
+    # obtain_vid_crops_and_feats(kp_dir=dir, key="train", data_dir=data_dir, return_feats=False)
+    # print("vid crops & feats train")
     # obtain_vid_crops_and_feats(kp_dir=dir, key="test", data_dir=data_dir, return_feats=False)
     # print("vid crops & feats test")
 

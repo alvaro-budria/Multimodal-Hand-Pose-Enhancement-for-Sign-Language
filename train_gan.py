@@ -171,13 +171,13 @@ def load_data(args, rng, data_dir):
     if args.pipeline == "wh2wh":
         train_X, val_X = train_X[:,:,6*6:], val_X[:,:,6*6:]  # keep hands for training
 
-    print(train_X.shape, train_Y.shape, flush=True)
+    print(f"train_X.shape, train_Y.shape {train_X.shape, train_Y.shape}", flush=True)
     if args.require_text or args.require_image:
-        print(f"train_feats.shape: {train_feats.shape}")
+        print(f"train_feats.shape: {train_feats.shape}", flush=True)
     train_X, train_Y, train_feats = rmv_clips_nan(train_X, train_Y, train_feats)
     val_X, val_Y, val_feats = rmv_clips_nan(val_X, val_Y, val_feats)
     assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
-    print(train_X.shape, train_Y.shape, flush=True)
+    print(f"train_X.shape, train_Y.shape {train_X.shape, train_Y.shape}", flush=True)
     if args.require_text:
         print(train_feats.shape)
 
