@@ -53,7 +53,6 @@ def main(args):
         rng = np.random.RandomState(23456)
         torch.manual_seed(23456)
         torch.cuda.manual_seed(23456)
-
         ## load data from saved files
         data_tuple = load_data(args, rng, config.data_dir)
         if args.require_text or args.require_image:
@@ -79,7 +78,6 @@ def main(args):
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         reg_criterion = nn.L1Loss()
-        # g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
         generator.train()
         wandb.watch(generator, reg_criterion, log="all", log_freq=10)
@@ -95,7 +93,6 @@ def main(args):
             discriminator.load_state_dict(loaded_state['state_dict'], strict=False)
             d_optimizer.load_state_dict(loaded_state['d_optimizer'])        
         gan_criterion = nn.MSELoss()
-        # d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=2*args.patience//(3*2), factor=0.5, min_lr=1e-5)
         d_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
         discriminator.train()
         wandb.watch(discriminator, gan_criterion, log="all", log_freq=10)
@@ -119,8 +116,7 @@ def main(args):
             if epoch > 100 and (epoch - prev_save_epoch) > patience:
                 print('early stopping at:', epoch-1, flush=True)
                 break
-
-            if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0) :
+            if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0):
                 train_discriminator(args, rng, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_feats=train_feats)
             else:
                 train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_feats=train_feats)
@@ -130,7 +126,7 @@ def main(args):
                 rng.shuffle(I)
                 train_X = train_X[I]
                 train_Y = train_Y[I]
-                if args.require_text:
+                if args.require_text or args.require_image:
                     train_feats = train_feats[I]
 
     shutil.copyfile(lastCheckpoint, args.model_path + f"/lastCheckpoint_{args.exp_name}.pth")  #  name last checkpoint as "lastCheckpoint.pth"
