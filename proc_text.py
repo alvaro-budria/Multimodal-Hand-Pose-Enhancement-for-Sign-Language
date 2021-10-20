@@ -58,7 +58,7 @@ def obtain_embeddings(key, ids):
 
 
 # returns the ID of those clips for which text is available
-def get_clip_ids(key="test"):
+def get_clip_ids(key):
     file_path = TEXT_PATHS[key]
     id_list = []
     with open(file_path) as fp:

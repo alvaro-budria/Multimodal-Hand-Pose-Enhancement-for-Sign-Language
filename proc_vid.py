@@ -1,6 +1,5 @@
 import os
 import json
-import argparse
 from multiprocessing import Pool
 from re import I
 
@@ -63,7 +62,7 @@ def load_clips(key, ids):
 
 
 # returns the ID of those clips for which video is available
-def get_vid_ids(key="train"):
+def get_vid_ids(key):
     clips_ids = [x[:-4] for x in os.listdir(VID_PATHS[key]) if x.endswith(".mp4")]
     return clips_ids
 
