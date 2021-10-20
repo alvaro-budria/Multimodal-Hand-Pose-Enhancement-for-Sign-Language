@@ -121,13 +121,6 @@ def main(args):
             else:
                 train_generator(args, rng, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_feats=train_feats)
                 currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=val_feats)
-                # Data shuffle
-                I = np.arange(len(train_X))
-                rng.shuffle(I)
-                train_X = train_X[I]
-                train_Y = train_Y[I]
-                if args.require_text or args.require_image:
-                    train_feats = train_feats[I]
 
     shutil.copyfile(lastCheckpoint, args.model_path + f"/lastCheckpoint_{args.exp_name}.pth")  #  name last checkpoint as "lastCheckpoint.pth"
 
@@ -176,16 +169,16 @@ def load_data(args, rng, data_dir):
     val_X, val_Y, val_feats = rmv_clips_nan(val_X, val_Y, val_feats)
     assert not np.any(np.isnan(train_X)) and not np.any(np.isnan(train_Y)) and not np.any(np.isnan(val_X)) and not np.any(np.isnan(val_Y))
     print(f"train_X.shape, train_Y.shape {train_X.shape, train_Y.shape}", flush=True)
-    if args.require_text:
-        print(train_feats.shape)
+    if args.require_text or args.require_image:
+        print(train_feats.shape, flush=True)
 
     print("-"*20 + "train" + "-"*20, flush=True)
     print('===> in/out', train_X.shape, train_Y.shape, flush=True)
     print(flush=True)
     print("-"*20 + "val" + "-"*20, flush=True)
     print('===> in/out', val_X.shape, val_Y.shape, flush=True)
-    if args.require_text:
-        print("===> text", train_feats.shape, flush=True)
+    if args.require_text or args.require_image:
+        print("===> feats", train_feats.shape, flush=True)
     ## DONE load from external files
 
     train_X = np.swapaxes(train_X, 1, 2).astype(np.float32)
