@@ -1,6 +1,6 @@
 # 2D_to_3D_conversion
 
-The goal of this repo is to predict the depth coordinate of 2D videos. 
+The goal of this repo is to classify sequences of 3D skeletons from the How2Sign dataset. 
 
 - **Data**<br />
 	The videos in the dataset are recordings of people speaking in sign language. For each video, 26 body keypoints of the person have been extracted to obtain a 		stick-figure representation. The depth coordinate for each keypoint has been estimated using a multiple-camera set-up. The data is stored in the following two 		numpy arrays:<br />
