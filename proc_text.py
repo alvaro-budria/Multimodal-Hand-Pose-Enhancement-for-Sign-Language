@@ -54,7 +54,7 @@ def obtain_embeddings(key, ids):
     sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)
     with torch.no_grad():
         embeddings = model.encode_text(sentence_tensor)
-    return embeddings.numpy()
+    return embeddings.cpu().numpy()
 
 
 # returns the ID of those clips for which text is available
