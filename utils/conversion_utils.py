@@ -149,7 +149,6 @@ def aa_to_xyz(aa, root, bone_len, structure):
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
-        print(f"aa_clip.shape: {aa_clip.shape}", flush=True)
         xyz_clip = np.empty((aa_clip.shape[0], aa_clip.shape[1]+6), dtype="float32")  # add 6 values, corresponding to two keypoints defining the root bone
         xyz_clip[:,0:6] = root
         for iBone in range(1,len(structure)):
