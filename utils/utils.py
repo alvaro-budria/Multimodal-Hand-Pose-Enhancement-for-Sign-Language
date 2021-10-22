@@ -21,6 +21,7 @@ import viz.viz_3d as viz
 
 import proc_text
 import proc_vid
+import proc_categ
 
 from conversion_utils import *
 from load_save_utils import *
@@ -184,7 +185,7 @@ def _load(args):
     in_kp, out_kp = load_clip(clip_path, pipeline)
     return clip, in_kp, out_kp
 
-def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep a certain % of the data only
+def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a certain % of the data only
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
 
@@ -199,6 +200,11 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     ids = sorted(ids)
     print(f"{key} len(ids): {len(ids)}", flush=True)
 
+    # get category for each of the clips
+    id_categ_dict = proc_categ.get_ids_categ(key=key)
+    categs = proc_categ.get_clips_categ(ids, id_categ_dict)
+
+    # keep subset of data
     idx_max = int(len(ids)*subset)
     print(f"{key} idx_max: {idx_max}", flush=True)
     print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
@@ -207,6 +213,7 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
     #embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
 
+    # load keypoints for selected clips
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
@@ -216,24 +223,25 @@ def _load_H2S_dataset(dir, pipeline, key, subset=0.1):  # subset allows to keep 
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
-    return in_features, out_features, embeds
+    return in_features, out_features, embeds, categs[:idx_max]
 
 def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False, subset=0.1):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
     val_path = os.path.join(data_dir, DATA_PATHS["val"])
     test_path = os.path.join(data_dir, DATA_PATHS["test"])
     # load data
-    in_train, out_train, in_val, out_val, in_test, out_test = None, None, None, None, None, None
     if os.path.exists(test_path):
-        in_test, out_test, embeds_test = _load_H2S_dataset(test_path, pipeline=pipeline, key="test", subset=subset)
+        in_test, out_test, embeds_test, categs_test = _load_H2S_dataset(test_path, pipeline=pipeline, key="test", subset=subset)
         print("LOADED RAW TEST DATA", flush=True)
     if os.path.exists(val_path):
-        in_val, out_val, embeds_val = _load_H2S_dataset(val_path, pipeline=pipeline, key="val", subset=subset)
+        in_val, out_val, embeds_val, categs_val = _load_H2S_dataset(val_path, pipeline=pipeline, key="val", subset=subset)
         print("LOADED RAW VAL DATA", flush=True)
     if os.path.exists(train_path):
-        in_train, out_train, embeds_train = _load_H2S_dataset(train_path, pipeline=pipeline, key="train", subset=subset)
+        in_train, out_train, embeds_train, categs_train = _load_H2S_dataset(train_path, pipeline=pipeline, key="train", subset=subset)
         print("LOADED RAW TRAIN DATA", flush=True)
-    return (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test)
+    return (in_train, out_train, embeds_train, categs_train), \
+           (in_val, out_val, embeds_val, categs_val), \
+           (in_test, out_test, embeds_test, categs_test)
 
 
 def obtain_vid_crops(kp_dir, key, data_dir, return_crops=False):
@@ -365,9 +373,9 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
+        print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
         if pipeline == "arm_wh2wh":
             input_aa = input_aa[:,:,:3*6]  # keep arms
-        print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
         filename = os.path.join(base_path, f"results/{tag}_inference_aa")
@@ -381,7 +389,7 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         assert not np.any(np.isnan(root))
         with open('root.pkl', 'wb') as handle:
             pickle.dump(root, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        
+
         bone_len = pose3D.get_bone_length(xyz_train, structure)
         assert not np.any(np.isnan(bone_len))
         with open('bone_len.pkl', 'wb') as handle:
@@ -399,8 +407,11 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
 def process_H2S_dataset(dir, data_dir):
     mkdir(data_dir)
 
-    # (in_train, out_train, embeds_train), (in_val, out_val, embeds_val), (in_test, out_test, embeds_test) = load_H2S_dataset(dir, subset=1)
-    # print("Loaded raw data from disk", flush=True)
+    (in_train, out_train, embeds_train, categs_train), \
+    (in_val, out_val, embeds_val, categs_val), \
+    (in_test, out_test, embeds_test, categs_test) \
+        = load_H2S_dataset(dir, subset=1)
+    print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
     # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
@@ -409,12 +420,16 @@ def process_H2S_dataset(dir, data_dir):
     # print("Selected HANDS keypoints", flush=True)
 
     #feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    #feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     #feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
     #save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
     #save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
-    # save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
+    #save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
+
+    save_binary(categs_train, f"{data_dir}/categs_train.pkl", append=False)
+    save_binary(categs_test, f"{data_dir}/categs_test.pkl", append=False)
+    save_binary(categs_val, f"{data_dir}/categs_val.pkl", append=False)
 
     # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
@@ -461,8 +476,8 @@ def process_H2S_dataset(dir, data_dir):
     # print("saved r6d data", flush=True)
     # print()
 
-    obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
-    print("vid crops & feats val")
+    # obtain_vid_crops_and_feats(kp_dir=dir, key="val", data_dir=data_dir, return_feats=False)
+    # print("vid crops & feats val")
     # obtain_vid_crops_and_feats(kp_dir=dir, key="train", data_dir=data_dir, return_feats=False)
     # print("vid crops & feats train")
     # obtain_vid_crops_and_feats(kp_dir=dir, key="test", data_dir=data_dir, return_feats=False)
