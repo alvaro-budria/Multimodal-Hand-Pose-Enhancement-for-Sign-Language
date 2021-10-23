@@ -2,7 +2,7 @@
 HIDDEN_SIZE = 1024
 NUM_LAYERS = 1
 BATCH_SIZE = 256
-TEST_BATCH_SIZE = 256
+VAL_BATCH_SIZE = 256
 SEQ_LEN = 50
 BIAS = True
 TEST_FRACTION = 0.2 # Fraction of the data used for testing
