@@ -34,36 +34,36 @@ def main(args):
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
-    r6d_train = load_data(data_dir=config.data_dir, filename="r6d_train.pkl")
-    r6d_val = load_data(data_dir=config.data_dir, filename="r6d_val.pkl")
-    Y_train, Y_val = load_binary(f"{config.data_dir}/categs_train.pkl"), load_binary(f"{config.data_dir}/categs_val.pkl")
+        r6d_train = load_data(data_dir=config.data_dir, filename="r6d_train.pkl")
+        r6d_val = load_data(data_dir=config.data_dir, filename="r6d_val.pkl")
+        Y_train, Y_val = load_binary(f"{config.data_dir}/categs_train.pkl"), load_binary(f"{config.data_dir}/categs_val.pkl")
 
-    # PARAMETER DEFINITION
-    NUM_ROTATIONS = r6d_train.shape[1]
-    SEQ_LEN = Y_train.shape[1]  # number of frames per clip
-    NUM_CLASSES = 9
+        # PARAMETER DEFINITION
+        NUM_ROTATIONS = r6d_train.shape[1]
+        SEQ_LEN = Y_train.shape[1]  # number of frames per clip
+        NUM_CLASSES = 9
 
-    # TRAIN AND VAL THE MODEL
-    # Initialize the model
-    model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size, NUM_ROTATIONS, NUM_CLASSES)
-    model.to(device)
-    # Define the loss function and the optimizer
-    loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
-    tr_loss, val_loss = [], []
-    rng = np.random.RandomState(23456)  # for shuffling batches
-    # Train the model for NUM_EPOCHS epochs
-    for epoch in range(config.num_epochs):
-        print('Starting epoch: ', epoch)
-        train_epoch_loss = train_epoch(model, r6d_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-        val_epoch_loss = val_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
-        wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
-        wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
-        if (epoch + 1) % 10 == 0:
-            print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ))
-            print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ))
-        tr_loss.append(train_epoch_loss)  ##### should store mean loss?¿
-        val_loss.append(val_epoch_loss)
+        # TRAIN AND VAL THE MODEL
+        # Initialize the model
+        model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size, NUM_ROTATIONS, NUM_CLASSES)
+        model.to(device)
+        # Define the loss function and the optimizer
+        loss_function = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+        tr_loss, val_loss = [], []
+        rng = np.random.RandomState(23456)  # for shuffling batches
+        # Train the model for NUM_EPOCHS epochs
+        for epoch in range(config.num_epochs):
+            print('Starting epoch: ', epoch)
+            train_epoch_loss = train_epoch(model, r6d_train, Y_train, optimizer, loss_function, config.batch_size, rng)
+            val_epoch_loss = val_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
+            wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
+            wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
+            if (epoch + 1) % 10 == 0:
+                print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ))
+                print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ))
+            tr_loss.append(train_epoch_loss)  ##### should store mean loss?¿
+            val_loss.append(val_epoch_loss)
 
 
 # Data load helper
