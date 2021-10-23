@@ -18,7 +18,7 @@ def get_ids_categ(key):
     for row in reader:
         key = row[0]
         if key not in id_categ_dict:
-            id_categ_dict[key] = row[1]
+            id_categ_dict[key] = int(row[1])
     return id_categ_dict
 
 
