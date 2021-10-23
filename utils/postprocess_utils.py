@@ -43,7 +43,7 @@ def rmv_clips_nan(X, Y=None, T=None):
 
 # given a list of arrays (each corresponding to a clip) with varying lengths,
 # makes all of them have equal (pair) length. The result is a single array
-def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=192):
+def make_equal_len(data, pipeline="arm2wh", method="cutting+reflect", maxpad=192):
     sizes = [arr.shape[0] for arr in data]
     if method=="0pad":
         maxpad = np.amax(sizes) if maxpad=="maxlen" else maxpad
@@ -68,5 +68,4 @@ def make_equal_len(data, pipeline="arm2wh", method="reflect", maxpad=192):
         max_T = max(max_T, maxpad)
         res = [np.pad(arr, ((0, max_T-arr.shape[0]), (0,0)), method) for arr in data]
         res = np.stack(res)
-
     return res
