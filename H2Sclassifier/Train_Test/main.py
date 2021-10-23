@@ -57,6 +57,8 @@ def main(args):
         print('Starting epoch: ', epoch)
         train_epoch_loss = train_epoch(model, r6d_train, Y_train, optimizer, loss_function, config.batch_size, rng)
         val_epoch_loss = test_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
+        wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
+        wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
         if (epoch + 1) % 10 == 0:
             print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ))
             print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ))
