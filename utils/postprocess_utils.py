@@ -27,7 +27,7 @@ import numpy as np
 
 # removes those clips that contain at least one nan value
 def rmv_clips_nan(X, Y=None, T=None):
-    idx_nan = np.argwhere(np.isnan(X).any(axis=0)).squeeze().tolist()
+    idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
     if Y is not None:
         idx_nan += np.argwhere(np.isnan(Y).any(axis=(1,2))).squeeze().tolist()
     if T is not None:
