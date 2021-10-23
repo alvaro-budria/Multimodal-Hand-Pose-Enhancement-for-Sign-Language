@@ -11,9 +11,11 @@ MAP_ID_CATEG_PATH = "/mnt/gpid08/datasets/How2Sign/metadata/How2Sign/categories/
 
 
 # returns a dict mapping an id (11 chars) to its category ([1-9])
-def get_ids_categ(key):
+def get_ids_categ(key, skip_header=True):
     file_path = CATEG_PATHS[key]
     reader = csv.reader(open(file_path))
+    if skip_header:
+        header = next(reader)  # skip header
     id_categ_dict = {}  # key: id, value: category ([1-9])
     for row in reader:
         key = row[0]
