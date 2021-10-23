@@ -41,10 +41,11 @@ def main(args):
     # PARAMETER DEFINITION
     NUM_ROTATIONS = r6d_train.shape[1]
     SEQ_LEN = Y_train.shape[1]  # number of frames per clip
+    NUM_CLASSES = 9
 
     # TRAIN AND VAL THE MODEL
     # Initialize the model
-    model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size, NUM_ROTATIONS)
+    model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size, NUM_ROTATIONS, NUM_CLASSES)
     model.to(device)
     # Define the loss function and the optimizer
     loss_function = nn.CrossEntropyLoss()
