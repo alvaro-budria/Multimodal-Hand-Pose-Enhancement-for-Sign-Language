@@ -34,12 +34,12 @@ def main(args):
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
-        r6d_train = load_data(data_dir=config.data_dir, filename="r6d_train.pkl")
-        r6d_val = load_data(data_dir=config.data_dir, filename="r6d_val.pkl")
-        Y_train, Y_val = load_binary(f"{config.data_dir}/categs_train.pkl"), load_binary(f"{config.data_dir}/categs_val.pkl")
-
+        X_train, Y_train = load_data(data_dir="video_data", key="train")
+        X_val, Y_val = load_data(data_dir="video_data", key="val")
+        print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}")
+        print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}")
         # PARAMETER DEFINITION
-        NUM_ROTATIONS = r6d_train.shape[1]
+        NUM_ROTATIONS = X_train.shape[1]
         SEQ_LEN = Y_train.shape[1]  # number of frames per clip
         NUM_CLASSES = 9
 
@@ -55,8 +55,8 @@ def main(args):
         # Train the model for NUM_EPOCHS epochs
         for epoch in range(config.num_epochs):
             print('Starting epoch: ', epoch)
-            train_epoch_loss = train_epoch(model, r6d_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-            val_epoch_loss = val_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
+            train_epoch_loss = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
+            val_epoch_loss = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
             wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
             if (epoch + 1) % 10 == 0:
@@ -67,11 +67,12 @@ def main(args):
 
 
 # Data load helper
-def load_data(data_dir="video_data", filename="r6d_train.pkl"):
-    data = load_binary(f"{data_dir}/r6d_train.pkl")
-    data = make_equal_len(data, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
-    data, _, _ = rmv_clips_nan(data)  # remove those clips containing nan values
-    return data
+def load_data(data_dir="video_data", key="train"):
+    X = load_binary(f"{data_dir}/r6d_{key}.pkl")
+    Y = load_binary(f"{data_dir}/categs_{key}.pkl")
+    X = make_equal_len(X, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
+    X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
+    return X, Y
 
 
 if __name__ == "__main__":
