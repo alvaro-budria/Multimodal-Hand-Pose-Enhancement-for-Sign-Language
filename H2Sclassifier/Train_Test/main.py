@@ -34,7 +34,7 @@ def main(args):
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
-        X_train, Y_train = load_data(data_dir="video_data", key="train")
+        X_train, Y_train = load_data(data_dir=config.data_dir, key="train")
         X_val, Y_val = load_data(data_dir="video_data", key="val")
         print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}")
         print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}")
