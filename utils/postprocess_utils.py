@@ -29,7 +29,10 @@ import numpy as np
 def rmv_clips_nan(X, Y=None, T=None):
     idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
     if Y is not None:
-        idx_nan += np.argwhere(np.isnan(Y).any(axis=(1,2))).squeeze().tolist()
+        if type(Y)==type([]):
+            idx_nan += np.argwhere(np.isnan(Y)).squeeze().tolist()
+        else:
+            idx_nan += np.argwhere(np.isnan(Y).any(axis=(1,2))).squeeze().tolist()
     if T is not None:
         idx_nan += np.argwhere(np.isnan(T).any(axis=(1,2))).squeeze().tolist()
     idx_nan = sorted(set(idx_nan))
