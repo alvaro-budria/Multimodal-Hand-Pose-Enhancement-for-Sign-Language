@@ -2,10 +2,9 @@ from hyperparameters import *
 import torch
 from torch.autograd import Variable
 import numpy as np
-from timeit import default_timer as timer
 
 
-def test_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
+def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
     val_loss = []
     predY = []
     model.eval()

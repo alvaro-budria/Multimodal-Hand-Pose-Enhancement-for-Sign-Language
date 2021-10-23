@@ -9,7 +9,7 @@ from ClassifLSTM import ClassifLSTM
 from hyperparameters import *
 
 from train_epoch import train_epoch
-from test_epoch import test_epoch
+from val_epoch import val_epoch
 
 sys.path.insert(1, "../../utils")
 from postprocess_utils import *
@@ -56,7 +56,7 @@ def main(args):
     for epoch in range(config.num_epochs):
         print('Starting epoch: ', epoch)
         train_epoch_loss = train_epoch(model, r6d_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-        val_epoch_loss = test_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
+        val_epoch_loss = val_epoch(model, r6d_val, Y_val, loss_function, config.batch_size, rng)
         wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
         wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
         if (epoch + 1) % 10 == 0:
