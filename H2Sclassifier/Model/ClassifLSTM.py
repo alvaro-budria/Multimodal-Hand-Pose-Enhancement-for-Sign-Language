@@ -15,11 +15,11 @@ class ClassifLSTM(nn.Module):
         self.lstm = nn.LSTM(num_rotations, hidden_size, num_layers, bidirectional=self.bidirectional, bias=True, batch_first=True)
 
         # Define a Linear Layer to obtain the depth coordinate
-        self.Linear = nn.Linear(hidden_size, NUM_CLASSES)
+        self.Linear = nn.Linear(hidden_size*(1+self.bidirectional), NUM_CLASSES)
 
     def forward(self, seq, state=None):
         h, state = self.lstm(seq, state) # h.shape = [batch_size, seq_len, hidden_size]
-        h = h.contiguous().view(-1, self.hidden_size) # h.shape = [batch_size*seq_len, hidden_size]
+        h = h.contiguous().view(-1, self.hidden_size*(1+self.bidirectional)) # h.shape = [batch_size*seq_len, hidden_size]
         y = self.Linear(h) # y.shape = [batch_size*seq_len, NUM_CLASSES]
         y = y.contiguous().view(self.batch_size, self.seq_len, self.NUM_CLASSES) #y.shape = [batch_size, seq_len, NUM_CLASSES]
         return y, state
