@@ -20,14 +20,14 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             # convert labels to one-hot encoding. subtract 1 from Y to make labels start from 0
-            outputGT = Variable( F.one_hot(torch.from_numpy(outputGT - 1), num_classes=10).to(device) )
+            outputGT = Variable( F.one_hot(torch.from_numpy(outputGT-1), num_classes=10).to(device) )
 
             # Forward pass.
             y_, _ = model(inputData)
             predY.append(y_)
-            epoch_acc += torch.sum(y_ == outputGT)
+            epoch_acc += torch.sum(y_[:,-1,:] == outputGT)
 
             # Compute loss
             loss = loss_function(y_, outputGT)
             val_loss.append(loss.item())
-    return val_loss, epoch_acc/(batchinds*BATCH_SIZE)
+    return val_loss, epoch_acc.cpu().detach().numpy()/(len(batchinds)*BATCH_SIZE)
