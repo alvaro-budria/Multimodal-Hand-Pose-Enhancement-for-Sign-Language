@@ -73,7 +73,7 @@ def load_data(data_dir="video_data", key="train"):
     Y = load_binary(f"{data_dir}/categs_{key}.pkl")
     X = make_equal_len(X, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
     X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
-    return X, Y
+    return X.float(), Y
 
 
 if __name__ == "__main__":
