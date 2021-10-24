@@ -16,7 +16,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             idxStart = bi * BATCH_SIZE
             inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
-            inputData = Variable(torch.from_numpy(inputData)).to(device)
+            inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             outputGT = Variable(torch.from_numpy(outputGT)).to(device)
 
             # Forward pass.
