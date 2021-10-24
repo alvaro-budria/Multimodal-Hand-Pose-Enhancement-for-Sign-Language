@@ -25,9 +25,9 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             # Forward pass.
             y_, _ = model(inputData)
             predY.append(y_)
-            epoch_acc += torch.sum(y_ == outputGT)
+            epoch_acc += torch.sum(y_[:,-1,:] == outputGT)
 
             # Compute loss
             loss = loss_function(y_, outputGT)
             val_loss.append(loss.item())
-    return val_loss, epoch_acc/(batchinds*BATCH_SIZE)
+    return val_loss, epoch_acc.cpu().detach().numpy()/(batchinds*BATCH_SIZE)
