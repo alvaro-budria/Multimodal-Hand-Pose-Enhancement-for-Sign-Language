@@ -28,7 +28,8 @@ def main(args):
         learning_rate = args.learning_rate,
         data_dir=args.data_dir,
         hidden_size=args.hidden_size,
-        num_layers=args.num_layers)
+        num_layers=args.num_layers,
+        log_step=args.log_step)
 
     ## DONE variables
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
@@ -61,7 +62,7 @@ def main(args):
             val_epoch_loss = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
             wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
-            if (epoch + 1) % 10 == 0:
+            if (epoch + 1) % config.log_step == 0:
                 print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ), flush=True)
                 print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ), flush=True)
             tr_loss.append(train_epoch_loss)  ##### should store mean loss?¿
@@ -86,6 +87,7 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-4, help='learning rate for training G and D')
     parser.add_argument('--hidden_size', type=int , default=1024, help='LSTM hidden size')
     parser.add_argument('--num_layers', type=int , default=10, help='Number of LSTM layers')
+    parser.add_argument('--log_step', type=int , default=2, help='Print logs every log_step epochs')
 
     args = parser.parse_args()
     print(args, flush=True)
