@@ -34,5 +34,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         optimizer.step()
-        
+    print(f"epoch_acc {epoch_acc}", flush=True)
+    print(f"epoch_acc.cpu().detach().numpy() {epoch_acc.cpu().detach().numpy()}", flush=True)
+    print(f"epoch_acc.cpu().detach().numpy()/(batchinds*BATCH_SIZE) {epoch_acc.cpu().detach().numpy()/(batchinds*BATCH_SIZE)}", flush=True)
     return epoch_loss, epoch_acc.cpu().detach().numpy()/(batchinds*BATCH_SIZE)
