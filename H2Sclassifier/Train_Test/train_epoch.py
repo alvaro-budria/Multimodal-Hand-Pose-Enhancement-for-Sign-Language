@@ -15,7 +15,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         ## setting batch data
         idxStart = bi * BATCH_SIZE
         inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
-        outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE), :, :]
+        outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
         inputData = Variable(torch.from_numpy(inputData)).to(device)
         outputGT = Variable(torch.from_numpy(outputGT)).to(device)          
 
