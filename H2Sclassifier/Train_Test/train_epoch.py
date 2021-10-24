@@ -30,7 +30,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         optimizer.zero_grad()
         print(f"y_.shape {y_.shape}", flush=True)
         print(f"outputGT.shape {outputGT.shape}", flush=True)
-        loss = loss_function(y_, outputGT)
+        loss = loss_function(y_[:,-1,:], outputGT)
         epoch_loss.append(loss.item())
         loss.backward()
         if clip_grad:
