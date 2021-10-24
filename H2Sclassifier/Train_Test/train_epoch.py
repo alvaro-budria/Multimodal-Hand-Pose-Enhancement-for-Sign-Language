@@ -26,6 +26,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         # Forward pass
         y_, _ = model(inputData)
         print(f"np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy() {np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy()}", flush=True)
+        print(f"type(...) {np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy()}", flush=True)
         epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
@@ -36,4 +37,4 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         optimizer.step()
-    return epoch_loss, epoch_acc.cpu().detach().numpy()/(len(batchinds)*BATCH_SIZE)
+    return epoch_loss, epoch_acc/(len(batchinds)*BATCH_SIZE)
