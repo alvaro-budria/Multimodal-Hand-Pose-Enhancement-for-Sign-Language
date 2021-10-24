@@ -2,6 +2,7 @@ import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
+from hyperparameters import device
 
 
 def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
