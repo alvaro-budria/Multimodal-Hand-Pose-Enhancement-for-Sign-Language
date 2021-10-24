@@ -8,7 +8,7 @@ import numpy as np
 #         if T is None and Y is None:
 #             if not np.isnan(X[sample,:,:]).any():
 #                 x.append(X[sample,:,:])
-#         if T is None:
+#         elif T is None:
 #             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
 #                 x.append(X[sample,:,:])
 #                 y.append(Y[sample,:,:])
@@ -28,17 +28,25 @@ import numpy as np
 # removes those clips that contain at least one nan value
 def rmv_clips_nan(X, Y=None, T=None):
     idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
+    if type(idx_nan)==type(1):  # tolist() returned a single int
+        idx_nan = [idx_nan]
     if Y is not None:
         if type(Y)==type([]):
             print(f"idx_nan {idx_nan}", flush=True)
             print(f"np.argwhere(np.isnan(Y)).squeeze().tolist() {np.argwhere(np.isnan(Y)).squeeze().tolist()}", flush=True)
-            idx_nan += np.argwhere(np.isnan(Y)).squeeze().tolist()
+            idx_nan_Y = np.argwhere(np.isnan(Y)).squeeze().tolist()
         else:
-            idx_nan += np.argwhere(np.isnan(Y).any(axis=(1,2))).squeeze().tolist()
+            idx_nan_Y = np.argwhere(np.isnan(Y).any(axis=1)).squeeze().tolist()
+        if type(idx_nan_Y)==type(1):  # tolist() returned a single int
+            idx_nan_Y = [idx_nan_Y]
+        idx_nan += idx_nan_Y
     if T is not None:
-        idx_nan += np.argwhere(np.isnan(T).any(axis=(1,2))).squeeze().tolist()
-    idx_nan = sorted(set(idx_nan))
-    X = np.delete(X, idx_nan, axis=0)
+        idx_nan_T = np.argwhere(np.isnan(T).any(axis=(1,2))).squeeze().tolist()
+        if type(idx_nan_T)==type(1):  # tolist() returned a single int
+            idx_nan_T = [idx_nan_T]
+        idx_nan += idx_nan_T
+    idx_nan = sorted(set(idx_nan))  # remove duplicate indexes
+    X = np.delete(X, idx_nan, axis=0)  # remove clips containing nan
     if Y is not None:
         Y = np.delete(Y, idx_nan, axis=0)
     if T is not None:
