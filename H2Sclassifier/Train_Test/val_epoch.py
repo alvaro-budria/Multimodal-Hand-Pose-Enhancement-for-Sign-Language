@@ -19,11 +19,13 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
+            #outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
 
             # Forward pass
             y_, _ = model(inputData)
             predY.append(y_)
-            epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
+            #epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
+            epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == (outputGT-1))
 
             # Compute loss
             loss = loss_function(y_[:,-1,:], outputGT)
