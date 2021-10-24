@@ -24,6 +24,8 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_, _ = model(inputData)
+        print(f"outputGT.shape {outputGT.shape}", flush=True)
+        print(f"y_.shape {y_.shape}", flush=True)
         epoch_acc += torch.sum(y_ == outputGT)
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
