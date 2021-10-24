@@ -17,8 +17,6 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         idxStart = bi * BATCH_SIZE
         inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
         outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
-        print(f"outputGT {outputGT}", flush=True)
-        print(f"outputGT-1 {outputGT-1}", flush=True)
         inputData = Variable(torch.from_numpy(inputData).float()).to(device)
         # convert labels to one-hot encoding. subtract 1 from Y to make labels start from 0
         outputGT = Variable( F.one_hot(torch.from_numpy(outputGT - 1), num_classes=10).to(device) )
