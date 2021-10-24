@@ -25,7 +25,8 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_, _ = model(inputData)
-        epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT)
+        print(f"np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy() {np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy()}", flush=True)
+        epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
