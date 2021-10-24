@@ -39,9 +39,10 @@ def main(args):
         print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}", flush=True)
         print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}", flush=True)
         # PARAMETER DEFINITION
-        NUM_ROTATIONS = X_train.shape[1]
-        SEQ_LEN = Y_train.shape[1]  # number of frames per clip
+        NUM_ROTATIONS = X_train.shape[2]
+        SEQ_LEN = X_train.shape[1]  # number of frames per clip
         NUM_CLASSES = 9
+        print(f"NUM_ROTATIONS: {NUM_ROTATIONS}, SEQ_LEN: {SEQ_LEN}, NUM_CLASSES: {NUM_CLASSES}", flush=True)
 
         # TRAIN AND VAL THE MODEL
         # Initialize the model
