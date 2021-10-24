@@ -25,6 +25,8 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         # Forward pass
         y_, _ = model(inputData)
         epoch_acc += torch.sum(y_[:,-1,:] == outputGT)
+        print(f"epoch_acc {epoch_acc}", flush=True)
+        print(f"torch.sum(y_[:,-1,:] == outputGT) {torch.sum(y_[:,-1,:] == outputGT)}", flush=True)
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
