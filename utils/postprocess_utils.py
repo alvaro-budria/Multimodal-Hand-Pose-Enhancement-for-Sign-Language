@@ -30,6 +30,7 @@ def rmv_clips_nan(X, Y=None, T=None):
     idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
     if Y is not None:
         if type(Y)==type([]):
+            print(f"np.argwhere(np.isnan(Y)).squeeze().tolist() {np.argwhere(np.isnan(Y)).squeeze().tolist()}", flush=True)
             idx_nan += np.argwhere(np.isnan(Y)).squeeze().tolist()
         else:
             idx_nan += np.argwhere(np.isnan(Y).any(axis=(1,2))).squeeze().tolist()
