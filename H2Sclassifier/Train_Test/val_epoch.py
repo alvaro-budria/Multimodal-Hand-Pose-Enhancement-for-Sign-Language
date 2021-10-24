@@ -22,7 +22,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             outputGT = Variable( F.one_hot(torch.from_numpy(outputGT - 1), num_classes=10).to(device) )
 
             # Forward pass.
-            y_ = model(inputData)
+            y_, _ = model(inputData)
             predY.append(y_)
 
             # Compute loss
