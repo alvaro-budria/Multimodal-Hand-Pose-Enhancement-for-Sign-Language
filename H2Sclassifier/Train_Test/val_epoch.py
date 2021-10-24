@@ -19,7 +19,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             # convert labels to one-hot encoding. subtract 1 from Y to make labels start from 0
-            outputGT = F.one_hot(Variable(torch.from_numpy(outputGT)).to(device) - 1, num_classes=9)
+            outputGT = F.one_hot(Variable(torch.from_numpy(outputGT)).to(device) - 1, num_classes=10)
 
             # Forward pass.
             y_ = model(inputData)

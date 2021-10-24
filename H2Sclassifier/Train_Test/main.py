@@ -42,7 +42,7 @@ def main(args):
         # PARAMETER DEFINITION
         NUM_ROTATIONS = X_train.shape[2]
         SEQ_LEN = X_train.shape[1]  # number of frames per clip
-        NUM_CLASSES = 9
+        NUM_CLASSES = 10
         print(f"NUM_ROTATIONS: {NUM_ROTATIONS}, SEQ_LEN: {SEQ_LEN}, NUM_CLASSES: {NUM_CLASSES}", flush=True)
 
         # TRAIN AND VAL THE MODEL
