@@ -26,6 +26,6 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
             # Compute loss
-            loss = loss_function(y_, outputGT)
+            loss = loss_function(y_[:,-1,:], outputGT)
             val_loss.append(loss.item())
     return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE)
