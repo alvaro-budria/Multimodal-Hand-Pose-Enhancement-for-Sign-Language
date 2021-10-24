@@ -56,14 +56,14 @@ def main(args):
         rng = np.random.RandomState(23456)  # for shuffling batches
         # Train the model for NUM_EPOCHS epochs
         for epoch in range(config.num_epochs):
-            print('Starting epoch: ', epoch)
+            print('Starting epoch: ', epoch, flush=True)
             train_epoch_loss = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
             val_epoch_loss = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
             wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
             if (epoch + 1) % 10 == 0:
-                print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ))
-                print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ))
+                print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ), flush=True)
+                print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ), flush=True)
             tr_loss.append(train_epoch_loss)  ##### should store mean loss?¿
             val_loss.append(val_epoch_loss)
 
