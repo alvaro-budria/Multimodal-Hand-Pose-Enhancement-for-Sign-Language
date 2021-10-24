@@ -7,6 +7,7 @@ from hyperparameters import device
 
 def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
     val_loss = []
+    epoch_acc = 0
     predY = []
     model.eval()
     batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
@@ -24,8 +25,9 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             # Forward pass.
             y_, _ = model(inputData)
             predY.append(y_)
+            epoch_acc += torch.sum(y_ == outputGT)
 
             # Compute loss
             loss = loss_function(y_, outputGT)
             val_loss.append(loss.item())
-    return val_loss
+    return val_loss, epoch_acc/(batchinds*BATCH_SIZE)

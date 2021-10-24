@@ -10,6 +10,7 @@ from hyperparameters import device
 def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, rng, clip_grad=False):
     model.train()
     epoch_loss = []
+    epoch_acc = 0
     batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
     rng.shuffle(batchinds)
     for bii, bi in enumerate(batchinds):
@@ -23,6 +24,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_, _ = model(inputData)
+        epoch_acc += torch.sum(y_ == outputGT)
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
@@ -33,4 +35,4 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
         optimizer.step()
         
-    return epoch_loss
+    return epoch_loss, epoch_acc/(batchinds*BATCH_SIZE)

@@ -58,13 +58,13 @@ def main(args):
         # Train the model for NUM_EPOCHS epochs
         for epoch in range(config.num_epochs):
             print('Starting epoch: ', epoch, flush=True)
-            train_epoch_loss = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-            val_epoch_loss = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
+            train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
+            val_epoch_loss, val_acc = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
             wandb.log({"epoch": epoch, "loss_val": np.mean(val_epoch_loss)})
             if (epoch + 1) % config.log_step == 0:
-                print('Training loss in epoch {} is: {}'.format(epoch, sum(train_epoch_loss)/len(train_epoch_loss) ), flush=True)
-                print('Val loss in epoch {} is: {}'.format(epoch, sum(val_epoch_loss)/len(val_epoch_loss) ), flush=True)
+                print(f'Epoch {epoch}: Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}', flush=True)
+                print(f'Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}', flush=True)
             tr_loss.append(train_epoch_loss)  ##### should store mean loss?¿
             val_loss.append(val_epoch_loss)
 
