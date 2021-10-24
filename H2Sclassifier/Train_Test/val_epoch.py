@@ -28,4 +28,4 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             # Compute loss
             loss = loss_function(y_, outputGT)
             val_loss.append(loss.item())
-    return val_loss, predY
+    return val_loss
