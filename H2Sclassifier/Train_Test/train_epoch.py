@@ -1,6 +1,6 @@
-from hyperparameters import *
 import torch
 from torch.autograd import Variable
+import torch.nn.functional as F
 import numpy as np
 from timeit import default_timer as timer
 
@@ -17,7 +17,8 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
         outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
         inputData = Variable(torch.from_numpy(inputData).float()).to(device)
-        outputGT = Variable(torch.from_numpy(outputGT)).to(device)          
+        # convert labels to one-hot encoding. subtract 1 from Y to make labels start from 0
+        outputGT = F.one_hot(Variable(torch.from_numpy(outputGT)).to(device) - 1, num_classes=9)
 
         # Forward pass
         y_, _ = model(inputData)

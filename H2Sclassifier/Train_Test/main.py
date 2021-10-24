@@ -38,6 +38,7 @@ def main(args):
         X_val, Y_val = load_data(data_dir=config.data_dir, key="val")
         print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}", flush=True)
         print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}", flush=True)
+        
         # PARAMETER DEFINITION
         NUM_ROTATIONS = X_train.shape[2]
         SEQ_LEN = X_train.shape[1]  # number of frames per clip
