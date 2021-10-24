@@ -1,4 +1,3 @@
-# Here we define an LSTM that regresses the depth
 import torch.nn as nn
 
 class ClassifLSTM(nn.Module):
@@ -13,7 +12,7 @@ class ClassifLSTM(nn.Module):
         self.bidirectional = bidirectional
 
         # Define the LSTM layer
-        self.lstm = nn.LSTM(6*num_rotations, hidden_size, num_layers, bidirectional=self.bidirectional, bias=True, batch_first=True)
+        self.lstm = nn.LSTM(num_rotations, hidden_size, num_layers, bidirectional=self.bidirectional, bias=True, batch_first=True)
 
         # Define a Linear Layer to obtain the depth coordinate
         self.Linear = nn.Linear(hidden_size, NUM_CLASSES)
