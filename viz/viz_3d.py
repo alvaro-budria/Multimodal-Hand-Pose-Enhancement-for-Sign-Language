@@ -80,9 +80,9 @@ def viz(xyz, structure, frame_rate=2, results_dir="viz_results"):
 def viz_GT(args):
     r6d_path = f"{args.data_dir}/r6d_{args.infer_set}.pkl"
     test_X, test_Y = load_windows(r6d_path, args.pipeline)
-    test_X, test_Y, _ = rmv_clips_nan(test_X, test_Y)
+    test_X, test_Y, _ = rmv_clips_nan(test_X[:args.seqs_to_viz,:,:], test_Y[:args.seqs_to_viz,:,:])
 
-    save_results(test_X[:args.sezqs_to_viz,:,:], test_Y[:args.seqs_to_viz,:,:], args.pipeline, args.base_path,
+    save_results(test_X[:args.seqs_to_viz,:,:], test_Y[:args.seqs_to_viz,:,:], args.pipeline, args.base_path,
                  data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
