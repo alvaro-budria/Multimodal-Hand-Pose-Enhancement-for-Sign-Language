@@ -122,8 +122,7 @@ def _retrieve_axis_angle(aa):
 from numba import jit
 
 @jit(nopython=True, parallel=True)
-def aa_to_xyz(aa, root, bone_len, structure):
-    aa = array_to_list(aa)
+def _aa_to_xyz(aa, root, bone_len, structure):
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
@@ -143,6 +142,10 @@ def aa_to_xyz(aa, root, bone_len, structure):
             p_E = p_J + bone_len[iBone]*v
             xyz_clip[:,(iBone+1)*3:(iBone+1)*3+3] = p_E 
         xyz.append(xyz_clip)
+
+def aa_to_xyz(aa, root, bone_len, structure):
+    aa = array_to_list(aa)
+    xyz = _aa_to_xyz(aa, root, bone_len, structure)
     return xyz
 
 
