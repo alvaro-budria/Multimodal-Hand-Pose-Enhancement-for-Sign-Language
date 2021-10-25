@@ -133,7 +133,13 @@ def _aa_to_xyz(aa, root, bone_len, structure):
             p_J, p_B = xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_B*3:id_p_B*3+3]
             u = p_J - p_B
             u = u / np.linalg.norm(u, axis=1)[:, np.newaxis]
-            a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
+            
+            
+            #a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
+            th = np.linalg.norm(aa, axis=1)
+            a = aa / th[:,np.newaxis]
+            
+            
             # Rodrigues' rotation formula
             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
