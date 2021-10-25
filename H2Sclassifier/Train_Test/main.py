@@ -46,13 +46,17 @@ def main(args):
         NUM_CLASSES = 10
         print(f"NUM_ROTATIONS: {NUM_ROTATIONS}, SEQ_LEN: {SEQ_LEN}, NUM_CLASSES: {NUM_CLASSES}", flush=True)
 
+        # Define the loss function and the optimizer
+        loss_function = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+
         # TRAIN AND VAL THE MODEL
         # Initialize the model
         model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size, NUM_ROTATIONS, NUM_CLASSES)
         model.to(device)
-        # Define the loss function and the optimizer
-        loss_function = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
+        model.train()
+        wandb.watch(model, loss_function, log="all", log_freq=10)
+        
         tr_loss, val_loss = [], []
         rng = np.random.RandomState(23456)  # for shuffling batches
         # Train the model for NUM_EPOCHS epochs
