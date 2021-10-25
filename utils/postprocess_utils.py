@@ -30,7 +30,6 @@ def rmv_clips_nan(X, Y=None, T=None):
     idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
     if type(idx_nan)==type(1):  # tolist() returned a single int
         idx_nan = [idx_nan]
-    print(f"first idx_nan: {idx_nan}", flush=True)
     if Y is not None:
         if type(Y)==type([]):
             idx_nan_Y = np.argwhere(np.isnan(Y)).squeeze().tolist()
@@ -39,13 +38,11 @@ def rmv_clips_nan(X, Y=None, T=None):
         if type(idx_nan_Y)==type(1):  # tolist() returned a single int
             idx_nan_Y = [idx_nan_Y]
         idx_nan += idx_nan_Y
-    print(f"after Y idx_nan: {idx_nan}", flush=True)
     if T is not None:
         idx_nan_T = np.argwhere(np.isnan(T).any(axis=(1))).squeeze().tolist()
         if type(idx_nan_T)==type(1):  # tolist() returned a single int
             idx_nan_T = [idx_nan_T]
         idx_nan += idx_nan_T
-    print(f"after T idx_nan: {idx_nan}", flush=True)
     idx_nan = sorted(set(idx_nan))  # remove duplicate indexes
     X = np.delete(X, idx_nan, axis=0)  # remove clips containing nan
     if Y is not None:
