@@ -119,6 +119,9 @@ def _retrieve_axis_angle(aa):
     return a, th
 
 
+from numba import jit
+
+@jit(nopython=True, parallel=True)
 def aa_to_xyz(aa, root, bone_len, structure):
     aa = array_to_list(aa)
     xyz = []
