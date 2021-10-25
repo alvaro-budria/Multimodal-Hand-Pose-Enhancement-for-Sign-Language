@@ -138,10 +138,10 @@ def _aa_to_xyz(aa, root, bone_len, structure):
             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
                 + np.multiply(np.multiply(a, np.einsum('ij,ij->i', a, u)[:, np.newaxis]), (1-np.cos(th))[:, np.newaxis])
-
             p_E = p_J + bone_len[iBone]*v
             xyz_clip[:,(iBone+1)*3:(iBone+1)*3+3] = p_E 
         xyz.append(xyz_clip)
+    return xyz
 
 def aa_to_xyz(aa, root, bone_len, structure):
     aa = array_to_list(aa)
