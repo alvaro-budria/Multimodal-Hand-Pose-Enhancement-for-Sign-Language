@@ -35,39 +35,25 @@ def np_mat_to_rot6d(np_mat):
 
 ## utility function to convert from r6d space to axis angle
 def _rot6d_to_aa(r6ds):
-    assert not np.any(np.isnan(r6ds))
     res = np.zeros((r6ds.shape[0], 3))
-    assert not np.any(np.isnan(res))
     for i,row in enumerate(r6ds):
         np_r6d = np.expand_dims(row, axis=0)
-        assert not np.any(np.isnan(np_r6d))
         np_mat = np.reshape(np_rot6d_to_mat(np_r6d)[0], (3,3))
-        assert not np.any(np.isnan(np_rot6d_to_mat(np_r6d)))
-        assert not np.any(np.isnan(np_mat))
         np_mat = R.from_matrix(np_mat)
-        #assert not np.any(np.isnan(np_mat))
         aa = np_mat.as_rotvec()
-        assert not np.any(np.isnan(aa))
         res[i,:] = aa
-        assert not np.any(np.isnan(res[i,:]))
     return res
 
 
 def clip_rot6d_to_aa(r6d_clip):
-    assert not np.any(np.isnan(r6d_clip))
     aa_clip = np.empty((r6d_clip.shape[0], r6d_clip.shape[1]//2))
     for idx in range(0, r6d_clip.shape[1], 6):
-        # print(f"r6d_clip.shape: {r6d_clip.shape}")
-        # print(f"r6d_clip[:,idx:idx+6].shape: {r6d_clip[:,idx:idx+6].shape}")
-        assert not np.any(np.isnan(r6d_clip[:,idx:idx+6]))
-        assert not np.any(np.isnan(_rot6d_to_aa(r6d_clip[:,idx:idx+6])))
         aa_clip[:,idx//2:idx//2+3] = _rot6d_to_aa(r6d_clip[:,idx:idx+6])
     return aa_clip
 
 
 def rot6d_to_aa(r6d):
     r6d = array_to_list(r6d)
-    assert not np.any(np.isnan(r6d))
     aa = []
     with Pool(processes=24) as pool:
         aa = pool.starmap( clip_rot6d_to_aa, zip(r6d) )
@@ -104,34 +90,23 @@ def aa_to_rot6d(aa):
 def np_rot6d_to_mat(np_r6d):
     shape = np_r6d.shape
     np_r6d = np.reshape(np_r6d, [-1,6])
-    assert not np.any(np.isnan(np_r6d))
     x_raw = np_r6d[:,0:3]
-    assert not np.any(np.isnan(x_raw))
     y_raw = np_r6d[:,3:6]
-    assert not np.any(np.isnan(y_raw))
 
     x = x_raw / (np.linalg.norm(x_raw, ord=2, axis=-1) + 1e-6)
-    assert not np.any(np.isnan(x))
     z = np.cross(x, y_raw)
-    assert not np.any(np.isnan(z))
     z = z / (np.linalg.norm(z, ord=2, axis=-1) + 1e-6)
-    assert not np.any(np.isnan(z))
     y = np.cross(z, x)
-    assert not np.any(np.isnan(y))
 
     x = np.reshape(x, [-1,3,1])
     y = np.reshape(y, [-1,3,1])
     z = np.reshape(z, [-1,3,1])
     np_matrix = np.concatenate([x,y,z], axis=-1)
-    assert not np.any(np.isnan(np_matrix))
     if len(shape) == 1:
         np_matrix = np.reshape(np_matrix, [9])
-        assert not np.any(np.isnan(np_matrix))
     else:
         output_shape = shape[:-1] + (9,)
-        assert not np.any(np.isnan(output_shape))
         np_matrix = np.reshape(np_matrix, output_shape)
-        assert not np.any(np.isnan(np_matrix))
 
     return np_matrix
 
