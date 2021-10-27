@@ -92,7 +92,7 @@ def main(args):
     output = None
     batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
     totalSteps = 0
-    for _, bi in enumerate(batchinds):
+    for bii, bi in enumerate(batchinds):
         totalSteps += 1
         ## setting batch data
         idxStart = bi * args.batch_size
@@ -114,6 +114,8 @@ def main(args):
         error += g_loss.item() * args.batch_size
         #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
         output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
+        if bii % 3 == 0:
+            torch.cuda.empty_cache()
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
@@ -123,7 +125,7 @@ def main(args):
 
     ## preparing output for saving
     print("Saving results...", flush=True)
-    output_np = output.data.cpu().numpy()
+    output_np = output.data.cpu().numpy() #####
     assert not np.any(np.isnan(output_np))
     output_np = output_np * body_std_Y + body_mean_Y
     output_np = np.swapaxes(output_np, 1, 2).astype(np.float32)
