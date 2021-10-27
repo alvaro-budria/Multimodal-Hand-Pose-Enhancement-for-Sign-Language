@@ -96,20 +96,21 @@ def main(args):
         totalSteps += 1
         ## setting batch data
         idxStart = bi * args.batch_size
+        print(f"idxStart {idxStart}", flush=True)
         if idxStart >= test_X.shape[0] or bi * args.batch_size >= args.num_samples:
             break
         idxEnd = idxStart + args.batch_size if (idxStart + args.batch_size) <= test_X.shape[0] else test_X.shape[0]
         inputData_np = test_X[idxStart:idxEnd, :, :]
         outputData_np = test_Y[idxStart:idxEnd, :, :]
         inputData = Variable(inputData_np).to(device)
-        outputGT = Variable(outputData_np).to(device)
+        outputGT = Variable(outputData_np)
 
         featsData = None
         if args.require_text or args.require_image:
             featsData = Variable(test_feats[idxStart:(idxStart + args.batch_size), :]).to(device)
         ## DONE setting batch data
         output_local = model(inputData, feats_=featsData)
-        g_loss = criterion(output_local, outputGT)
+        g_loss = criterion(output_local.cpu(), outputGT)
         error += g_loss.item() * args.batch_size
         #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
         output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
@@ -124,12 +125,8 @@ def main(args):
     print("Saving results...", flush=True)
     output_np = output.data.cpu().numpy()
     assert not np.any(np.isnan(output_np))
-    output_gt = outputGT.data.cpu().numpy()
-    assert not np.any(np.isnan(output_gt))
     output_np = output_np * body_std_Y + body_mean_Y
-    output_gt = output_gt * body_std_Y + body_mean_Y
     output_np = np.swapaxes(output_np, 1, 2).astype(np.float32)
-    output_gt = np.swapaxes(output_gt, 1, 2).astype(np.float32)
     assert not np.any(np.isnan(input_feats))
     assert not np.any(np.isnan(output_np))
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
