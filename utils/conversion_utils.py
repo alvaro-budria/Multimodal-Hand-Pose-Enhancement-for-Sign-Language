@@ -19,17 +19,13 @@ def np_mat_to_rot6d(np_mat):
             6D rotation representation (last dimension is 6)
     """
     shape = np_mat.shape
-
     if not ((shape[-1] == 3 and shape[-2] == 3) or (shape[-1] == 9)):
         raise AttributeError("The inputs in tf_matrix_to_rotation6d should be [...,9] or [...,3,3], \
             but found tensor with shape {}".format(shape[-1]))
-
     np_mat = np.reshape(np_mat, [-1, 3, 3])
     np_r6d = np.concatenate([np_mat[...,0], np_mat[...,1]], axis=-1)
-
     if len(shape) == 1:
         np_r6d = np.reshape(np_r6d, [6])
-
     return np_r6d
 
 
@@ -118,11 +114,8 @@ def _retrieve_axis_angle(aa):
     a = aa / th[:,np.newaxis]
     return a, th
 
-
-from numba import jit
-
-@jit(nopython=True, parallel=True)
-def _aa_to_xyz(aa, root, bone_len, structure):
+def aa_to_xyz(aa, root, bone_len, structure):
+    aa = array_to_list(aa)
     xyz = []
     for i in range(len(aa)):
         aa_clip = aa[i]
@@ -133,13 +126,7 @@ def _aa_to_xyz(aa, root, bone_len, structure):
             p_J, p_B = xyz_clip[:,id_p_J*3:id_p_J*3+3], xyz_clip[:,id_p_B*3:id_p_B*3+3]
             u = p_J - p_B
             u = u / np.linalg.norm(u, axis=1)[:, np.newaxis]
-            
-            
-            #a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
-            th = np.linalg.norm(aa, axis=1)
-            a = aa / th[:,np.newaxis]
-            
-            
+            a, th = _retrieve_axis_angle(aa_clip[:,(iBone-1)*3:(iBone-1)*3+3])
             # Rodrigues' rotation formula
             v = np.multiply(u, np.cos(th)[:, np.newaxis]) \
                 + np.multiply(np.cross(a, u), np.sin(th)[:, np.newaxis]) \
@@ -147,11 +134,6 @@ def _aa_to_xyz(aa, root, bone_len, structure):
             p_E = p_J + bone_len[iBone]*v
             xyz_clip[:,(iBone+1)*3:(iBone+1)*3+3] = p_E 
         xyz.append(xyz_clip)
-    return xyz
-
-def aa_to_xyz(aa, root, bone_len, structure):
-    aa = array_to_list(aa)
-    xyz = _aa_to_xyz(aa, root, bone_len, structure)
     return xyz
 
 
