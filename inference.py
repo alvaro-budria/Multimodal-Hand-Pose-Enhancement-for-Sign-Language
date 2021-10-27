@@ -7,6 +7,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 import wandb
+import gc
 
 sys.path.append('./3DposeEstimator')
 import skeletalModel
@@ -116,7 +117,8 @@ def main(args):
         g_loss = criterion(output_local.cpu(), outputGT)
         error += g_loss.item() * args.batch_size
         #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
-        output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
+        output = torch.cat((output, output_local.cpu().detach()), 0) if output is not None else output_local.cpu().detach()
+        gc.collect()
         torch.cuda.empty_cache()
 
     error /= totalSteps * args.batch_size
@@ -128,6 +130,7 @@ def main(args):
     ## preparing output for saving
     print("Saving results...", flush=True)
     output_np = output.data.cpu().numpy() #####
+    #output_np = output
     assert not np.any(np.isnan(output_np))
     output_np = output_np * body_std_Y + body_mean_Y
     output_np = np.swapaxes(output_np, 1, 2).astype(np.float32)
