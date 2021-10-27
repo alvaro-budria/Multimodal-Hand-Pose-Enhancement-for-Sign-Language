@@ -111,7 +111,8 @@ def main(args):
         output_local = model(inputData, feats_=featsData)
         g_loss = criterion(output_local, outputGT)
         error += g_loss.item() * args.batch_size
-        output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local
+        #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
+        output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
