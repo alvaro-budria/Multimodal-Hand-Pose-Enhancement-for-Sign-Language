@@ -2,7 +2,7 @@ import torch.nn as nn
 
 class ClassifLSTM(nn.Module):
 
-    def __init__(self, hidden_size, num_layers, seq_len, batch_size, num_rotations, NUM_CLASSES, bidirectional=True):
+    def __init__(self, hidden_size, num_layers, seq_len, batch_size, num_rotations, NUM_CLASSES, bidirectional=True, dropout=0):
         super().__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
@@ -10,9 +10,10 @@ class ClassifLSTM(nn.Module):
         self.batch_size = batch_size
         self.NUM_CLASSES = NUM_CLASSES
         self.bidirectional = bidirectional
+        self.dropout = dropout
 
         # Define the LSTM layer
-        self.lstm = nn.LSTM(num_rotations, hidden_size, num_layers, bidirectional=self.bidirectional, bias=True, batch_first=True)
+        self.lstm = nn.LSTM(num_rotations, hidden_size, num_layers, bidirectional=self.bidirectional, dropout=self.dropout, batch_first=True)
 
         # Define a Linear Layer to obtain the depth coordinate
         self.Linear = nn.Linear(hidden_size*(1+self.bidirectional), NUM_CLASSES)
