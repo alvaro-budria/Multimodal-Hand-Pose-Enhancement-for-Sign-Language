@@ -361,16 +361,16 @@ def hconcat_feats(neck, arms, hands):
 
 
 ## utility to save results
-def save_results(input, output, pipeline, base_path, data_dir, tag=''):
+def save_results(input, output, pipeline, base_path, data_dir, tag="", infer_set=""):
     feats = pipeline.split('2')
     out_feat = feats[1]
-    mkdir(os.path.join(base_path, 'results/'))
+    res_dir = f'results_{tag}/'
+    mkdir(os.path.join(base_path, res_dir))
     print(f"input.shape, output.shape: {input.shape}, {output.shape}", flush=True)
     assert not np.any(np.isnan(input))
     assert not np.any(np.isnan(output))
     if pipeline in list(FEATURE_MAP.keys()) or out_feat == 'wh' or out_feat == 'fingerL':
-        print(f"inside save_results first if")
-        filename = os.path.join(base_path, f"results/{tag}_inference_r6d")
+        filename = os.path.join(base_path, f"{res_dir}/r6d_{infer_set}")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
         print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
@@ -378,13 +378,13 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
             input_aa = input_aa[:,:,:3*6]  # keep arms
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
-        filename = os.path.join(base_path, f"results/{tag}_inference_aa")
+        filename = os.path.join(base_path, f"{res_dir}/aa_{infer_set}")
         save_binary(np.concatenate(( input_aa, output_aa ), axis=2), filename)  # save in aa format
 
         structure = skeletalModel.getSkeletalModelStructure()
-        xyz_train = load_binary(f"{data_dir}/xyz_train.pkl")#[:input.shape[0]]
+        xyz_train = load_binary(f"{data_dir}/xyz_train.pkl")
         xyz_train = make_equal_len(xyz_train, method="cutting+reflect")
-        xyz_train, _, _ = rmv_clips_nan(xyz_train, xyz_train)  ####!##
+        xyz_train, _, _ = rmv_clips_nan(xyz_train)
         root = get_root_bone(xyz_train, structure)
         assert not np.any(np.isnan(root))
         with open('root.pkl', 'wb') as handle:
@@ -395,12 +395,11 @@ def save_results(input, output, pipeline, base_path, data_dir, tag=''):
         with open('bone_len.pkl', 'wb') as handle:
             pickle.dump(bone_len, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        input_output_aa = load_binary(os.path.join(base_path, f"results/{tag}_inference_aa.pkl"))
+        input_output_aa = load_binary(os.path.join(base_path, f"{res_dir}/aa_{infer_set}.pkl"))
         assert not np.any(np.isnan(input_output_aa))
-        #input_output_aa = np.concatenate(( input_aa, output_aa ), axis=2)
         input_output_xyz = aa_to_xyz(input_output_aa, root, bone_len, structure)
         assert not np.any(np.isnan(input_output_xyz))
-        filename = os.path.join(base_path, f"results/{tag}_inference_xyz")
+        filename = os.path.join(base_path, f"{res_dir}/xyz_{infer_set}")
         save_binary(input_output_xyz, filename)  # save in xyz format
 
 

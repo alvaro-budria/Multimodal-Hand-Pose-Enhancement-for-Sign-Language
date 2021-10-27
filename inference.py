@@ -23,7 +23,6 @@ import viz.viz_3d as viz
 def main(args):
     # variable initializations
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    rng = np.random.RandomState(23456)
     torch.manual_seed(23456)
     torch.cuda.manual_seed(23456)
     pipeline = args.pipeline
@@ -61,12 +60,12 @@ def main(args):
     if args.require_text or args.require_image:
         test_feats = test_X[1]
         test_X = test_X[0]
-    print(test_X.shape, test_Y.shape, flush=True)
+    print(f"test_X.shape, test_Y.shape {test_X.shape, test_Y.shape}", flush=True)
     if args.require_text or args.require_image:
         print(test_feats.shape, flush=True)
     test_X, test_Y, test_feats = rmv_clips_nan(test_X, test_Y, test_feats)
     assert not np.any(np.isnan(test_X)) and not np.any(np.isnan(test_Y))
-    print(test_X.shape, test_Y.shape, flush=True)
+    print(f"test_X.shape, test_Y.shape {test_X.shape, test_Y.shape}", flush=True)
     input_feats = test_X.copy()
     if pipeline=="wh2wh":
         test_X = test_X[:,:,6*6:]  # keep hands; input_feats still contains both hands and arms for saving purposes
@@ -87,12 +86,10 @@ def main(args):
 
     ## pass loaded data into inference
     test_X, test_Y = torch.from_numpy(test_X), torch.from_numpy(test_Y)
-    assert not torch.isnan(test_X).any() and not torch.isnan(test_Y).any()
     if args.require_text or args.require_image:
         test_feats = torch.from_numpy(test_feats)
     error = 0
     output = None
-    model.eval()
     batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
     totalSteps = 0
     for _, bi in enumerate(batchinds):
@@ -106,19 +103,15 @@ def main(args):
         outputData_np = test_Y[idxStart:idxEnd, :, :]
         inputData = Variable(inputData_np).to(device)
         outputGT = Variable(outputData_np).to(device)
-        assert not torch.isnan(inputData).any() and not torch.isnan(outputGT).any()
 
         featsData = None
         if args.require_text or args.require_image:
             featsData = Variable(test_feats[idxStart:(idxStart + args.batch_size), :]).to(device)
         ## DONE setting batch data
         output_local = model(inputData, feats_=featsData)
-        assert not torch.isnan(output_local).any()
-        print(f"output_local.shape, outputGT.shape: {output_local.shape, outputGT.shape}")
         g_loss = criterion(output_local, outputGT)
         error += g_loss.item() * args.batch_size
         output = torch.cat((output, output_local), 0) if output is not None else output_local
-        print(f"output.shape: {output.shape}")
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
@@ -141,12 +134,12 @@ def main(args):
     print(f"input_feats.shape: {input_feats.shape}; output_np.shape: {output_np.shape}", flush=True)
     print(f"input_feats[:output_np.shape[0],:,:].shape: {input_feats[:output_np.shape[0],:,:].shape}", flush=True)
     save_results(input_feats[:output_np.shape[0],:,:], output_np, args.pipeline, args.base_path,
-                 data_dir=args.data_dir, tag=args.exp_name+"_"+args.infer_set)
+                 data_dir=args.data_dir, tag=args.exp_name, infer_set=args.infer_set)
     print("Saved results.", flush=True)
     ## DONE preparing output for saving
 
     ## generating viz for qualitative assessment
-    _inference_xyz = load_binary(os.path.join(args.base_path, f"results/{args.exp_name}_{args.infer_set}_inference_xyz.pkl"))[0:args.seqs_to_viz]
+    _inference_xyz = load_binary(os.path.join(args.base_path, f"results_{args.exp_name}/xyz_{args.infer_set}.pkl"))[0:args.seqs_to_viz]
     print(f"inference _inference_xyz[0].shape {_inference_xyz[0].shape}", flush=True)
     structure = skeletalModel.getSkeletalModelStructure()
     gifs_paths = viz.viz(_inference_xyz, structure, frame_rate=2, results_dir=f"viz_results_{args.exp_name}_{args.infer_set}")
