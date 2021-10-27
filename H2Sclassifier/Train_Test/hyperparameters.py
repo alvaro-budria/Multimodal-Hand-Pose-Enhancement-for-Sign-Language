@@ -1,13 +1,9 @@
-# HYPERPARAMETER DEFINITION
-HIDDEN_SIZE = 1024
-NUM_LAYERS = 1
-BATCH_SIZE = 256
-VAL_BATCH_SIZE = 256
-SEQ_LEN = 50
-BIAS = True
-TEST_FRACTION = 0.2 # Fraction of the data used for testing
-NUM_EPOCHS = 1000
-NUM_JOINTS = 26
+import torch.optim as optim
+
+# OPTIMIZER
+optimizers = {"Adam": optim.Adam,
+              "AdamW": optim.AdamW,
+              "NAdam": optim.NAdam}
 
 # DEVICE
 import torch
