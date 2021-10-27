@@ -41,6 +41,9 @@ def main(args):
     loaded_state = torch.load(pretrained_model, map_location=lambda storage, loc: storage)
     model.load_state_dict(loaded_state['state_dict'], strict=False)
     model = model.eval()
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!", flush=True)
+        model = nn.DataParallel(model)
     model.to(device)
     criterion = nn.L1Loss()
     ## DONE set up model/ load pretrained model
@@ -114,8 +117,7 @@ def main(args):
         error += g_loss.item() * args.batch_size
         #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
         output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
-        if bii % 2 == 0:
-            torch.cuda.empty_cache()
+        torch.cuda.empty_cache()
 
     error /= totalSteps * args.batch_size
     ## DONE pass loaded data into inference
@@ -153,12 +155,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str, default="models/lastCheckpoint.pth", help='path to checkpoint file (pretrained model)')
     parser.add_argument('--base_path', type=str, default="./", help='absolute path to the base directory where all of the data is stored')
-    parser.add_argument('--data_dir', type=str, default="video_data" , help='directory where results should be stored and loaded from')
+    parser.add_argument('--data_dir', type=str, default="video_data", help='directory where results should be stored and loaded from')
     parser.add_argument('--pipeline', type=str, default='arm2wh', help='pipeline specifying which input/output joints to use')
     parser.add_argument('--require_text', action='store_true', help='whether text is used as input for the model')
     parser.add_argument('--require_image', action="store_true", help="use additional image features or not")
-    parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "average", use average text embeds')
-    parser.add_argument('--infer_set', type=str, default="test" , help='if "test", infer using test set; if "train", infer using train set')
+    parser.add_argument('--embeds_type', type=str, default="normal", help='if "normal", use normal text embeds; if "average", use average text embeds')
+    parser.add_argument('--infer_set', type=str, default="test", help='if "test", infer using test set; if "train", infer using train set')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
     parser.add_argument('--batch_size', type=int, default=128, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
