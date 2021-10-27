@@ -370,12 +370,12 @@ def save_results(input, output, pipeline, base_path, data_dir, tag="", infer_set
     assert not np.any(np.isnan(input))
     assert not np.any(np.isnan(output))
     if pipeline in list(FEATURE_MAP.keys()) or out_feat == 'wh' or out_feat == 'fingerL':
+        if pipeline == "arm_wh2wh" or pipeline == "wh2wh":
+            input = input[:,:,:6*6]  # keep arms
         filename = os.path.join(base_path, f"{res_dir}/r6d_{infer_set}")
         save_binary(np.concatenate((input, output), axis=2), filename)  # save in r6d format
         input_aa, output_aa = np.array(rot6d_to_aa(input)), np.array(rot6d_to_aa(output))
         print(f"input_aa.shape, output_aa.shape: {input_aa.shape}, {output_aa.shape}", flush=True)
-        if pipeline == "arm_wh2wh":
-            input_aa = input_aa[:,:,:3*6]  # keep arms
         assert not np.any(np.isnan(input_aa))
         assert not np.any(np.isnan(output_aa))
         filename = os.path.join(base_path, f"{res_dir}/aa_{infer_set}")
