@@ -114,7 +114,7 @@ def main(args):
         error += g_loss.item() * args.batch_size
         #output = np.concatenate((output, output_local.cpu().detach().numpy()), 0) if output is not None else output_local
         output = torch.cat((output, output_local.cpu()), 0) if output is not None else output_local.cpu()
-        if bii % 3 == 0:
+        if bii % 2 == 0:
             torch.cuda.empty_cache()
 
     error /= totalSteps * args.batch_size
@@ -160,7 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--embeds_type', type=str, default="normal" , help='if "normal", use normal text embeds; if "average", use average text embeds')
     parser.add_argument('--infer_set', type=str, default="test" , help='if "test", infer using test set; if "train", infer using train set')
     parser.add_argument('--tag', type=str, default='', help='prefix for naming purposes')
-    parser.add_argument('--batch_size', type=int, default=256, help='batch size for inference')
+    parser.add_argument('--batch_size', type=int, default=128, help='batch size for inference')
     parser.add_argument('--seqs_to_viz', type=int, default=2, help='number of sequences to visualize')
     parser.add_argument('--exp_name', type=str, default='experiment', help='name for the experiment')
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
