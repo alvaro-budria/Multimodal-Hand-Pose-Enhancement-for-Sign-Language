@@ -117,12 +117,13 @@ if __name__ == "__main__":
     parser.add_argument('--learning_rate', type=float, default=1e-4, help="Learning rate")
     parser.add_argument('--hidden_size', type=int , default=1024, help="LSTM hidden size")
     parser.add_argument('--num_layers', type=int , default=10, help="Number of LSTM layers")
-    parser.add_argument('--bidir', action="store_true", help="If this flag is used, a bidirectional LSTM is chosen.")
+    parser.add_argument('--bidir', type=str, default="False", help="If 'True' is passed, bidirectional LSTM cells are chosen.")
     parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay rate for regularization.")
     parser.add_argument('--dropout', type=float, default=0.1, help="Dropout at the end of each LSTM for regularization.")
     parser.add_argument('--optimizer', type=str, default="Adam", help="Available optimizers are Adam, AdamW and NAdam.")
     parser.add_argument('--log_step', type=int , default=2, help="Print logs every log_step epochs")
 
     args = parser.parse_args()
+    args.bidir = True if args.bidir in ["True", "T", "true"] else False
     print(args, flush=True)
     main(args)
