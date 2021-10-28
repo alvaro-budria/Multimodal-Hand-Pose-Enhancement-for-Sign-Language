@@ -23,18 +23,24 @@ def main(args):
     wandb.login()
     ## variables
     config = dict(
-        data_dir=args.data_dir,
-        categs_dir=args.categs_dir,
-        num_epochs = args.num_epochs,
-        batch_size = args.batch_size,
-        learning_rate = args.learning_rate,
-        hidden_size=args.hidden_size,
-        num_layers=args.num_layers,
-        bidir=args.bidir,
-        dropout=args.dropout,
-        optimizer=args.optimizer,
-        weight_decay=args.weight_decay,
-        log_step=args.log_step)
+                data_dir=args.data_dir,
+                categs_dir=args.categs_dir,
+                num_epochs = args.num_epochs,
+                batch_size = args.batch_size,
+                learning_rate = args.learning_rate,
+                hidden_size=args.hidden_size,
+                num_layers=args.num_layers,
+                bidir=args.bidir,
+                dropout=args.dropout,
+                optimizer=args.optimizer,
+                weight_decay=args.weight_decay,
+                log_step=args.log_step)
+
+    args.exp_name = (f"{args.data_dir}__{args.num_epochs}"
+                     f"__{args.batch_size}__{args.learning_rate}"
+                     f"__{args.hidden_size}__{args.num_layers}"
+                     f"__bidir{str(args.bidir)}__{args.weight_decay}"
+                     f"__{args.dropout}__{args.optimizer}")
 
     ## DONE variables
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
