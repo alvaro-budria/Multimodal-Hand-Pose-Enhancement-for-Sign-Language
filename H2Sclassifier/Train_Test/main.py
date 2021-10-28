@@ -67,8 +67,9 @@ def main(args):
         tr_loss, val_loss = [], []
         rng = np.random.RandomState(23456)  # for shuffling batches
         # Train the model for NUM_EPOCHS epochs
+        currBestLoss = 0
         for epoch in range(config.num_epochs):
-            print('Starting epoch: ', epoch, flush=True)
+            print("Starting epoch: ", epoch, flush=True)
             train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
             val_epoch_loss, val_acc = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch, "loss_train": np.mean(train_epoch_loss)})
@@ -76,10 +77,17 @@ def main(args):
             wandb.log({"epoch": epoch, "acc_train": train_acc})
             wandb.log({"epoch": epoch, "acc_val": val_acc})
             if epoch % config.log_step == 0:
-                print(f'Epoch {epoch}:  Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}', flush=True)
-                print(f'Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}', flush=True)
+                print(f"Epoch {epoch}:  Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}", flush=True)
+                print(f"Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}", flush=True)
             tr_loss.append(train_epoch_loss)
             val_loss.append(val_epoch_loss)
+            if np.mean(val_epoch_loss) < currBestLoss:
+                checkpoint = {"epoch": epoch,
+                              "state_dict": model.state_dict(),
+                              "g_optimizer": optimizer.state_dict()}
+                fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
+                torch.save(checkpoint, fileName)
+                currBestLoss = np.mean(val_epoch_loss)
 
 
 # Data load helper
@@ -95,17 +103,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default="../../video_data" , help='Directory where results should be stored to and loaded from')
     parser.add_argument('--categs_dir', type=str, default="../../video_data" , help='Directory where categories for each sequence can be loaded from')
+    parser.add_argument('--models_dir', type=str, default="models/" , help='Directory where checkpoints are stored.')
     parser.add_argument('--exp_name', type=str, default='experiment', help='Name for the experiment')
-    parser.add_argument('--num_epochs', type=int, default=200, help='Number of training epochs')
-    parser.add_argument('--batch_size', type=int, default=128, help='Batch size for training')
-    parser.add_argument('--learning_rate', type=float, default=1e-4, help='Learning rate')
-    parser.add_argument('--hidden_size', type=int , default=1024, help='LSTM hidden size')
-    parser.add_argument('--num_layers', type=int , default=10, help='Number of LSTM layers')
-    parser.add_argument('--bidir', action="store_true", help='If this flag is used, a bidirectional LSTM is chosen.')
-    parser.add_argument('--weight_decay', type=float, default=1e-3, help='Weight decay rate for regularization.')
-    parser.add_argument('--dropout', type=float, default=0.1, help='Dropout at the end of each LSTM for regularization.')
-    parser.add_argument('--optimizer', type=str, default="Adam", help='Available optimizers are Adam, AdamW and NAdam.')
-    parser.add_argument('--log_step', type=int , default=2, help='Print logs every log_step epochs')
+    parser.add_argument('--num_epochs', type=int, default=200, help="Number of training epochs")
+    parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training")
+    parser.add_argument('--learning_rate', type=float, default=1e-4, help="Learning rate")
+    parser.add_argument('--hidden_size', type=int , default=1024, help="LSTM hidden size")
+    parser.add_argument('--num_layers', type=int , default=10, help="Number of LSTM layers")
+    parser.add_argument('--bidir', action="store_true", help="If this flag is used, a bidirectional LSTM is chosen.")
+    parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay rate for regularization.")
+    parser.add_argument('--dropout', type=float, default=0.1, help="Dropout at the end of each LSTM for regularization.")
+    parser.add_argument('--optimizer', type=str, default="Adam", help="Available optimizers are Adam, AdamW and NAdam.")
+    parser.add_argument('--log_step', type=int , default=2, help="Print logs every log_step epochs")
 
     args = parser.parse_args()
     print(args, flush=True)
