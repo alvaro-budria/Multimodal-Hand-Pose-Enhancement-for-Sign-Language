@@ -60,7 +60,7 @@ def main(args):
         # TRAIN AND VAL THE MODEL
         # Initialize the model
         model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size,
-                            NUM_ROTATIONS, NUM_CLASSES, config.bidir, config.dropout)
+                            NUM_ROTATIONS, NUM_CLASSES, bool(config.bidir), config.dropout)
         model.to(device)
         model.train()
         # Define the loss function and the optimizer
