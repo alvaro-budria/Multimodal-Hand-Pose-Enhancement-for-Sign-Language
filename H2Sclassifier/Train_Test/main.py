@@ -4,6 +4,8 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
+import gc
+
 sys.path.insert(1, '../Model')
 from ClassifLSTM import ClassifLSTM
 from hyperparameters import *
@@ -86,6 +88,8 @@ def main(args):
             if epoch % config.log_step == 0:
                 print(f"Epoch {epoch}:  Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}", flush=True)
                 print(f"Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}", flush=True)
+                gc.collect()
+                torch.cuda.empty_cache()
             tr_loss.append(train_epoch_loss)
             val_loss.append(val_epoch_loss)
             if np.mean(val_epoch_loss) < currBestLoss:
