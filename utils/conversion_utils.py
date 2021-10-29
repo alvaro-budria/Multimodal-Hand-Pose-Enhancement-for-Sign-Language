@@ -137,7 +137,7 @@ def aa_to_xyz(aa, root, bone_len, structure):
     return xyz
 
 
-def xyz_to_aa(xyz, structure, root_filename=None):
+def xyz_to_aa(xyz, structure):
     xyz = array_to_list(xyz)
     aa = []
     for i in range(len(xyz)):

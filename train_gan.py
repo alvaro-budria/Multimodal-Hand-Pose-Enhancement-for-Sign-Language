@@ -22,8 +22,6 @@ from standardization_utils import *
 # experiment logging
 import wandb
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-lastCheckpoint = ""
 
 #######################################################
 ## main training function
@@ -47,9 +45,7 @@ def main(args):
         config = wandb.config
 
         feature_in_dim, feature_out_dim = FEATURE_MAP[config.pipeline]
-        feats = config.pipeline.split('2')
-        in_feat, out_feat = feats[0], feats[1]
-        currBestLoss = 1e3
+        currBestLoss = 1e9
         rng = np.random.RandomState(23456)
         torch.manual_seed(23456)
         torch.cuda.manual_seed(23456)
@@ -77,7 +73,7 @@ def main(args):
             loaded_state = torch.load(os.path.join(args.model_path, f"lastCheckpoint_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
-        reg_criterion = nn.L1Loss()
+        reg_criterion = LOSSES[args.loss]
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
         generator.train()
         wandb.watch(generator, reg_criterion, log="all", log_freq=10)
@@ -293,7 +289,12 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             fake_score = discriminator(fake_motion)
         fake_score = fake_score.detach()
 
-        g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
+        if args.loss=="RobustLoss":
+            print(f"output.shape {output.shape}", flush=True)
+            print(f"outputGT.shape {outputGT.shape}", flush=True)
+            g_loss = torch.mean(reg_criterion.lossfun((output - outputGT)))#[:,None]))
+        else:
+            g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
         g_loss.backward()
         if clip_grad:
@@ -398,6 +399,7 @@ if __name__ == '__main__':
     parser.add_argument('--model', type=str, default="v1" , help='model architecture to be used')
     parser.add_argument('--disc_label_smooth', action="store_true", help="if True, use label smoothing for the discriminator")
     parser.add_argument('--data_dir', type=str, default="video_data" , help='directory where results should be stored and loaded from')
+    parser.add_argument('--loss', type=str, default="L1" , help='Loss to optimize the generator over')
 
     args = parser.parse_args()
     print(args, flush=True)
