@@ -20,17 +20,13 @@ required for evaluating the negative log-likelihood (NLL) of the distribution
 and for sampling from the distribution.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numbers
 
 from pkg_resources import resource_stream
 import mpmath
 import numpy as np
 import torch
-import util
+from robust_loss import util  # import util
 from robust_loss_pytorch import cubic_spline
 from robust_loss_pytorch import general
 

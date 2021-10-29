@@ -23,9 +23,9 @@ that.
 import numpy as np
 import torch
 import torch.nn as nn
-# import distribution
-from robust_loss import distribution
-import util
+
+from robust_loss import distribution  # import distribution
+from robust_loss import util  # import util
 
 
 class AdaptiveLossFunction(nn.Module):
