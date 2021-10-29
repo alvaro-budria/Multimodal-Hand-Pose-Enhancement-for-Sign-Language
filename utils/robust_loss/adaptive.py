@@ -52,7 +52,7 @@ class AdaptiveLossFunction(nn.Module):
                num_dims,
                float_dtype,
                device,
-               alpha_lo=-2,
+               alpha_lo=1e-5,
                alpha_hi=1,
                alpha_init=None,
                scale_lo=1e-5,
