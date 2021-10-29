@@ -23,7 +23,8 @@ that.
 import numpy as np
 import torch
 import torch.nn as nn
-import distribution
+# import distribution
+from robust_loss import distribution
 import util
 
 
