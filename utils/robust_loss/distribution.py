@@ -27,8 +27,8 @@ import mpmath
 import numpy as np
 import torch
 from robust_loss import util  # import util
-from robust_loss_pytorch import cubic_spline
-from robust_loss_pytorch import general
+from robust_loss import cubic_spline
+from robust_loss import general
 
 
 
