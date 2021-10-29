@@ -56,4 +56,4 @@ from robust_loss import adaptive
 LOSSES = {"L1": nn.L1Loss(),
           "L2": nn.MSELoss(),
           "Huber1": nn.HuberLoss(delta=1.0),
-          "RobustLoss": adaptive.AdaptiveLossFunction(num_dims=1, float_dtype=np.float32, device=device)}
+          "RobustLoss": adaptive.AdaptiveLossFunction(num_dims=1, float_dtype=torch.float32, device=device)}
