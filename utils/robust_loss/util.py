@@ -22,7 +22,6 @@ import os
 
 import numpy as np
 import torch
-import torch_dct
 
 
 def log_safe(x):
@@ -117,73 +116,6 @@ def students_t_nll(x, df, scale):
           0.5 * np.log(np.pi))
   return 0.5 * ((df + 1.) * torch.log1p(
       (x / scale)**2. / df) + torch.log(df)) + log_partition
-
-
-# A constant scale that makes tf.image.rgb_to_yuv() volume preserving.
-_VOLUME_PRESERVING_YUV_SCALE = 1.580227820074
-
-
-def rgb_to_syuv(rgb):
-  """A volume preserving version of tf.image.rgb_to_yuv().
-
-  By "volume preserving" we mean that rgb_to_syuv() is in the "special linear
-  group", or equivalently, that the Jacobian determinant of the transformation
-  is 1.
-
-  Args:
-    rgb: A tensor whose last dimension corresponds to RGB channels and is of
-      size 3.
-
-  Returns:
-    A scaled YUV version of the input tensor, such that this transformation is
-    volume-preserving.
-  """
-  rgb = torch.as_tensor(rgb)
-  kernel = torch.tensor([[0.299, -0.14714119, 0.61497538],
-                         [0.587, -0.28886916, -0.51496512],
-                         [0.114, 0.43601035, -0.10001026]]).to(rgb)
-  yuv = torch.reshape(
-      torch.matmul(torch.reshape(rgb, [-1, 3]), kernel), rgb.shape)
-  return _VOLUME_PRESERVING_YUV_SCALE * yuv
-
-
-def syuv_to_rgb(yuv):
-  """A volume preserving version of tf.image.yuv_to_rgb().
-
-  By "volume preserving" we mean that rgb_to_syuv() is in the "special linear
-  group", or equivalently, that the Jacobian determinant of the transformation
-  is 1.
-
-  Args:
-    yuv: A tensor whose last dimension corresponds to scaled YUV channels and is
-      of size 3 (ie, the output of rgb_to_syuv()).
-
-  Returns:
-    An RGB version of the input tensor, such that this transformation is
-    volume-preserving.
-  """
-  yuv = torch.as_tensor(yuv)
-  kernel = torch.tensor([[1, 1, 1], [0, -0.394642334, 2.03206185],
-                         [1.13988303, -0.58062185, 0]]).to(yuv)
-  rgb = torch.reshape(
-      torch.matmul(torch.reshape(yuv, [-1, 3]), kernel), yuv.shape)
-  return rgb / _VOLUME_PRESERVING_YUV_SCALE
-
-
-def image_dct(image):
-  """Does a type-II DCT (aka "The DCT") on axes 1 and 2 of a rank-3 tensor."""
-  image = torch.as_tensor(image)
-  dct_y = torch.transpose(torch_dct.dct(image, norm='ortho'), 1, 2)
-  dct_x = torch.transpose(torch_dct.dct(dct_y, norm='ortho'), 1, 2)
-  return dct_x
-
-
-def image_idct(dct_x):
-  """Inverts image_dct(), by performing a type-III DCT."""
-  dct_x = torch.as_tensor(dct_x)
-  dct_y = torch_dct.idct(torch.transpose(dct_x, 1, 2), norm='ortho')
-  image = torch_dct.idct(torch.transpose(dct_y, 1, 2), norm='ortho')
-  return image
 
 
 def compute_jacobian(f, x):
