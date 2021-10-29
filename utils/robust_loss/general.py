@@ -20,13 +20,9 @@ hand-tuned ones) and return a loss. For an adaptive loss, look at adaptive.py
 or distribution.py.
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 import torch
-from robust_loss_pytorch import util
+from robust_loss import util
 
 
 def lossfun(x, alpha, scale, approximate=False, epsilon=1e-6):
