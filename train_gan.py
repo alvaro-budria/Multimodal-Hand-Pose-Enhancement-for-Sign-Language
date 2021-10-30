@@ -300,7 +300,8 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
             outputGT2 = torch.reshape(outputGT, (batchDim,-1))
             print(f"output2.shape {output2.shape}", flush=True)
             print(f"outputGT2.shape {outputGT2.shape}", flush=True)
-            g_loss = torch.mean(reg_criterion.lossfun((output2 - outputGT2)))
+            g_loss = torch.mean(reg_criterion.lossfun((output2 - outputGT2))) \
+                     + gan_criterion(fake_score, torch.ones_like(fake_score))
         else:
             g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
@@ -351,7 +352,17 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
         ## DONE setting batch data
         
         output = generator(inputData, feats_=featsData)
-        g_loss = reg_criterion(output, outputGT)
+        if args.loss=="RobustLoss":
+            print(f"output.shape {output.shape}", flush=True)
+            print(f"outputGT.shape {outputGT.shape}", flush=True)
+            batchDim = output.shape[0]
+            output2 = torch.reshape(output, (batchDim,-1))
+            outputGT2 = torch.reshape(outputGT, (batchDim,-1))
+            print(f"output2.shape {output2.shape}", flush=True)
+            print(f"outputGT2.shape {outputGT2.shape}", flush=True)
+            g_loss = torch.mean(reg_criterion.lossfun((output2 - outputGT2)))
+        else:
+            g_loss = reg_criterion(output, outputGT)
         testLoss += g_loss.item() * val_batch_size
 
     testLoss /= totalSteps * val_batch_size
