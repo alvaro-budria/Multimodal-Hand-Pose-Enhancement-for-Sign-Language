@@ -74,6 +74,10 @@ def main(args):
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
             g_optimizer.load_state_dict(loaded_state['g_optimizer'])
         reg_criterion = LOSSES[args.loss]
+        if args.loss=="RobustLoss":
+            reg_criterion = reg_criterion(num_dims=train_Y.shape[1]*train_Y.shape[2],
+                                          float_dtype=torch.float32,
+                                          device="cuda:0")
         g_scheduler = ReduceLROnPlateau(g_optimizer, 'min', patience=1000000, factor=0.5, min_lr=1e-5)
         generator.train()
         wandb.watch(generator, reg_criterion, log="all", log_freq=10)
@@ -291,7 +295,12 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         if args.loss=="RobustLoss":
             print(f"output.shape {output.shape}", flush=True)
             print(f"outputGT.shape {outputGT.shape}", flush=True)
-            g_loss = torch.mean(reg_criterion.lossfun((output - outputGT)))#[:,None]))
+            batchDim = output.shape[0]
+            output2 = torch.reshape(output, (batchDim,-1))
+            outputGT2 = torch.reshape(outputGT, (batchDim,-1))
+            print(f"output2.shape {output2.shape}", flush=True)
+            print(f"outputGT2.shape {outputGT2.shape}", flush=True)
+            g_loss = torch.mean(reg_criterion.lossfun((output2 - outputGT2)))
         else:
             g_loss = reg_criterion(output, outputGT) + gan_criterion(fake_score, torch.ones_like(fake_score))
         g_optimizer.zero_grad()
