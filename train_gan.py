@@ -154,7 +154,6 @@ def load_data(args, rng, data_dir):
 
     train_X, train_Y, train_feats = fetch_data("train")
     val_X, val_Y, val_feats = fetch_data("val")
-    print(f"val_feats {val_feats}", flush=True)
     if args.pipeline == "wh2wh":
         train_X, val_X = train_X[:,:,6*6:], val_X[:,:,6*6:]  # keep hands for training
 
