@@ -192,7 +192,6 @@ class AdaptiveLossFunction(nn.Module):
       mean.
     """
     x = torch.as_tensor(x)
-    print(f"x.shape, self.num_dims {x.shape, self.num_dims}", flush=True)
     assert len(x.shape) == 2
     assert x.shape[1] == self.num_dims
     assert x.dtype == self.float_dtype
