@@ -54,9 +54,9 @@ class AdaptiveLossFunction(nn.Module):
                device,
                alpha_lo=1e-5,
                alpha_hi=1,
-               alpha_init=None,
+               alpha_init=1e-4,
                scale_lo=1e-5,
-               scale_init=1.0):
+               scale_init=0.5):
     """Sets up the loss function.
 
     Args:
