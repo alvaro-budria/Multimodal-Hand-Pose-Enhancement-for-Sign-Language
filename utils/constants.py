@@ -1,3 +1,7 @@
+import torch
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+lastCheckpoint = ""
+
 DATA_PATHS = {
         "train": "train/rgb_front/features/openpose_output/json",
         "val": "val/rgb_front/features/openpose_output/json",
@@ -45,3 +49,11 @@ MODELS = {
         "v4": "regressor_fcn_bn_32_v4",
         "v4_deeper": "regressor_fcn_bn_32_v4_deeper"
 }
+
+import numpy as np
+import torch.nn as nn
+from robust_loss import adaptive
+LOSSES = {"L1": nn.L1Loss(),
+          "L2": nn.MSELoss(),
+          "Huber1": nn.HuberLoss(delta=1.0),
+          "RobustLoss": adaptive.AdaptiveLossFunction}

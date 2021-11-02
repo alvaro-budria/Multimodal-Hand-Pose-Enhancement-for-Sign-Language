@@ -2,30 +2,6 @@ import numpy as np
 
 
 # removes those clips that contain at least one nan value
-# def rmv_clips_nan(X, Y=None, T=None):
-#     x, y, t = [], [], []
-#     for sample in range(X.shape[0]):
-#         if T is None and Y is None:
-#             if not np.isnan(X[sample,:,:]).any():
-#                 x.append(X[sample,:,:])
-#         elif T is None:
-#             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any()):
-#                 x.append(X[sample,:,:])
-#                 y.append(Y[sample,:,:])
-#         else:
-#             if not (np.isnan(X[sample,:,:]).any() | np.isnan(Y[sample,:,:]).any() | np.isnan(T[sample,:]).any()):
-#                 x.append(X[sample,:,:])
-#                 y.append(Y[sample,:,:])
-#                 t.append(T[sample,:])
-#     x = np.array(x)
-#     if Y is not None:
-#         y = np.array(y)
-#     if T is not None:
-#         t = np.array(t)
-#     return x, y, t
-
-
-# removes those clips that contain at least one nan value
 def rmv_clips_nan(X, Y=None, T=None):
     idx_nan = np.argwhere(np.isnan(X).any(axis=(1,2))).squeeze().tolist()
     if type(idx_nan)==type(1):  # tolist() returned a single int

@@ -153,8 +153,6 @@ def retrieve_coords(keypoints, keep_confidence=False):
 
 
 def load_clip(clip_path, pipeline, keep_confidence=True):
-    feats = pipeline.split('2')
-    in_feat, out_feat = feats[0], feats[1]
     in_kp, out_kp = np.array([]), np.array([])
     for frame in sorted(os.listdir(clip_path))[0:]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
