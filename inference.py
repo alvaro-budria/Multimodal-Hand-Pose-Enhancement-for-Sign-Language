@@ -42,7 +42,7 @@ def main(args):
     loaded_state = torch.load(pretrained_model, map_location=lambda storage, loc: storage)
     model.load_state_dict(loaded_state['state_dict'], strict=False)
     model = model.eval()
-    if torch.cuda.device_count() > 1:
+    if torch.cuda.device_count() > 1:  # parallelize inference with multiple GPUs
         print("Let's use", torch.cuda.device_count(), "GPUs!", flush=True)
         model = nn.DataParallel(model)
     model.to(device)
@@ -56,7 +56,6 @@ def main(args):
     elif args.embeds_type == "average":
         text_path = f"{args.data_dir}/average_{args.infer_set}_sentence_embeddings.pkl"
     image_path = f"{args.data_dir}/{args.infer_set}_vid_feats.pkl"
-
     test_X, test_Y = load_windows(r6d_path, args.pipeline, require_text=args.require_text, text_path=text_path,
                                   require_image=args.require_image, image_path=image_path)
 
@@ -96,7 +95,7 @@ def main(args):
     output = None
     batchinds = np.arange(test_X.shape[0] // args.batch_size + 1)
     totalSteps = 0
-    for bii, bi in enumerate(batchinds):
+    for _, bi in enumerate(batchinds):
         totalSteps += 1
         ## setting batch data
         idxStart = bi * args.batch_size
