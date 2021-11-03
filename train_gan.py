@@ -11,7 +11,6 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append('./viz')
-from track_grads import plot_grad_flow
 import modelZoo
 
 sys.path.append("./utils")
@@ -303,9 +302,6 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
         g_loss.backward()
         if clip_grad:
             torch.nn.utils.clip_grad_norm_(generator.parameters(), 1)
-        if epoch % 1 == 0 and bii == 0:  # every epoch, generate gradient flow chart
-            mkdir("viz_grads")
-            plot_grad_flow(generator.named_parameters(), f'viz_grads/grad_graph_e{epoch}')
         g_optimizer.step()
 
         avgLoss += g_loss.item() * args.batch_size
