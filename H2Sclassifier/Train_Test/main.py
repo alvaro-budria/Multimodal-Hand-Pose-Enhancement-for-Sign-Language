@@ -37,7 +37,7 @@ def main(args):
                 weight_decay=args.weight_decay,
                 log_step=args.log_step)
 
-    args.exp_name = (f"{args.data_dir.split()[-1]}__{args.num_epochs}"
+    args.exp_name = (f"{args.data_dir.split('/')[-1]}__{args.num_epochs}"
                      f"__{args.batch_size}__{args.learning_rate}"
                      f"__{args.hidden_size}__{args.num_layers}"
                      f"__bidir{str(args.bidir)}__{args.weight_decay}"
