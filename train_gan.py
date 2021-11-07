@@ -8,7 +8,6 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append('./viz')
 import modelZoo
@@ -67,7 +66,7 @@ def main(args):
         else:
             generator.build_net(feature_in_dim, feature_out_dim, require_text=args.require_text)
         generator.to(device)
-        g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)#1e-5)
+        g_optimizer = torch.optim.Adam(generator.parameters(), lr=config.learning_rate, weight_decay=0)
         if args.use_checkpoint:
             loaded_state = torch.load(os.path.join(args.model_path, f"lastCheckpoint_{args.exp_name}.pth"), map_location=lambda storage, loc: storage)
             generator.load_state_dict(loaded_state['state_dict'], strict=False)
@@ -97,15 +96,6 @@ def main(args):
         wandb.watch(discriminator, gan_criterion, log="all", log_freq=10)
         ## DONE model
 
-        ## setup results logger
-        mkdir("logs/"); mkdir('logs/train/'); mkdir('logs/val/')
-        train_log_dir = 'logs/train/' + args.exp_name
-        val_log_dir   = 'logs/val/' + args.exp_name
-        train_summary_writer = SummaryWriter(train_log_dir)
-        val_summary_writer   = SummaryWriter(val_log_dir)
-        mkdir(args.model_path) # create model checkpoints directory if it doesn't exist
-        ## DONE setup logger 
-
         ## training job
         prev_save_epoch = 0
         patience = args.patience
@@ -122,9 +112,6 @@ def main(args):
                 currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=val_feats)
 
     shutil.copyfile(lastCheckpoint, args.model_path + f"/lastCheckpoint_{args.exp_name}.pth")  #  name last checkpoint as "lastCheckpoint.pth"
-
-    train_summary_writer.flush()
-    val_summary_writer.flush()
 
 
 #######################################################
@@ -314,8 +301,6 @@ def train_generator(args, rng, generator, discriminator, reg_criterion, gan_crit
                                                                                                   avgLoss / (totalSteps * args.batch_size), 
                                                                                                   np.exp(avgLoss / (totalSteps * args.batch_size))), flush=True)
     wandb.log({"epoch": epoch, "loss_train_gen": avgLoss / (totalSteps * args.batch_size)})
-    # Save data to tensorboard                   
-    train_summary_writer.add_scalar('Tr. loss', avgLoss / (totalSteps * args.batch_size), epoch)
 
 
 ## validating generator function
@@ -325,7 +310,7 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
     generator.eval()
     discriminator.eval()
     val_batch_size = args.batch_size // 2
-    batchinds = np.arange(val_X.shape[0] // val_batch_size)  # integer division so drop last incomplete batch
+    batchinds = np.arange(val_X.shape[0] // val_batch_size)  # integer division so last incomplete batch gets dropped
     totalSteps = len(batchinds)
 
     for bii, bi in enumerate(batchinds):
@@ -357,8 +342,6 @@ def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_
                                                                                                       testLoss, 
                                                                                                       np.exp(testLoss),
                                                                                                       g_optimizer.param_groups[0]["lr"]), flush=True)
-    # Save data to tensorboard                             
-    val_summary_writer.add_scalar('Val. loss', testLoss, epoch)
     print('----------------------------------', flush=True)
     g_scheduler.step(testLoss)
     d_scheduler.step(testLoss)
