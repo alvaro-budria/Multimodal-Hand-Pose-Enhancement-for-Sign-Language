@@ -103,7 +103,7 @@ def main(args):
             I = np.arange(X_train.shape[0])
             rng.shuffle(I)
             X_train = X_train[I,:,:]
-            Y_train = Y_train[I,:,:]
+            Y_train = Y_train[I]
 
 
 # Data load helper
