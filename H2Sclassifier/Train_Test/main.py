@@ -98,6 +98,12 @@ def main(args):
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
                 currBestLoss = np.mean(val_epoch_loss)
+            
+            # Data shuffle
+            I = np.arange(X_train.shape[0])
+            rng.shuffle(I)
+            X_train = X_train[I,:,:]
+            Y_train = Y_train[I,:,:]
 
 
 # Data load helper
