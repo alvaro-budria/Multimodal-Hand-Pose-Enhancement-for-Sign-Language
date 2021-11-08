@@ -18,7 +18,7 @@ class regressor_fcn_bn_32_b2h(nn.Module):
 			if self.use_resnet:
 				self.image_resnet_postprocess = nn.Sequential(
 					nn.Dropout(0.5),
-					nn.Linear(1000*2, default_size),  # 1000 is the size of ResNet50's embeddins (2 hands)
+					nn.Linear(1000*2, default_size),  # 1000 is the size of ResNet50's embeddings (2 hands)
 					nn.LeakyReLU(0.2, True),
 					nn.BatchNorm1d(default_size, momentum=0.01),
 				)
@@ -375,40 +375,6 @@ class regressor_fcn_bn_32_v2(nn.Module):
 			nn.BatchNorm1d(self.embed_size),
 		)
 
-		# self.conv8 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.conv9 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.conv10 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.skip1 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.skip2 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
 		self.skip4 = nn.Sequential(
 			nn.Dropout(0.5),
 			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
@@ -459,15 +425,6 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		fifth_block = self.conv5(fourth_block)
 		sixth_block = self.conv6(fifth_block)
 		seventh_block = self.conv7(sixth_block)
-		# eighth_block = self.conv8(seventh_block)
-		# ninth_block = self.conv9(eighth_block)
-		# tenth_block = self.conv10(ninth_block)
-
-		# ninth_block = tenth_block + ninth_block
-		# ninth_block = self.skip1(ninth_block)
-
-		# eighth_block = ninth_block + eighth_block
-		# eighth_block = self.skip2(eighth_block)
 
 		if self.require_text:
 			feat = self.process_text(text_)
@@ -530,41 +487,6 @@ class regressor_fcn_bn_32_v4(nn.Module):
 			nn.BatchNorm1d(self.embed_size//(1+self.require_text)),
 		)
 
-		# self.conv8 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.conv9 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.conv10 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.skip1 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
-		# self.skip2 = nn.Sequential(
-		# 	nn.Dropout(0.5),
-		# 	nn.Conv1d(embed_size,embed_size,3,padding=1),
-		# 	nn.LeakyReLU(0.2, True),
-		# 	nn.BatchNorm1d(embed_size),
-		# )
-
 		self.skip4 = nn.Sequential(
 			nn.Dropout(0.5),
 			nn.Conv1d(self.embed_size,self.embed_size,3,padding=1),
@@ -616,15 +538,6 @@ class regressor_fcn_bn_32_v4(nn.Module):
 		fifth_block = self.conv5(fourth_block)
 		sixth_block = self.conv6(fifth_block)
 		seventh_block = self.conv7(sixth_block)
-		# eighth_block = self.conv8(seventh_block)
-		# ninth_block = self.conv9(eighth_block)
-		# tenth_block = self.conv10(ninth_block)
-
-		# ninth_block = tenth_block + ninth_block
-		# ninth_block = self.skip1(ninth_block)
-
-		# eighth_block = ninth_block + eighth_block
-		# eighth_block = self.skip2(eighth_block)
 
 		if self.require_text:
 			T = seventh_block.shape[2]
