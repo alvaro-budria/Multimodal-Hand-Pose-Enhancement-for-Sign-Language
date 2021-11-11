@@ -1,5 +1,5 @@
 import csv
-from collections import Counter
+from collections import Counter, OrderedDict
 import pandas as pd
 
 
@@ -37,10 +37,23 @@ def get_clips_categ(clip_names, id_categ_dict):
     return categ_list
 
 
+def counter_to_relative(counter):
+    total_count = sum(counter.values())
+    relative = {}
+    for key in counter:
+        relative[key] = counter[key] / total_count
+    return relative
+
 def plot_barChart_categs(categs, key):
-    count = Counter(categs)
+    count = OrderedDict(Counter(categs))
     df = pd.DataFrame.from_dict(count, orient='index')
     ax = df.plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
     fig.savefig(f"barChart_classes_{key}.png")
-    print(f"*** Generated barChart_classes_{key}.png ***", flush=True)
+    print(f"*** Generated barChart_absFreq_classes_{key}.png ***", flush=True)
+
+    df = pd.DataFrame.from_dict(counter_to_relative(count), orient='index')
+    ax = df.plot(kind='bar', title=f"Examples per class in {key} set")
+    fig = ax.get_figure()
+    fig.savefig(f"barChart_classes_{key}.png")
+    print(f"*** Generated barChart_relFreq_classes_{key}.png ***", flush=True)
