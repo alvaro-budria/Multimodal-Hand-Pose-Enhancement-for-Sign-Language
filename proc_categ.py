@@ -49,11 +49,11 @@ def plot_barChart_categs(categs, key):
     df = pd.DataFrame.from_dict(count, orient='index')
     ax = df.sort_values(by=0, ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
-    fig.savefig(f"barChart_classes_{key}.png")
+    fig.savefig(f"barChart_absFreq_classes_{key}.png")
     print(f"*** Generated barChart_absFreq_classes_{key}.png ***", flush=True)
 
     df = pd.DataFrame.from_dict(counter_to_relative(count), orient='index')
     ax = df.sort_values(by=0, ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
-    fig.savefig(f"barChart_classes_{key}.png")
+    fig.savefig(f"barChart_relFreq_classes_{key}.png")
     print(f"*** Generated barChart_relFreq_classes_{key}.png ***", flush=True)
