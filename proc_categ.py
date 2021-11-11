@@ -37,10 +37,10 @@ def get_clips_categ(clip_names, id_categ_dict):
     return categ_list
 
 
-def plot_barChart_categs(categs):
+def plot_barChart_categs(categs, key):
     count = Counter(categs)
     df = pd.DataFrame.from_dict(count, orient='index')
-    ax = df.plot(kind='bar', title=f"Examples per class in {set} set")
+    ax = df.plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
-    fig.savefig(f"barChart_classes_{set}.png")
-    print(f"*** Generated barChart_classes_{set}.png ***", flush=True)
+    fig.savefig(f"barChart_classes_{key}.png")
+    print(f"*** Generated barChart_classes_{key}.png ***", flush=True)

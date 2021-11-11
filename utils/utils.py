@@ -201,7 +201,7 @@ def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a 
     # get category for each of the clips
     id_categ_dict = proc_categ.get_ids_categ(key=key)
     categs = proc_categ.get_clips_categ(ids, id_categ_dict)
-    proc_categ.plot_barChart_categs(categs)
+    proc_categ.plot_barChart_categs(categs, key)
 
     # keep subset of data
     idx_max = int(len(ids)*subset)
