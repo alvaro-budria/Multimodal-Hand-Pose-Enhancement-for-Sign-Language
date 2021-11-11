@@ -1,4 +1,6 @@
 import csv
+from collections import Counter
+import pandas as pd
 
 
 CATEG_PATHS = {
@@ -33,3 +35,12 @@ def get_clips_categ(clip_names, id_categ_dict):
         clip_id = clip_name[:11]  # first 11 characters are the id
         categ_list.append(id_categ_dict[clip_id])
     return categ_list
+
+
+def plot_barChart_categs(categs):
+    count = Counter(categs)
+    df = pd.DataFrame.from_dict(count, orient='index')
+    ax = df.plot(kind='bar', title=f"Examples per class in {set} set")
+    fig = ax.get_figure()
+    fig.savefig(f"barChart_classes_{set}.png")
+    print(f"*** Generated barChart_classes_{set}.png ***", flush=True)
