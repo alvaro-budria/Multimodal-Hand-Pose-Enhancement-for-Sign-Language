@@ -47,13 +47,13 @@ def counter_to_relative(counter):
 def plot_barChart_categs(categs, key):
     count = OrderedDict(Counter(categs))
     df = pd.DataFrame.from_dict(count, orient='index')
-    ax = df.sort_values(ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
+    ax = df.sort_values(by=0, ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
     fig.savefig(f"barChart_classes_{key}.png")
     print(f"*** Generated barChart_absFreq_classes_{key}.png ***", flush=True)
 
     df = pd.DataFrame.from_dict(counter_to_relative(count), orient='index')
-    ax = df.sort_values(ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
+    ax = df.sort_values(by=0, ascending=False).plot(kind='bar', title=f"Examples per class in {key} set")
     fig = ax.get_figure()
     fig.savefig(f"barChart_classes_{key}.png")
     print(f"*** Generated barChart_relFreq_classes_{key}.png ***", flush=True)
