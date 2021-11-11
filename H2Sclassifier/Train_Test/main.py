@@ -37,7 +37,7 @@ def main(args):
                 weight_decay=args.weight_decay,
                 log_step=args.log_step)
 
-    args.exp_name = (f"{args.data_dir}__{args.num_epochs}"
+    args.exp_name = (f"{args.data_dir.split('/')[-1]}__{args.num_epochs}"
                      f"__{args.batch_size}__{args.learning_rate}"
                      f"__{args.hidden_size}__{args.num_layers}"
                      f"__bidir{str(args.bidir)}__{args.weight_decay}"
@@ -98,6 +98,12 @@ def main(args):
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
                 currBestLoss = np.mean(val_epoch_loss)
+            
+            # Data shuffle
+            I = np.arange(X_train.shape[0])
+            rng.shuffle(I)
+            X_train = X_train[I,:,:]
+            Y_train = Y_train[I]
 
 
 # Data load helper
