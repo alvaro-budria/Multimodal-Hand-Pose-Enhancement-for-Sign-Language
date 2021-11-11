@@ -425,9 +425,9 @@ def process_H2S_dataset(dir, data_dir):
     #save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
     #save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
 
-    save_binary(categs_train, f"{data_dir}/categs_train.pkl", append=False)
-    save_binary(categs_test, f"{data_dir}/categs_test.pkl", append=False)
-    save_binary(categs_val, f"{data_dir}/categs_val.pkl", append=False)
+    # save_binary(categs_train, f"{data_dir}/categs_train.pkl", append=False)
+    # save_binary(categs_test, f"{data_dir}/categs_test.pkl", append=False)
+    # save_binary(categs_val, f"{data_dir}/categs_val.pkl", append=False)
 
     # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
