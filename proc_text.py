@@ -81,7 +81,7 @@ def obtain_embeddings(key, ids, method="BERT"):
         model.eval()
         with torch.no_grad():
             outputs = model(indexed_tokens, attention_mask)
-            
+
             # Evaluating the model will return a different number of objects based on 
             # how it's  configured in the `from_pretrained` call earlier. In this case, 
             # becase we set `output_hidden_states = True`, the third item will be the 
@@ -89,7 +89,8 @@ def obtain_embeddings(key, ids, method="BERT"):
             # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
             hidden_states = outputs[2]
 
-        print(np.array(hidden_states).shape, flush=True)
+        print(type(hidden_states), flush=True)
+        print(hidden_states, flush=True)
 
         # # Stores the token vectors, with shape [22 x 768]
         # token_vecs_sum = []
