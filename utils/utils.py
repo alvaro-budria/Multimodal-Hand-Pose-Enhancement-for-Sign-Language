@@ -209,7 +209,7 @@ def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a 
     print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
     #print(f"{key} len(ids[idx_max:]): {len(ids[idx_max:])}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT")  # obtain text embeddings for each clip
     #embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
 
     # load keypoints for selected clips
@@ -408,7 +408,7 @@ def process_H2S_dataset(dir, data_dir):
     (in_train, out_train, embeds_train, categs_train), \
     (in_val, out_val, embeds_val, categs_val), \
     (in_test, out_test, embeds_test, categs_test) \
-        = load_H2S_dataset(dir, subset=1)
+        = load_H2S_dataset(dir, subset=0.1)
     print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)

@@ -50,7 +50,6 @@ MODELS = {
         "v4_deeper": "regressor_fcn_bn_32_v4_deeper"
 }
 
-import numpy as np
 import torch.nn as nn
 from robust_loss import adaptive
 LOSSES = {"L1": nn.L1Loss(),

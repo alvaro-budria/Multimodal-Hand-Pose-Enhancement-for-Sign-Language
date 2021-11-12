@@ -4,6 +4,7 @@ import pickle
 import numpy as np
 import torch
 import clip
+from transformers import BertTokenizer, BertModel
 
 TEXT_PATHS = {
     "train": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/train/text/en/raw_text/train.text.id.en",
@@ -41,20 +42,68 @@ def load_text(key, ids):
             if id in ids:
                 dict_text[id] = text
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
-    # sentence_list = [v for _, v in dict_text.items()]  # it's important that the result is already sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
     return sentence_list
 
 
 # obtain embeddings for each sentence in the input list
-def obtain_embeddings(key, ids):
-    model, _ = clip.load('ViT-B/32', device)
-    # Calculate features
+def obtain_embeddings(key, ids, method="BERT"):
     sentence_list = load_text(key, ids)
-    sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)
-    with torch.no_grad():
-        embeddings = model.encode_text(sentence_tensor)
-    return embeddings.cpu().numpy()
+
+    if method=="clip":
+        model, _ = clip.load('ViT-B/32', device)        
+        sentence_tensor = torch.cat([clip.tokenize(sent, truncate=True) for sent in sentence_list]).to(device)
+        with torch.no_grad():
+            embeddings = model.encode_text(sentence_tensor)
+        return embeddings.cpu().numpy()
+
+    if method=="BERT":
+        # Load pre-trained model tokenizer (vocabulary)
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        idxs_segmIDs = tokenizer.tokenize(sentence_list, add_special_tokens=True, padding="max_length",
+                                          max_length=32, truncation=True, return_tensors="pt")
+
+
+        print(f"type(idxs_degmIDs) {type(idxs_segmIDs)}", flush=True)
+
+        indexed_tokens = idxs_segmIDs["input_ids"]
+        segments_ids = idxs_segmIDs["token_type_ids"]
+        attention_mask = idxs_segmIDs["attention_mask"]
+
+        print(f"type(segments_ids) {type(segments_ids)}", flush=True)
+        print(f"type(attention_mask) {type(attention_mask)}", flush=True)
+
+        model = BertModel.from_pretrained('bert-base-uncased',
+                                          output_hidden_states=True)
+        model.eval()
+        with torch.no_grad():
+            outputs = model(indexed_tokens, attention_mask)
+            
+            # Evaluating the model will return a different number of objects based on 
+            # how it's  configured in the `from_pretrained` call earlier. In this case, 
+            # becase we set `output_hidden_states = True`, the third item will be the 
+            # hidden states from all layers. See the documentation for more details:
+            # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
+            hidden_states = outputs[2]
+        print(hidden_states.shape)
+
+        # # Stores the token vectors, with shape [22 x 768]
+        # token_vecs_sum = []
+
+        # # `token_embeddings` is a [22 x 12 x 768] tensor.
+
+        # # For each token in the sentence...
+        # for token in token_embeddings:
+
+        #     # `token` is a [12 x 768] tensor
+
+        #     # Sum the vectors from the last four layers.
+        #     sum_vec = torch.sum(token[-4:], dim=0)
+
+        #     # Use `sum_vec` to represent `token`.
+        #     token_vecs_sum.append(sum_vec)
+
+        # print ('Shape is: %d x %d' % (len(token_vecs_sum), len(token_vecs_sum[0])))
 
 
 # returns the ID of those clips for which text is available
