@@ -61,8 +61,10 @@ def obtain_embeddings(key, ids, method="BERT"):
         # Load pre-trained model tokenizer (vocabulary)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         print(sentence_list[:4], flush=True)
-        idxs_segmIDs = tokenizer.tokenize(sentence_list, add_special_tokens=True, padding="max_length",
-                                          max_length=32, truncation=True, return_tensors="pt")
+        # idxs_segmIDs = tokenizer.tokenize(sentence_list, add_special_tokens=True, padding="max_length",
+        #                                   max_length=32, truncation=True, return_tensors="pt")
+        idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
+                                                   max_length=32, truncation=True, return_tensors="pt")
 
 
         print(f"type(idxs_degmIDs) {type(idxs_segmIDs)}", flush=True)
