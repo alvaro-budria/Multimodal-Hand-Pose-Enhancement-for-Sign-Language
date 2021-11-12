@@ -88,7 +88,8 @@ def obtain_embeddings(key, ids, method="BERT"):
             # hidden states from all layers. See the documentation for more details:
             # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
             hidden_states = outputs[2]
-        print(hidden_states.shape)
+
+        print(np.array(hidden_states).shape, flush=True)
 
         # # Stores the token vectors, with shape [22 x 768]
         # token_vecs_sum = []
