@@ -15,23 +15,6 @@ TEXT_PATHS = {
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-sentences = ['This framework generates embeddings for each input sentence',
-             'Sentences are passed as a list of string.', 
-             'The quick brown fox jumps over the lazy dog.',
-             "Esta frase está escrita en español",
-             "Aquesta frase és en català."]
-
-sample_data = ["fyI1Ev5m1w4_12-8-rgb_front And then you would start to turn your pile.",
-               "fyI1Ev5m1w4_13-8-rgb_front You would take the top and you would put it on the bottom, just like this.",
-               "fyI1Ev5m1w4_2-8-rgb_front Because, if you layered it right, and you watered it right, and you got your microorganisms in there, and you put the compost inoculate in there, you shouldn't have to turn this pile.",
-               "fyI1Ev5m1w4_3-8-rgb_front Now, obviously, this is a brand new pile that we just made today.",
-               "fyI1Ev5m1w4_4-8-rgb_front But, if for some reason your pile didn't cook down, which means if your pile is four feet high, when it's finished it should be about a foot and a half high.",
-               "fyI1Ev5m1w4_5-8-rgb_front And it should cook down, and it should go down, and you should be able to see that it looks like compost, not like this material.",
-               "fyI1Ev5m1w4_6-8-rgb_front But if you come across your pile, and it hasn't done those things, then you're going to want to turn your pile.",
-               "fyI1Ev5m1w4_7-8-rgb_front The way we would do that is we would do just like we did in the beginning.",
-               "fyI1Ev5m1w4_8-8-rgb_front We would put holes in the ground so it would drain good.",
-               "fyI1Ev5m1w4_9-8-rgb_front We would create--add some more sticks, which we've run out of"]
-
 
 def load_text(key, ids):
     file_path = TEXT_PATHS[key]
@@ -49,6 +32,8 @@ def load_text(key, ids):
 # obtain embeddings for each sentence in the input list
 def obtain_embeddings(key, ids, method="BERT"):
     sentence_list = load_text(key, ids)
+    
+    print(f"sentence_list.shape {sentence_list.shape}",  flush=True)
 
     if method=="clip":
         model, _ = clip.load('ViT-B/32', device)        
@@ -66,22 +51,21 @@ def obtain_embeddings(key, ids, method="BERT"):
         idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
                                                    max_length=32, truncation=True, return_tensors="pt")
 
-
         print(f"type(idxs_degmIDs) {type(idxs_segmIDs)}", flush=True)
 
         indexed_tokens = idxs_segmIDs["input_ids"]
         segments_ids = idxs_segmIDs["token_type_ids"]
         attention_mask = idxs_segmIDs["attention_mask"]
 
-        print(f"type(segments_ids) {type(segments_ids)}", flush=True)
-        print(f"type(attention_mask) {type(attention_mask)}", flush=True)
+        print(f"segments_ids.shape {segments_ids.shape}", flush=True)
+        print(f"attention_mask.shape {attention_mask.shape}", flush=True)
 
         model = BertModel.from_pretrained('bert-base-uncased',
                                           output_hidden_states=True)
         model.eval()
         with torch.no_grad():
             outputs = model(indexed_tokens, attention_mask)
-
+            print(f"type(outputs) {type(outputs)}", flush=True)
             # Evaluating the model will return a different number of objects based on 
             # how it's  configured in the `from_pretrained` call earlier. In this case, 
             # becase we set `output_hidden_states = True`, the third item will be the 
