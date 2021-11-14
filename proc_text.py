@@ -76,7 +76,7 @@ def obtain_embeddings(key, ids, method="BERT"):
         print(type(hidden_states), flush=True)
         for hidden_state in hidden_states:
             print("*********************************+", flush=True)
-            print('Tensor shape for each layer: ', hidden_state[0].shape, flush=True)
+            print('Tensor shape for each layer: ', hidden_state.shape, flush=True)
 
         # # Stores the token vectors, with shape [22 x 768]
         # token_vecs_sum = []
