@@ -78,7 +78,7 @@ def obtain_embeddings(key, ids, method="BERT"):
             print('Tensor shape for each layer: ', hidden_state.shape, flush=True)
 
 
-        print(f"torch.cat(hidden_states[-4:]).shape {torch.cat(hidden_states[-4:]).shape}")
+        print(f"torch.stack(hidden_states[-4:]).shape {torch.stack(hidden_states[-4:]).shape}")
         # hidden_states has shape 12xBx32x768 (12 hidden states, 32 tokes per sentence)
         hidden_states = torch.sum(torch.stack(hidden_states[-4:], dim=0), dim=0)  # Sum the vectors from the last four layers.
         print(f"hidden_states.shape {hidden_states.shape}", flush=True)
