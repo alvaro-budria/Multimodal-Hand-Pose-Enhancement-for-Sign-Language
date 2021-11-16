@@ -74,7 +74,7 @@ def obtain_embeddings(key, ids, method="BERT"):
             hidden_states = outputs[2]
 
         print(type(hidden_states), flush=True)
-        print(f"hidden_states.shape {hidden_states.shape}", flush=True)
+        print(f"len(hidden_states) {len(hidden_states)}", flush=True)
         for hidden_state in hidden_states:
             print("**********************************", flush=True)
             print('Tensor shape for each layer: ', hidden_state.shape, flush=True)
