@@ -45,20 +45,12 @@ def obtain_embeddings(key, ids, method="BERT"):
     if method=="BERT":
         # Load pre-trained model tokenizer (vocabulary)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        print(sentence_list[:4], flush=True)
-        # idxs_segmIDs = tokenizer.tokenize(sentence_list, add_special_tokens=True, padding="max_length",
-        #                                   max_length=32, truncation=True, return_tensors="pt")
         idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
                                                    max_length=32, truncation=True, return_tensors="pt")
-
-        print(f"type(idxs_degmIDs) {type(idxs_segmIDs)}", flush=True)
 
         indexed_tokens = idxs_segmIDs["input_ids"]
         segments_ids = idxs_segmIDs["token_type_ids"]
         attention_mask = idxs_segmIDs["attention_mask"]
-
-        print(f"segments_ids.shape {segments_ids.shape}", flush=True)
-        print(f"attention_mask.shape {attention_mask.shape}", flush=True)
 
         model = BertModel.from_pretrained('bert-base-uncased',
                                           output_hidden_states=True)
@@ -73,34 +65,10 @@ def obtain_embeddings(key, ids, method="BERT"):
             # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
             hidden_states = outputs[2]
 
-        for hidden_state in hidden_states:
-            print("**********************************", flush=True)
-            print('Tensor shape for each layer: ', hidden_state.shape, flush=True)
-
-
-        print(f"torch.stack(hidden_states[-4:]).shape {torch.stack(hidden_states[-4:]).shape}")
         # hidden_states has shape 12xBx32x768 (12 hidden states, 32 tokes per sentence)
         hidden_states = torch.sum(torch.stack(hidden_states[-4:], dim=0), dim=0)  # Sum the vectors from the last four layers.
-        print(f"hidden_states.shape {hidden_states.shape}", flush=True)
-
-
-        # # Stores the token vectors, with shape [22 x 768]
-        # token_vecs_sum = []
-
-        # # `token_embeddings` is a [22 x 12 x 768] tensor.
-
-        # # For each token in the sentence...
-        # for token in token_embeddings:
-
-        #     # `token` is a [12 x 768] tensor
-
-        #     # Sum the vectors from the last four layers.
-        #     sum_vec = torch.sum(token[-4:], dim=0)
-
-        #     # Use `sum_vec` to represent `token`.
-        #     token_vecs_sum.append(sum_vec)
-
-        # print ('Shape is: %d x %d' % (len(token_vecs_sum), len(token_vecs_sum[0])))
+              
+        return hidden_states
 
 
 # returns the ID of those clips for which text is available
