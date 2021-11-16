@@ -33,7 +33,7 @@ def load_text(key, ids):
 def obtain_embeddings(key, ids, method="BERT"):
     sentence_list = load_text(key, ids)
     
-    print(f"sentence_list.shape {sentence_list.shape}",  flush=True)
+    print(f"len(sentence_list) {len(sentence_list)}",  flush=True)
 
     if method=="clip":
         model, _ = clip.load('ViT-B/32', device)        
