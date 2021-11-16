@@ -73,15 +73,14 @@ def obtain_embeddings(key, ids, method="BERT"):
             # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
             hidden_states = outputs[2]
 
-        print(type(hidden_states), flush=True)
-        print(f"len(hidden_states) {len(hidden_states)}", flush=True)
         for hidden_state in hidden_states:
             print("**********************************", flush=True)
             print('Tensor shape for each layer: ', hidden_state.shape, flush=True)
 
 
+        print(f"torch.cat(hidden_states[-4:]).shape {torch.cat(hidden_states[-4:]).shape}")
         # hidden_states has shape 12xBx32x768 (12 hidden states, 32 tokes per sentence)
-        hidden_states = torch.sum(hidden_states[-4:,:,:,:], dim=0)  # Sum the vectors from the last four layers.
+        hidden_states = torch.sum(torch.cat(hidden_states[-4:]), dim=0)  # Sum the vectors from the last four layers.
         print(f"hidden_states.shape {hidden_states.shape}", flush=True)
 
 
