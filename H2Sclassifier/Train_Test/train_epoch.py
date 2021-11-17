@@ -1,6 +1,5 @@
 import torch
 from torch.autograd import Variable
-import torch.nn.functional as F
 import numpy as np
 from hyperparameters import device
 
@@ -8,8 +7,7 @@ from hyperparameters import device
 # Define a function that trains the model for one epoch
 def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, rng, clip_grad=False):
     model.train()
-    epoch_loss = []
-    epoch_acc = 0
+    epoch_loss, epoch_acc = [], 0
     batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
     # rng.shuffle(batchinds)
     for bii, bi in enumerate(batchinds):

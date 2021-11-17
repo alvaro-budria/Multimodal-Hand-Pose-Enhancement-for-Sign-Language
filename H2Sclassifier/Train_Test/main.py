@@ -107,8 +107,9 @@ def main(args):
 
 
 # Data load helper
-def load_data(data_dir="../../video_data", categs_dir="../../video_data", key="train"):
-    X = load_binary(f"{data_dir}/r6d_{key}.pkl")
+def load_data(data_dir="../../video_data", data_type="r6d", categs_dir="../../video_data", key="train"):
+    f = {"r6d": f"r6d_{key}.pkl", "wordBert": f"{key}_wordBert_embeddings.pkl"}
+    X = load_binary(f"{data_dir}/{f[data_type]}")
     Y = load_binary(f"{categs_dir}/categs_{key}.pkl")
     X = make_equal_len(X, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
     X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default="../../video_data" , help='Directory where results should be stored to and loaded from')
     parser.add_argument('--categs_dir', type=str, default="../../video_data" , help='Directory where categories for each sequence can be loaded from')
+    parser.add_argument('--data_type', type=str, default="r6d" , help='Type of data to be used. Can be "r6d" or "wordBert".')
     parser.add_argument('--models_dir', type=str, default="models/" , help='Directory where checkpoints are stored.')
     parser.add_argument('--exp_name', type=str, default='experiment', help='Name for the experiment')
     parser.add_argument('--num_epochs', type=int, default=200, help="Number of training epochs")

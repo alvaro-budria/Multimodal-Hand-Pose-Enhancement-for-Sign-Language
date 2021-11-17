@@ -57,18 +57,17 @@ def obtain_embeddings(key, ids, method="BERT"):
         model.eval()
         with torch.no_grad():
             outputs = model(indexed_tokens, attention_mask)
-            print(f"type(outputs) {type(outputs)}", flush=True)
             # Evaluating the model will return a different number of objects based on 
             # how it's  configured in the `from_pretrained` call earlier. In this case, 
             # becase we set `output_hidden_states = True`, the third item will be the 
             # hidden states from all layers. See the documentation for more details:
             # https://huggingface.co/transformers/model_doc/bert.html#bertmodel
             hidden_states = outputs[2]
+            # hidden_states contains 12 hidden states of shape Bx32x768 (32 tokes per sentence)
 
-        # hidden_states has shape 12xBx32x768 (12 hidden states, 32 tokes per sentence)
         hidden_states = torch.sum(torch.stack(hidden_states[-4:], dim=0), dim=0)  # Sum the vectors from the last four layers.
-              
-        return hidden_states
+        print(f"hidden_states.shape {hidden_states.shape}", flush=True)
+        return hidden_states  # shape Bx32x768
 
 
 # returns the ID of those clips for which text is available
