@@ -21,14 +21,14 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
             print(f"outputGT.shape {outputGT.shape}", flush=True)
-            GT + outputGT.cpu().numpy().tolist()
+            GT = GT + outputGT.cpu().numpy().tolist()
             print(outputGT.cpu().numpy().tolist(), flush=True)
 
             # Forward pass
             y_, _ = model(inputData)
             print(f"y_.shape {y_.shape}", flush=True)
             print(f"np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).shape {np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).shape}", flush=True)
-            predY + np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).tolist()
+            predY = predY + np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).tolist()
             print(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).tolist(), flush=True)
             epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
