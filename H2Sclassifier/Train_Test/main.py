@@ -93,6 +93,8 @@ def main(args):
                 torch.cuda.empty_cache()
             tr_loss.append(train_epoch_loss)
             val_loss.append(val_epoch_loss)
+            
+            print(f"val_epoch_loss, currBestLoss {val_epoch_loss, currBestLoss}", flush=True)
             if np.mean(val_epoch_loss) < currBestLoss:
                 checkpoint = {"epoch": epoch,
                               "state_dict": model.state_dict(),
