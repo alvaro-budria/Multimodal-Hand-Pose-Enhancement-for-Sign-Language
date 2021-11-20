@@ -74,7 +74,7 @@ def main(args):
         tr_loss, val_loss = [], []
         rng = np.random.RandomState(23456)  # for shuffling batches
         # Train the model for NUM_EPOCHS epochs
-        currBestLoss = 0
+        currBestAcc = 0
         for epoch in range(config.num_epochs):
             print("Starting epoch: ", epoch, flush=True)
             train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
@@ -93,15 +93,15 @@ def main(args):
                 torch.cuda.empty_cache()
             tr_loss.append(train_epoch_loss)
             val_loss.append(val_epoch_loss)
-            
-            print(f"val_epoch_loss, currBestLoss {val_epoch_loss, currBestLoss}", flush=True)
-            if np.mean(val_epoch_loss) < currBestLoss:
+
+            print(f"val_epoch_loss, currBestAcc {val_epoch_loss, currBestAcc}", flush=True)
+            if val_acc > currBestAcc:
                 checkpoint = {"epoch": epoch,
                               "state_dict": model.state_dict(),
                               "g_optimizer": optimizer.state_dict()}
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
-                currBestLoss = np.mean(val_epoch_loss)
+                currBestAcc = val_acc
 
                 # save predY here, in the format (GT, predY)
                 import csv

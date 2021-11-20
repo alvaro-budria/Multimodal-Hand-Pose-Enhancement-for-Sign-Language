@@ -32,5 +32,5 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
 
             # Compute loss
             loss = loss_function(y_[:,-1,:], outputGT)
-            val_loss.append(loss.item())
+            val_loss += loss.item()
     return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)
