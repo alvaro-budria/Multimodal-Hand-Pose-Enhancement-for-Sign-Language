@@ -88,7 +88,7 @@ def main(args):
                        "acc_val": val_acc})
             if epoch % config.log_step == 0:
                 print(f"Epoch {epoch}:  Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}", flush=True)
-                print(f"Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}", flush=True)
+                print(f"Epoch {epoch}: Val. loss={val_epoch_loss} Val. acc.={val_acc}", flush=True)
                 gc.collect()
                 torch.cuda.empty_cache()
             tr_loss.append(train_epoch_loss)
