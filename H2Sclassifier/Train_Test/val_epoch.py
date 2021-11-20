@@ -1,6 +1,5 @@
 import torch
 from torch.autograd import Variable
-import torch.nn.functional as F
 import numpy as np
 from hyperparameters import device
 
@@ -8,7 +7,7 @@ from hyperparameters import device
 def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
     val_loss = []
     epoch_acc = 0
-    predY = []
+    predY, GT = [], []
     model.eval()
     batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
     rng.shuffle(batchinds)
@@ -20,13 +19,16 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
+            print(f"outputGT.shape {outputGT.shape}", flush=True)
+            GT.append(outputGT.numpy())
 
             # Forward pass
             y_, _ = model(inputData)
-            predY.append(y_)
+            print(f"y_.shape {y_.shape}", flush=True)
+            predY.append(y_.numpy())
             epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
             # Compute loss
             loss = loss_function(y_[:,-1,:], outputGT)
             val_loss.append(loss.item())
-    return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE)
+    return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)

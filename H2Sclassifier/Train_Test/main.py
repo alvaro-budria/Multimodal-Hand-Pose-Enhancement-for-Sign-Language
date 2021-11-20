@@ -78,7 +78,7 @@ def main(args):
         for epoch in range(config.num_epochs):
             print("Starting epoch: ", epoch, flush=True)
             train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-            val_epoch_loss, val_acc = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
+            val_epoch_loss, val_acc, (GT, predY) = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
             wandb.log({"epoch": epoch,
                        "loss_train": np.mean(train_epoch_loss),
                        "loss_val": np.mean(val_epoch_loss),
@@ -98,7 +98,8 @@ def main(args):
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
                 currBestLoss = np.mean(val_epoch_loss)
-            
+                # save predY here, in the format (GT, predY)
+
             # Data shuffle
             I = np.arange(X_train.shape[0])
             rng.shuffle(I)
