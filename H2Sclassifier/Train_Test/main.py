@@ -79,7 +79,6 @@ def main(args):
             print("Starting epoch: ", epoch, flush=True)
             train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
             val_epoch_loss, val_acc, (GT, predY) = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
-            print(f"GT {GT}", flush=True)
             print(f"len(GT), len(predY) {len(GT), len(predY)}", flush=True)
 
             wandb.log({"epoch": epoch,
@@ -101,7 +100,16 @@ def main(args):
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
                 currBestLoss = np.mean(val_epoch_loss)
+                
                 # save predY here, in the format (GT, predY)
+                import csv
+                from itertools import zip_longest
+                d = [GT, predY]
+                export_data = zip_longest(*d, fillvalue='')
+                with open('GT_predY.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
+                    wr = csv.writer(myfile)
+                    wr.writerow(("GT", "predY"))
+                    wr.writerows(export_data)
 
             # Data shuffle
             I = np.arange(X_train.shape[0])
