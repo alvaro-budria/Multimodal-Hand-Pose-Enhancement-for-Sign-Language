@@ -27,8 +27,8 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             y_, _ = model(inputData)
             print(f"y_.shape {y_.shape}", flush=True)
             print(f"np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).shape {np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).shape}", flush=True)
-            predY.append(y_.cpu().numpy().tolist())
-            print(y_.cpu().numpy().tolist(), flush=True)
+            predY.append(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).tolist())
+            print(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1).tolist(), flush=True)
             epoch_acc += sum(np.argmax(y_[:,-1,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
             # Compute loss
