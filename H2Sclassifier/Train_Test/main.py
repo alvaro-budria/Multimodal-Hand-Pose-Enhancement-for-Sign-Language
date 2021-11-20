@@ -100,7 +100,7 @@ def main(args):
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
                 currBestLoss = np.mean(val_epoch_loss)
-                
+
                 # save predY here, in the format (GT, predY)
                 import csv
                 from itertools import zip_longest
@@ -110,6 +110,7 @@ def main(args):
                     wr = csv.writer(myfile)
                     wr.writerow(("GT", "predY"))
                     wr.writerows(export_data)
+                print("after saving .csv", flush=True)
 
             # Data shuffle
             I = np.arange(X_train.shape[0])
