@@ -5,7 +5,7 @@ from hyperparameters import device
 
 
 def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
-    val_loss = []
+    val_loss = 0
     epoch_acc = 0
     predY, GT = [], []
     model.eval()
