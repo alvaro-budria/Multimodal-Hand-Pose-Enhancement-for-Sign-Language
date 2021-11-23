@@ -74,11 +74,13 @@ def main(args):
         tr_loss, val_loss = [], []
         rng = np.random.RandomState(23456)  # for shuffling batches
         # Train the model for NUM_EPOCHS epochs
-        currBestLoss = 0
+        currBestAcc = 0
         for epoch in range(config.num_epochs):
             print("Starting epoch: ", epoch, flush=True)
             train_epoch_loss, train_acc = train_epoch(model, X_train, Y_train, optimizer, loss_function, config.batch_size, rng)
-            val_epoch_loss, val_acc = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
+            val_epoch_loss, val_acc, (GT, predY) = val_epoch(model, X_val, Y_val, loss_function, config.batch_size, rng)
+            print(f"len(GT), len(predY) {len(GT), len(predY)}", flush=True)
+
             wandb.log({"epoch": epoch,
                        "loss_train": np.mean(train_epoch_loss),
                        "loss_val": np.mean(val_epoch_loss),
@@ -86,19 +88,32 @@ def main(args):
                        "acc_val": val_acc})
             if epoch % config.log_step == 0:
                 print(f"Epoch {epoch}:  Tr. loss={sum(train_epoch_loss)/len(train_epoch_loss)} Tr. acc.={train_acc}", flush=True)
-                print(f"Epoch {epoch}: Val. loss={sum(val_epoch_loss)/len(val_epoch_loss)} Val. acc.={val_acc}", flush=True)
+                print(f"Epoch {epoch}: Val. loss={val_epoch_loss} Val. acc.={val_acc}", flush=True)
                 gc.collect()
                 torch.cuda.empty_cache()
             tr_loss.append(train_epoch_loss)
             val_loss.append(val_epoch_loss)
-            if np.mean(val_epoch_loss) < currBestLoss:
+
+            print(f"val_epoch_loss, currBestAcc {val_epoch_loss, currBestAcc}", flush=True)
+            if val_acc > currBestAcc:
                 checkpoint = {"epoch": epoch,
                               "state_dict": model.state_dict(),
                               "g_optimizer": optimizer.state_dict()}
                 fileName = args.models_dir + "/{}_checkpoint.pth".format(args.exp_name)
                 torch.save(checkpoint, fileName)
-                currBestLoss = np.mean(val_epoch_loss)
-            
+                currBestAcc = val_acc
+
+                # save predY here, in the format (GT, predY)
+                import csv
+                from itertools import zip_longest
+                d = [GT, predY]
+                export_data = zip_longest(*d, fillvalue='')
+                with open('GT_predY.csv', 'w', encoding="ISO-8859-1", newline='') as myfile:
+                    wr = csv.writer(myfile)
+                    wr.writerow(("GT", "predY"))
+                    wr.writerows(export_data)
+                print("after saving .csv", flush=True)
+
             # Data shuffle
             I = np.arange(X_train.shape[0])
             rng.shuffle(I)
@@ -107,8 +122,9 @@ def main(args):
 
 
 # Data load helper
-def load_data(data_dir="../../video_data", categs_dir="../../video_data", key="train"):
-    X = load_binary(f"{data_dir}/r6d_{key}.pkl")
+def load_data(data_dir="../../video_data", data_type="r6d", categs_dir="../../video_data", key="train"):
+    f = {"r6d": f"r6d_{key}.pkl", "wordBert": f"{key}_wordBert_embeddings.pkl"}
+    X = load_binary(f"{data_dir}/{f[data_type]}")
     Y = load_binary(f"{categs_dir}/categs_{key}.pkl")
     X = make_equal_len(X, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
     X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
@@ -119,6 +135,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default="../../video_data" , help='Directory where results should be stored to and loaded from')
     parser.add_argument('--categs_dir', type=str, default="../../video_data" , help='Directory where categories for each sequence can be loaded from')
+    parser.add_argument('--data_type', type=str, default="r6d" , help='Type of data to be used. Can be "r6d" or "wordBert".')
     parser.add_argument('--models_dir', type=str, default="models/" , help='Directory where checkpoints are stored.')
     parser.add_argument('--exp_name', type=str, default='experiment', help='Name for the experiment')
     parser.add_argument('--num_epochs', type=int, default=200, help="Number of training epochs")

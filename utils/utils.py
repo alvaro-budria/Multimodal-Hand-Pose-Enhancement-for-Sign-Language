@@ -1,4 +1,5 @@
 import os
+import re
 import glob
 import sys
 import json
@@ -209,7 +210,7 @@ def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a 
     print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
     #print(f"{key} len(ids[idx_max:]): {len(ids[idx_max:])}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max])  # obtain text embeddings for each clip
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT")  # obtain text embeddings for each clip
     #embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
 
     # load keypoints for selected clips
@@ -283,7 +284,6 @@ def obtain_vid_feats(key, hand_crops_list=None, data_dir=None):
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
 
-import re
 def atof(text):
     try:
         retval = float(text)
@@ -408,7 +408,7 @@ def process_H2S_dataset(dir, data_dir):
     (in_train, out_train, embeds_train, categs_train), \
     (in_val, out_val, embeds_val, categs_val), \
     (in_test, out_test, embeds_test, categs_test) \
-        = load_H2S_dataset(dir, subset=1)
+        = load_H2S_dataset(dir, subset=0.1)
     print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
@@ -429,6 +429,11 @@ def process_H2S_dataset(dir, data_dir):
     # save_binary(categs_test, f"{data_dir}/categs_test.pkl", append=False)
     # save_binary(categs_val, f"{data_dir}/categs_val.pkl", append=False)
 
+    save_binary(embeds_train, f"{data_dir}/train_wordBert_embeddings.pkl", append=False)
+    save_binary(embeds_test, f"{data_dir}/test_wordBert_embeddings.pkl", append=False)
+    save_binary(embeds_val, f"{data_dir}/val_wordBert_embeddings.pkl", append=False)
+    print(f"Saved wordBert embeddings", flush=True)
+    
     # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
