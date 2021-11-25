@@ -1,5 +1,4 @@
 import os
-import re
 import glob
 import sys
 import json
@@ -139,21 +138,18 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
 
 
 # given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
-# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True
-
-## @jit
+# returns [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True else
+#         [X1, Y1, ... Xn, Yn] or [X1, Y1, ... Xn, Yn]
 def retrieve_coords(keypoints, keep_confidence=False):
     coords = []
     for i in range(0, len(keypoints), 3):
-        #coords.append([keypoints[i], keypoints[i+1]])
-        coords.append(keypoints[i])
-        coords.append(keypoints[i+1])
+        coords.append(keypoints[i]); coords.append(keypoints[i+1])
         if keep_confidence:
             coords.append(keypoints[i+2])
-    return coords # [elem for singleList in coords for elem in singleList]
+    return coords
 
 
-def load_clip(clip_path, pipeline, keep_confidence=True):
+def load_utterance(clip_path, pipeline, keep_confidence=True):
     in_kp, out_kp = np.array([]), np.array([])
     for frame in sorted(os.listdir(clip_path))[0:]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
@@ -175,16 +171,20 @@ def load_clip(clip_path, pipeline, keep_confidence=True):
     return in_kp, out_kp
 
 
+def _groupClips(clips, in_features, out_features):
+    
+    return clips, in_features, out_features
+
 def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
 
 def _load(args):
     clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
-    in_kp, out_kp = load_clip(clip_path, pipeline)
+    in_kp, out_kp = load_utterance(clip_path, pipeline)
     return clip, in_kp, out_kp
 
-def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a certain % of the data only
+def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subset allows to keep a certain % of the data only
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
 
@@ -199,33 +199,37 @@ def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a 
     ids = sorted(ids)
     print(f"{key} len(ids): {len(ids)}", flush=True)
 
-    # get category for each of the clips
-    id_categ_dict = proc_categ.get_ids_categ(key=key)
-    categs = proc_categ.get_clips_categ(ids, id_categ_dict)
-    proc_categ.plot_barChart_categs(categs, key)
-
     # keep subset of data
     idx_max = int(len(ids)*subset)
     print(f"{key} idx_max: {idx_max}", flush=True)
     print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
-    #print(f"{key} len(ids[idx_max:]): {len(ids[idx_max:])}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT")  # obtain text embeddings for each clip
-    #embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
+    # get category for each of the clips
+    id_categ_dict = proc_categ.get_ids_categ(key=key)
+    categs = proc_categ.get_clips_categ(ids, id_categ_dict)
+    proc_categ.plot_barChart_categs(categs, key)
 
     # load keypoints for selected clips
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
         result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
-        # result = executor.map(_load, zip(ids[idx_max:], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
-    print(f"Number of clips: {len(clips)}", flush=True)
-    print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
-    print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
+
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT", groupByClip=groupByClip)  # obtain text embeddings for each clip
+
+    if groupByClip:  # group keypoint sequences belonging to the same clip
+        clips, in_features, out_features = _groupClips(clips, in_features, out_features)
+
+    else:
+
+        print(f"Number of clips: {len(clips)}", flush=True)
+        print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
+        print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
+
     return in_features, out_features, embeds, categs[:idx_max]
 
-def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False, subset=0.1):
+def load_H2S_dataset(data_dir, pipeline="arm2wh", subset=0.1):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
     val_path = os.path.join(data_dir, DATA_PATHS["val"])
     test_path = os.path.join(data_dir, DATA_PATHS["test"])
@@ -284,16 +288,6 @@ def obtain_vid_feats(key, hand_crops_list=None, data_dir=None):
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
 
-def atof(text):
-    try:
-        retval = float(text)
-    except ValueError:
-        retval = text
-    return retval
-
-def natural_keys(text):
-    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-
 def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
@@ -304,7 +298,7 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 500 ###
+    size = 500
     start = 0
     print(f"(start, len(ids), size) {start, len(ids), size}", flush=True)
     for subset in range(start, len(ids), size):
@@ -318,7 +312,7 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     hand_feats = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
     print(f"vid_feats_files {vid_feats_files}", flush=True)
-    vid_feats_files.sort(key=natural_keys)
+    vid_feats_files.sort(key=proc_text.natural_keys)
     print(f"vid_feats_files {vid_feats_files}", flush=True)
     for file in vid_feats_files:
         print(file, flush=True)
@@ -564,13 +558,13 @@ if __name__ == "__main__":
 
     # testing that kp match video coordinates
     # path_json = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
-    # in_kp, out_kp = load_clip(path_json, "arm2wh", keep_confidence=False)
+    # in_kp, out_kp = load_utterance(path_json, "arm2wh", keep_confidence=False)
 
     # print(type(in_kp), in_kp.shape)
     # arms = select_keypoints([in_kp], ARMS, keep_confidence=False)[0]
     # print(arms.shape)
 
-    # video = proc_vid.load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
+    # video = proc_vid.load_utterance("G42xKICVj9U_4-10-rgb_front.mp4")
     # video_overlap = proc_vid.overlap_vid_points(np.moveaxis(video, 1, -1), arms)
     # print(video_overlap.shape)
     # video_overlap = np.moveaxis(video_overlap, -1, 1)

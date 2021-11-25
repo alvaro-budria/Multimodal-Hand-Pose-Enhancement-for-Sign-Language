@@ -1,4 +1,4 @@
-import argparse
+import re
 import pickle
 
 import numpy as np
@@ -12,11 +12,31 @@ TEXT_PATHS = {
     "test": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en"
 }
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_text(key, ids):
+def natural_keys(text):
+    def atof(text):
+        try:
+            retval = float(text)
+        except ValueError:
+            retval = text
+        return retval
+
+    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+
+
+def groupByClip(dict_text):
+
+    ####
+    # vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
+    # vid_feats_files.sort(key=natural_keys)
+    ####
+
+    return dict_text_grouped
+
+
+def load_text(key, ids, groupByClip=False):
     file_path = TEXT_PATHS[key]
     dict_text = {}
     with open(file_path) as fp:
@@ -24,14 +44,20 @@ def load_text(key, ids):
             id, text = line.split(" ", 1)  # first space separates id from text
             if id in ids:
                 dict_text[id] = text
-    sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
+
+    print(dict_text.keys(), flush=True)
+
+    if groupByClip:
+        dict_text = groupByClip(dict_text)
+    else:
+        sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
     return sentence_list
 
 
 # obtain embeddings for each sentence in the input list
-def obtain_embeddings(key, ids, method="BERT"):
-    sentence_list = load_text(key, ids)
+def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
+    sentence_list = load_text(key, ids, groupByClip=groupByClip)
     
     print(f"len(sentence_list) {len(sentence_list)}",  flush=True)
 
