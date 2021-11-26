@@ -180,7 +180,7 @@ def _groupClips(clips, in_features, out_features):
     print(f"temp[0] = {temp[0]}", flush=True)
     for i in range(len(temp[0])):
         clip_id = temp[0][i][:11]  # select first 11 characters of the utterance id
-        clips_grouped += clip_id
+        clips_grouped.append(clip_id)
         print(f"temp[0][i] = {temp[0][i]}", flush=True)
         print(f"clip_id = {clip_id}", flush=True)
         if clip_id not in in_features_grouped:
