@@ -253,8 +253,7 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
 
     if groupByClip:  # group keypoint sequences belonging to the same clip
         clips, in_features, out_features = _groupClips(clips, in_features, out_features)
-        # ojo amb #### amb el nom amb què guardes els feats!!! no sobreescriguis els kp preprocessats!!!!
-    raise Exception("quiet aquí!")
+
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
@@ -471,9 +470,9 @@ def process_H2S_dataset(dir, data_dir):
     # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/{groupByKey}average_val_sentence_embeddings.pkl")
     # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/{groupByKey}average_test_sentence_embeddings.pkl")
 
-    # print()
-    # print("saved xy original and text embeddings", flush=True)
-    # print()
+    print()
+    print("saved xy original and text embeddings", flush=True)
+    print()
 
     # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_train.pkl"), f"{data_dir}/{groupByKey}xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
