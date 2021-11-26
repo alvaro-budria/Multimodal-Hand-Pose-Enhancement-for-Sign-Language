@@ -32,7 +32,7 @@ def _groupByClip(dict_text):
     # vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
     # vid_feats_files.sort(key=natural_keys)
     ####
-
+    print(dict_text.keys(), flush=True)
     utterance_ids = list(dict_text.keys()).sort(key=natural_keys)
 
     print(len(utterance_ids), flush=True)
@@ -63,6 +63,7 @@ def load_text(key, ids, groupByClip=False):
             if id in ids:
                 dict_text[id] = text
 
+    print(len(list(dict_text.keys())), flush=True)
     print(dict_text.keys(), flush=True)
 
     if groupByClip:
