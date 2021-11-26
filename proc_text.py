@@ -28,21 +28,17 @@ def natural_keys(text):
 
 def _groupByClip(dict_text):
 
-    ####
-    # vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
-    # vid_feats_files.sort(key=natural_keys)
-    ####
-    print(dict_text.keys(), flush=True)
-    utterance_ids = list(dict_text.keys()).sort(key=natural_keys)
+    utterance_ids = list(dict_text.keys())
+    utterance_ids = utterance_ids.sort(key=natural_keys)
 
     print(len(utterance_ids), flush=True)
     print(utterance_ids, flush=True)
-    
+
     dict_text_grouped = {}
     clip_id = utterance_ids[0][:11]
     dict_text_grouped[clip_id] = dict_text[utterance_ids[0]]
-    
-    
+
+
     for utt_id in utterance_ids:
         if utt_id[:11] not in dict_text_grouped:
             dict_text_grouped[utt_id[:11]] = dict_text[utt_id]
@@ -77,8 +73,6 @@ def load_text(key, ids, groupByClip=False):
 # obtain embeddings for each sentence in the input list
 def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
     sentence_list = load_text(key, ids, groupByClip=groupByClip)
-    
-    print(f"len(sentence_list) {len(sentence_list)}",  flush=True)
 
     if method=="clip":
         model, _ = clip.load('ViT-B/32', device)        
