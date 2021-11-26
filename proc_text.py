@@ -34,9 +34,6 @@ def _groupByClip(dict_text):
             dict_text_grouped[utt_id[:11]] = dict_text[utt_id].replace("\n", " ")
         else:
             dict_text_grouped[utt_id[:11]] += dict_text[utt_id].replace("\n", " ")
-
-    print(len(dict_text_grouped.keys()), flush=True)
-    raise Exception("quiet aquí!!")
     return dict_text_grouped
 
 
@@ -49,14 +46,14 @@ def load_text(key, ids, groupByClip=False):
             if id in ids:
                 dict_text[id] = text
 
-    print(len(list(dict_text.keys())), flush=True)
-    print(dict_text.keys(), flush=True)
-
     if groupByClip:
         dict_text = _groupByClip(dict_text)
-    else:
-        sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
+
+    sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
+    print("********************", flush=True)
+    print(sentence_list, flush=True)
+    print("********************", flush=True)
     return sentence_list
 
 
@@ -75,7 +72,7 @@ def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
         # Load pre-trained model tokenizer (vocabulary)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
-                                                   max_length=32, truncation=True, return_tensors="pt")
+                                                   max_length=512, truncation=True, return_tensors="pt")
 
         indexed_tokens = idxs_segmIDs["input_ids"]
         segments_ids = idxs_segmIDs["token_type_ids"]

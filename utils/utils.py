@@ -160,7 +160,7 @@ def load_utterance(clip_path, pipeline, keep_confidence=True):
                 in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)], axis=0)
             else:
                 in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)])
-            
+
             temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=keep_confidence),
                     retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=keep_confidence)]
             temp = [elem for singleList in temp for elem in singleList]
@@ -172,8 +172,33 @@ def load_utterance(clip_path, pipeline, keep_confidence=True):
 
 
 def _groupClips(clips, in_features, out_features):
+    assert len(clips) == len(in_features) == len(out_features)
 
-    return clips, in_features, out_features
+    temp = sorted( zip(clips, in_features, out_features), key=lambda x: proc_text.natural_keys(x[0]) )  # natural sort based on clips
+    temp = list(map(list, zip(*temp)))  # temp is a tuple of three lists, one for clips, one for in_features and one for out_features
+    clips_grouped = []; in_features_grouped = {}; out_features_grouped = {}
+    for i in range(len(temp[0])):
+        clip_id = temp[0][i][:11]  # select first 11 characters of the utterance id
+        clips_grouped += clip_id
+        if clip_id not in in_features_grouped:
+            in_features_grouped[clip_id] = in_features[i]
+            out_features_grouped[clip_id] = out_features_grouped[i]
+        else:
+            in_features_grouped[clip_id] += in_features[i]
+            out_features_grouped[clip_id] += out_features_grouped[i]
+
+    clips_grouped = sorted(clips_grouped)  # it's important that the result is sorted by clip ID
+    print(f"len(clips_grouped): {len(clips_grouped)}", flush=True)
+    in_features_grouped = [v for _, v in sorted(in_features_grouped.items())]  # it's important that the result is sorted by clip ID
+    print(f"len(in_features_grouped): {len(in_features_grouped)}", flush=True)
+    out_features_grouped = [v for _, v in sorted(out_features_grouped.items())]  # it's important that the result is sorted by clip ID
+    print(f"len(out_features_grouped): {len(out_features_grouped)}", flush=True)
+
+    print("********************", flush=True)
+    print(clips_grouped, flush=True)
+    print("********************", flush=True)
+    return clips_grouped, in_features_grouped, out_features_grouped
+
 
 def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
@@ -185,9 +210,9 @@ def _load(args):
     return clip, in_kp, out_kp
 
 def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subset allows to keep a certain % of the data only
-    
+
     groupByClip = True #######
-    
+
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
 
@@ -223,6 +248,8 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
 
     if groupByClip:  # group keypoint sequences belonging to the same clip
         clips, in_features, out_features = _groupClips(clips, in_features, out_features)
+        # ojo amb #### amb el nom amb què guardes els feats!!! no sobreescriguis els kp preprocessats!!!!
+
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
