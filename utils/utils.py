@@ -182,8 +182,10 @@ def _groupClips(clips, in_features, out_features):
         clips_grouped += clip_id
         if clip_id not in in_features_grouped:
             print(f"in_features[i] {in_features[i]}", flush=True)
+            print(f"type(in_features[i]) {type(in_features[i])}", flush=True)
             in_features_grouped[clip_id] = in_features[i]
             print(f"out_features[i] {out_features[i]}", flush=True)
+            print(f"type(out_features[i]) {type(out_features[i])}", flush=True)
             out_features_grouped[clip_id] = out_features[i]
         else:
             in_features_grouped[clip_id] += in_features[i]
