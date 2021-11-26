@@ -31,11 +31,11 @@ def _groupByClip(dict_text):
     dict_text_grouped = {}
     for utt_id in utterance_ids:
         if utt_id[:11] not in dict_text_grouped:
-            dict_text_grouped[utt_id[:11]] = dict_text[utt_id].replace("\n", "")
+            dict_text_grouped[utt_id[:11]] = dict_text[utt_id].replace("\n", " ")
         else:
-            dict_text_grouped[utt_id[:11]] += dict_text[utt_id].replace("\n", "")
+            dict_text_grouped[utt_id[:11]] += dict_text[utt_id].replace("\n", " ")
 
-    print(dict_text_grouped, flush=True)
+    print(len(dict_text_grouped.keys()), flush=True)
     raise Exception("quiet aquí!!")
     return dict_text_grouped
 
