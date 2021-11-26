@@ -48,12 +48,13 @@ def load_text(key, ids, groupByClip=False):
 
     if groupByClip:
         dict_text = _groupByClip(dict_text)
-
+    
+    print("********************", flush=True)
+    print([k for k, _ in sorted(dict_text.items())], flush=True)
+    print("********************", flush=True)
+    
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
-    print("********************", flush=True)
-    print(sentence_list, flush=True)
-    print("********************", flush=True)
     return sentence_list
 
 
