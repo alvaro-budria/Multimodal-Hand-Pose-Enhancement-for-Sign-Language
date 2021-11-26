@@ -29,7 +29,7 @@ def natural_keys(text):
 def _groupByClip(dict_text):
 
     utterance_ids = list(dict_text.keys())
-    utterance_ids = utterance_ids.sort(key=natural_keys)
+    utterance_ids.sort(key=natural_keys)
 
     print(len(utterance_ids), flush=True)
     print(utterance_ids, flush=True)
