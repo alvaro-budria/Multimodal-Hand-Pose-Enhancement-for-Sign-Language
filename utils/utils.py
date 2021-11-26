@@ -177,9 +177,11 @@ def _groupClips(clips, in_features, out_features):
     temp = sorted( zip(clips, in_features, out_features), key=lambda x: proc_text.natural_keys(x[0]) )  # natural sort based on clips
     temp = list(map(list, zip(*temp)))  # temp is a tuple of three lists, one for clips, one for in_features and one for out_features
     clips_grouped = []; in_features_grouped = {}; out_features_grouped = {}
+    print(f"temp[0] = {temp[0]}", flush=True)
     for i in range(len(temp[0])):
         clip_id = temp[0][i][:11]  # select first 11 characters of the utterance id
         clips_grouped += clip_id
+        print(f"temp[0][i] = {temp[0][i]}", flush=True)
         print(f"clip_id = {clip_id}", flush=True)
         if clip_id not in in_features_grouped:
             in_features_grouped[clip_id] = in_features[i]
@@ -191,10 +193,10 @@ def _groupClips(clips, in_features, out_features):
                                                              in_features[i]), axis=0 )
             out_features_grouped[clip_id] = np.concatenate( (out_features_grouped[clip_id],
                                                              out_features[i]), axis=0 )
-            
-    print("********************", flush=True)
-    print(clips_grouped, flush=True)
-    print("********************", flush=True)
+
+    # print("********************", flush=True)
+    # print(clips_grouped, flush=True)
+    # print("********************", flush=True)
 
     clips_grouped = sorted(clips_grouped)  # it's important that the result is sorted by clip ID
     print(f"len(clips_grouped): {len(clips_grouped)}", flush=True)
