@@ -26,7 +26,7 @@ def natural_keys(text):
     return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
 
 
-def groupByClip(dict_text):
+def _groupByClip(dict_text):
 
     ####
     # vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
@@ -35,6 +35,7 @@ def groupByClip(dict_text):
 
     utterance_ids = list(dict_text.keys()).sort(key=natural_keys)
 
+    print(len(utterance_ids), flush=True)
     print(utterance_ids, flush=True)
     
     dict_text_grouped = {}
@@ -65,7 +66,7 @@ def load_text(key, ids, groupByClip=False):
     print(dict_text.keys(), flush=True)
 
     if groupByClip:
-        dict_text = groupByClip(dict_text)
+        dict_text = _groupByClip(dict_text)
     else:
         sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
