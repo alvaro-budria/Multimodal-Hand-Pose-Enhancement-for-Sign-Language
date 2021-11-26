@@ -33,6 +33,23 @@ def groupByClip(dict_text):
     # vid_feats_files.sort(key=natural_keys)
     ####
 
+    utterance_ids = list(dict_text.keys()).sort(key=natural_keys)
+
+    print(utterance_ids, flush=True)
+    
+    dict_text_grouped = {}
+    clip_id = utterance_ids[0][:11]
+    dict_text_grouped[clip_id] = dict_text[utterance_ids[0]]
+    
+    
+    for utt_id in utterance_ids:
+        if utt_id[:11] not in dict_text_grouped:
+            dict_text_grouped[utt_id[:11]] = dict_text[utt_id]
+        else:
+            dict_text_grouped[utt_id[:11]] += dict_text[utt_id]
+
+    print(dict_text_grouped, flush=True)
+    raise Exception("quiet aquí!!")
     return dict_text_grouped
 
 
