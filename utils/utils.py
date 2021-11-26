@@ -186,8 +186,10 @@ def _groupClips(clips, in_features, out_features):
         else:
             print(f"in_features_grouped[clip_id].shape {in_features_grouped[clip_id].shape}", flush=True)
             print(f"in_features[i].shape {in_features[i].shape}", flush=True)
-            in_features_grouped[clip_id] += in_features[i]
-            out_features_grouped[clip_id] += out_features[i]
+            in_features_grouped[clip_id]  = np.concatenate( (in_features_grouped[clip_id],
+                                                             in_features[i]), axis=0 )
+            out_features_grouped[clip_id] = np.concatenate( (out_features_grouped[clip_id],
+                                                             out_features[i]), axis=0 )
 
     clips_grouped = sorted(clips_grouped)  # it's important that the result is sorted by clip ID
     print(f"len(clips_grouped): {len(clips_grouped)}", flush=True)
