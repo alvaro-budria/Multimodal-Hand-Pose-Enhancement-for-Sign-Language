@@ -182,10 +182,10 @@ def _groupClips(clips, in_features, out_features):
         clips_grouped += clip_id
         if clip_id not in in_features_grouped:
             in_features_grouped[clip_id] = in_features[i]
-            out_features_grouped[clip_id] = out_features_grouped[i]
+            out_features_grouped[clip_id] = out_features[i]
         else:
             in_features_grouped[clip_id] += in_features[i]
-            out_features_grouped[clip_id] += out_features_grouped[i]
+            out_features_grouped[clip_id] += out_features[i]
 
     clips_grouped = sorted(clips_grouped)  # it's important that the result is sorted by clip ID
     print(f"len(clips_grouped): {len(clips_grouped)}", flush=True)
