@@ -133,7 +133,7 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
         print(flush=True)
-        print(f"LIFTED {int(i / nPartitions *100)}%", flush=True)
+        print(f"LIFTED {int(i / nPartitions * 100)}%", flush=True)
         print("*"*50, flush=True)
 
 
@@ -434,35 +434,35 @@ def process_H2S_dataset(dir, data_dir):
 
     mkdir(data_dir)
 
-    (in_train, out_train, embeds_train, categs_train), \
-    (in_val, out_val, embeds_val, categs_val), \
-    (in_test, out_test, embeds_test, categs_test) \
-        = load_H2S_dataset(dir, subset=0.1)
-    print("Loaded raw data from disk", flush=True)
-    neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
-    print("Selected NECK keypoints", flush=True)
-    arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
-    print("Selected ARMS keypoints", flush=True)
-    hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
-    print("Selected HANDS keypoints", flush=True)
+    # (in_train, out_train, embeds_train, categs_train), \
+    # (in_val, out_val, embeds_val, categs_val), \
+    # (in_test, out_test, embeds_test, categs_test) \
+    #     = load_H2S_dataset(dir, subset=0.1)
+    # print("Loaded raw data from disk", flush=True)
+    # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
+    # print("Selected NECK keypoints", flush=True)
+    # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
+    # print("Selected ARMS keypoints", flush=True)
+    # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
+    # print("Selected HANDS keypoints", flush=True)
 
-    feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
-    save_binary(feats_train, f"{data_dir}/{groupByKey}xy_train.pkl", append=False)
-    save_binary(feats_test, f"{data_dir}/{groupByKey}xy_test.pkl", append=False)
-    save_binary(feats_val, f"{data_dir}/{groupByKey}xy_val.pkl", append=False)
+    # save_binary(feats_train, f"{data_dir}/{groupByKey}xy_train.pkl", append=False)
+    # save_binary(feats_test, f"{data_dir}/{groupByKey}xy_test.pkl", append=False)
+    # save_binary(feats_val, f"{data_dir}/{groupByKey}xy_val.pkl", append=False)
 
     # save_binary(categs_train, f"{data_dir}/{groupByKey}categs_train.pkl", append=False)
     # save_binary(categs_test, f"{data_dir}/{groupByKey}categs_test.pkl", append=False)
     # save_binary(categs_val, f"{data_dir}/{groupByKey}categs_val.pkl", append=False)
 
-    save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_embeddings.pkl", append=False)
-    save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_embeddings.pkl", append=False)
-    save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_embeddings.pkl", append=False)
-    print(f"Saved {groupByKey}wordBert embeddings", flush=True)
-    
+    # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_embeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_embeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_embeddings.pkl", append=False)
+    # print(f"Saved {groupByKey}wordBert embeddings", flush=True)
+
     # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_sentence_embeddings.pkl", append=False)
@@ -470,17 +470,17 @@ def process_H2S_dataset(dir, data_dir):
     # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/{groupByKey}average_val_sentence_embeddings.pkl")
     # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/{groupByKey}average_test_sentence_embeddings.pkl")
 
-    print()
-    print("saved xy original and text embeddings", flush=True)
-    print()
+    # print()
+    # print("saved xy original and text embeddings", flush=True)
+    # print()
 
+    lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_val.pkl"), f"{data_dir}/{groupByKey}xyz_val.pkl")
+    print("lifted val to 3d", flush=True)
+    lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_test.pkl"), f"{data_dir}/{groupByKey}xyz_test.pkl")
+    print("lifted test to 3d", flush=True)
     # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_train.pkl"), f"{data_dir}/{groupByKey}xyz_train.pkl")
     # print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_val.pkl"), f"{data_dir}/{groupByKey}xyz_val.pkl")
-    # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_test.pkl"), f"{data_dir}/{groupByKey}xyz_test.pkl")
-    # print("lifted test to 3d", flush=True)
- 
+
     # print()
     # print("saved lifted xyz", flush=True)
     # print()
