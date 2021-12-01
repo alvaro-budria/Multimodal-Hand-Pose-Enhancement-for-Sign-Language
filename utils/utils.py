@@ -494,13 +494,13 @@ def process_H2S_dataset(dir, data_dir):
     save_binary(lengths, f"{data_dir}/{groupByKey}lengths_train.pkl")
     print("Obtained bone lengths.", flush=True)
 
-    train_aa = xyz_to_aa(train_3d, structure, root_filename=f"{data_dir}/{groupByKey}xyz_train_root.pkl")
+    train_aa = xyz_to_aa(train_3d, structure)
     save_binary(aa_to_rot6d(train_aa), f"{data_dir}/{groupByKey}r6d_train.pkl")
     print("Train xyz to r6d.", flush=True)
-    val_aa = xyz_to_aa(val_3d, structure, root_filename=f"{data_dir}/{groupByKey}xyz_val_root.pkl")
+    val_aa = xyz_to_aa(val_3d, structure)
     save_binary(aa_to_rot6d(val_aa), f"{data_dir}/{groupByKey}r6d_val.pkl")
     print("Val xyz to r6d.", flush=True)
-    test_aa = xyz_to_aa(test_3d, structure, root_filename=f"{data_dir}/{groupByKey}xyz_test_root.pkl")
+    test_aa = xyz_to_aa(test_3d, structure)
     save_binary(aa_to_rot6d(test_aa), f"{data_dir}/{groupByKey}r6d_test.pkl")
     print("Test xyz to r6d.", flush=True)
 
