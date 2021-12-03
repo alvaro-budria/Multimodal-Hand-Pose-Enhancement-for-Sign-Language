@@ -48,11 +48,11 @@ def load_text(key, ids, groupByClip=False):
 
     if groupByClip:
         dict_text = _groupByClip(dict_text)
-    
+
     print("********************", flush=True)
     print([k for k, _ in sorted(dict_text.items())], flush=True)
     print("********************", flush=True)
-    
+
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
     return sentence_list
@@ -69,7 +69,7 @@ def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
             embeddings = model.encode_text(sentence_tensor)
         return embeddings.cpu().numpy()
 
-    if method=="BERT":
+    if method=="BERTword":
         # Load pre-trained model tokenizer (vocabulary)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
@@ -95,6 +95,14 @@ def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
         hidden_states = torch.sum(torch.stack(hidden_states[-4:], dim=0), dim=0)  # Sum the vectors from the last four layers.
         print(f"hidden_states.shape {hidden_states.shape}", flush=True)
         return hidden_states  # shape Bx32x768
+
+    if method=="BERTsentence":
+        from sentence_transformers import SentenceTransformer
+
+        model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
+        embeddings = model.encode(sentence_list)
+        print(f"embeddings.shape {embeddings.shape}", flush=True)
+        return embeddings  # shape 2x384
 
 
 # returns the ID of those clips for which text is available

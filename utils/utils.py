@@ -249,7 +249,7 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
         result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT", groupByClip=groupByClip)  # obtain text embeddings for each clip
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERTsentence", groupByClip=groupByClip)  # obtain text embeddings for each clip
 
     if groupByClip:  # group keypoint sequences belonging to the same clip
         clips, in_features, out_features = _groupClips(clips, in_features, out_features)
@@ -434,10 +434,10 @@ def process_H2S_dataset(dir, data_dir):
 
     mkdir(data_dir)
 
-    # (in_train, out_train, embeds_train, categs_train), \
-    # (in_val, out_val, embeds_val, categs_val), \
-    # (in_test, out_test, embeds_test, categs_test) \
-    #     = load_H2S_dataset(dir, subset=1)
+    (in_train, out_train, embeds_train, categs_train), \
+    (in_val, out_val, embeds_val, categs_val), \
+    (in_test, out_test, embeds_test, categs_test) \
+        = load_H2S_dataset(dir, subset=1)
     # print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
@@ -458,10 +458,10 @@ def process_H2S_dataset(dir, data_dir):
     # save_binary(categs_test, f"{data_dir}/{groupByKey}categs_test.pkl", append=False)
     # save_binary(categs_val, f"{data_dir}/{groupByKey}categs_val.pkl", append=False)
 
-    # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_embeddings.pkl", append=False)
-    # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_embeddings.pkl", append=False)
-    # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_embeddings.pkl", append=False)
-    # print(f"Saved {groupByKey}wordBert embeddings", flush=True)
+    save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_sentEmbeddings.pkl", append=False)
+    save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_sentEmbeddings.pkl", append=False)
+    save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_sentEmbeddings.pkl", append=False)
+    print(f"Saved {groupByKey}wordBert embeddings", flush=True)
 
     # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_sentence_embeddings.pkl", append=False)
