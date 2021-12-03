@@ -123,7 +123,10 @@ def main(args):
 
 # Data load helper
 def load_data(data_dir="../../video_data", data_type="r6d", categs_dir="../../video_data", key="train"):
-    f = {"r6d": f"r6d_{key}.pkl", "wordBert": f"{key}_wordBert_embeddings.pkl"}
+    f = {"r6d": f"r6d_{key}.pkl",
+         "grouped_r6d": f"Truer6d_{key}.pkl",
+         "wordBert": f"{key}_wordBert_embeddings.pkl",
+         "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",}
     X = load_binary(f"{data_dir}/{f[data_type]}")
     Y = load_binary(f"{categs_dir}/categs_{key}.pkl")
     X = make_equal_len(X, method="cutting+reflect")  # make sequences have equal length, as initially they have different lengths
