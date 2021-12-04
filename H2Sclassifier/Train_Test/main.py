@@ -47,8 +47,8 @@ def main(args):
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
-        X_train, Y_train = load_data(data_dir=config.data_dir, key="train")
-        X_val, Y_val = load_data(data_dir=config.data_dir, key="val")
+        X_train, Y_train = load_data(data_dir=config.data_dir, data_type=args.data_type, key="train")
+        X_val, Y_val = load_data(data_dir=config.data_dir, data_type=args.data_type, key="val")
         print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}", flush=True)
         print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}", flush=True)
 
