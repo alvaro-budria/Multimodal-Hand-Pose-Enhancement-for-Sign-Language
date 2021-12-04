@@ -122,13 +122,13 @@ def main(args):
 
 
 # Data load helper
-def load_data(data_dir="../../video_data", data_type="r6d", categs_dir="../../video_data", key="train"):
+def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
     f = {"r6d": f"r6d_{key}.pkl",
          "grouped_r6d": f"Truer6d_{key}.pkl",
          "wordBert": f"{key}_wordBert_embeddings.pkl",
          "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",}
     X = load_binary(f"{data_dir}/{f[data_type]}")
-    Y = load_binary(f"{categs_dir}/categs_{key}.pkl")
+    Y = load_binary(f"{data_dir}/categs_{key}.pkl")
     X = make_equal_len(X, method="cutting+reflect", maxpad=192*(1 + 10*(data_type=="grouped_r6d")))  # make sequences have equal length, as initially they have different lengths
     X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
     return X, Y
