@@ -184,8 +184,6 @@ def _groupClips(clips, in_features, out_features):
             in_features_grouped[clip_id] = in_features[i]
             out_features_grouped[clip_id] = out_features[i]
         else:
-            print(f"in_features_grouped[clip_id].shape {in_features_grouped[clip_id].shape}", flush=True)
-            print(f"in_features[i].shape {in_features[i].shape}", flush=True)
             in_features_grouped[clip_id]  = np.concatenate( (in_features_grouped[clip_id],
                                                              in_features[i]), axis=0 )
             out_features_grouped[clip_id] = np.concatenate( (out_features_grouped[clip_id],
@@ -239,7 +237,10 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
 
     # get category for each of the clips
     id_categ_dict = proc_categ.get_ids_categ(key=key)
-    categs = proc_categ.get_clips_categ(ids, id_categ_dict)
+    if groupByClip:
+        categs = [v for _, v in sorted(id_categ_dict.items())]
+    else:
+        categs = proc_categ.get_clips_categ(ids, id_categ_dict)
     proc_categ.plot_barChart_categs(categs, key)
 
     # load keypoints for selected clips
@@ -454,14 +455,14 @@ def process_H2S_dataset(dir, data_dir):
     # save_binary(feats_test, f"{data_dir}/{groupByKey}xy_test.pkl", append=False)
     # save_binary(feats_val, f"{data_dir}/{groupByKey}xy_val.pkl", append=False)
 
-    # save_binary(categs_train, f"{data_dir}/{groupByKey}categs_train.pkl", append=False)
-    # save_binary(categs_test, f"{data_dir}/{groupByKey}categs_test.pkl", append=False)
-    # save_binary(categs_val, f"{data_dir}/{groupByKey}categs_val.pkl", append=False)
+    save_binary(categs_train, f"{data_dir}/{groupByKey}categs_train.pkl", append=False)
+    save_binary(categs_test, f"{data_dir}/{groupByKey}categs_test.pkl", append=False)
+    save_binary(categs_val, f"{data_dir}/{groupByKey}categs_val.pkl", append=False)
 
-    save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_sentEmbeddings.pkl", append=False)
-    save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_sentEmbeddings.pkl", append=False)
-    save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_sentEmbeddings.pkl", append=False)
-    print(f"Saved {groupByKey}wordBert embeddings", flush=True)
+    # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_sentEmbeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_sentEmbeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_sentEmbeddings.pkl", append=False)
+    # print(f"Saved {groupByKey}wordBert embeddings", flush=True)
 
     # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_sentence_embeddings.pkl", append=False)
     # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_sentence_embeddings.pkl", append=False)
