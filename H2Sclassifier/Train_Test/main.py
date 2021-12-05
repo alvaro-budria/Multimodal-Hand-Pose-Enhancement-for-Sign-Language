@@ -132,7 +132,9 @@ def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
     if data_type not in ["wordBert", "groupedWordBert"]:
         X = make_equal_len(X, method="cutting+reflect", maxpad=192*(1 + 10*(data_type=="grouped_r6d")))  # make sequences have equal length, as initially they have different lengths
         X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
+    print(Y, flush=True)
     print(f"data_type type(X), type(Y) {data_type, type(X), type(Y)}", flush=True)
+    print(np.array(Y), np.array(Y).shape, flush=True)
     return X, Y
 
 
