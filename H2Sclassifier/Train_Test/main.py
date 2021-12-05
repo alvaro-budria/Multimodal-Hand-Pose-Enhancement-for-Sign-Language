@@ -131,7 +131,7 @@ def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
     Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl") if "grouped" in data_type else load_binary(f"{data_dir}/categs_{key}.pkl")
     if data_type not in ["wordBert", "groupedWordBert"]:
         X = make_equal_len(X, method="cutting+reflect", maxpad=192*(1 + 10*(data_type=="grouped_r6d")))  # make sequences have equal length, as initially they have different lengths
-    X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
+        X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
     return X, Y
 
 
