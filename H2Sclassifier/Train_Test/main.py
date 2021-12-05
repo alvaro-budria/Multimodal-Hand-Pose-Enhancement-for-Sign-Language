@@ -134,7 +134,7 @@ def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
         X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
     else:
         X = X.numpy()
-        Y = torch.from_numpy(np.array(Y))
+        Y = np.array(Y)
     print(f"data_type type(X), type(Y) {data_type, type(X), type(Y)}", flush=True)
     return X, Y
 
