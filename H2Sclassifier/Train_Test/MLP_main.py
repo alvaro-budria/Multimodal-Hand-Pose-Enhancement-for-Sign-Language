@@ -131,13 +131,13 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_ = model(inputData)
-        print(f"torch.squeeze(y_).shape {torch.squeeze(y_).shape}", flush=True)
-        print(f"outputGT.shape {outputGT.shape}", flush=True)
-        epoch_acc += sum(np.argmax(torch.squeeze(y_).cpu().detach().numpy()) == outputGT.cpu().detach().numpy())
+        y_ = torch.squeeze(y_)
+        print(f"y_.shape {y_.shape}", flush=True)
+        epoch_acc += sum(np.argmax(y_.cpu().detach().numpy()) == outputGT.cpu().detach().numpy())
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
-        loss = loss_function(y_[:,:], outputGT)
+        loss = loss_function(y_, outputGT)
         print(f"loss.item() {loss.item()}", flush=True)
         epoch_loss.append(loss.item())
         loss.backward()
