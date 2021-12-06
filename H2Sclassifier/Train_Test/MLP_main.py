@@ -136,7 +136,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
-        loss = loss_function(y_.float(), outputGT)
+        loss = loss_function(y_, outputGT.float())
         print(f"loss.item() {loss.item()}", flush=True)
         epoch_loss.append(loss.item())
         loss.backward()
