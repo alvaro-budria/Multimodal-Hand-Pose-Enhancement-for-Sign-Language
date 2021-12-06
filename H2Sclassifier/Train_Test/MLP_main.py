@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 from torch import optim
-from torch import functional as F
 import gc
 import wandb
 
@@ -61,7 +60,7 @@ def main(args):
         model.train()
 
         optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
-        loss_function = F.CrossEntropyLoss()
+        loss_function = nn.CrossEntropyLoss()
 
         # log model stats
         wandb.watch(model, loss_function, log="all", log_freq=10)
