@@ -131,7 +131,6 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_ = model(inputData)
-        print(f"y_.shape {y_.shape}", flush=True)
         y_ = torch.squeeze(y_)
         
         epoch_acc += sum(np.argmax(y_.cpu().detach().numpy()) == outputGT.cpu().detach().numpy())
@@ -139,7 +138,6 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
         loss = loss_function(y_, outputGT)
-        print(f"loss.item() {loss.item()}", flush=True)
         epoch_loss.append(loss.item())
         loss.backward()
         if clip_grad:
@@ -157,25 +155,21 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
     rng.shuffle(batchinds)
     with torch.no_grad():
         for bii, bi in enumerate(batchinds):
-            print(f"bii: {bii}", flush=True)
             ## setting batch data
             idxStart = bi * BATCH_SIZE
             inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :]
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
-            print(f"outputGT.shape {outputGT.shape}", flush=True)
             GT = GT + outputGT.cpu().numpy().tolist()
 
             # Forward pass
             y_ = model(inputData)
-            print(f"y_.shape {y_.shape}", flush=True)
-            print(f"np.argmax(y_[:,:].cpu().detach().numpy(), axis=1).shape {np.argmax(y_[:,:].cpu().detach().numpy(), axis=1).shape}", flush=True)
-            predY = predY + np.argmax(y_[:,:].cpu().detach().numpy(), axis=1).tolist()
-            epoch_acc += sum(np.argmax(y_[:,:].cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
+            predY = predY + np.argmax(y_.cpu().detach().numpy(), axis=1).tolist()
+            epoch_acc += sum(np.argmax(y_.cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
             # Compute loss
-            loss = loss_function(y_[:,:], outputGT)
+            loss = loss_function(y_, outputGT)
             val_loss += loss.item()
     return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)
 
