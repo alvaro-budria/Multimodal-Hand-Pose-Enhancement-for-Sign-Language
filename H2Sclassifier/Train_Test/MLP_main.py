@@ -19,7 +19,7 @@ class SentenceClassifier(nn.Module):
     def __init__(self):
         super(SentenceClassifier, self).__init__()
         self.classifier = nn.Sequential(
-            nn.Linear(768, 256),
+            nn.Linear(384, 256),
             nn.ReLU(),
             nn.Linear(256, 1),
             nn.Sigmoid(),
@@ -181,9 +181,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
 def load_data(data_dir="../../video_data_groupByClip", key="train"):
     X = load_binary(f"{data_dir}/True{key}_wordBert_sentEmbeddings.pkl")
     Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl")
-    print(f"X.shape {X.shape}", flush=True)
-    print(f"np.array(Y).shape {np.array(Y).shape}", flush=True)
-    return X, Y
+    return X, np.array(Y)
 
 
 if __name__ == "__main__":
