@@ -124,7 +124,7 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
     for bii, bi in enumerate(batchinds):
         ## setting batch data
         idxStart = bi * BATCH_SIZE
-        inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
+        inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :]
         outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
         inputData = Variable(torch.from_numpy(inputData).float()).to(device)
         outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
@@ -156,7 +156,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             print(f"bii: {bii}", flush=True)
             ## setting batch data
             idxStart = bi * BATCH_SIZE
-            inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :, :]
+            inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :]
             outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
             inputData = Variable(torch.from_numpy(inputData).float()).to(device)
             outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
