@@ -20,7 +20,7 @@ class SentenceClassifier(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(384, 256),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(256, 10),
             nn.Sigmoid(),
         )
 
@@ -131,8 +131,9 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
 
         # Forward pass
         y_ = model(inputData)
+        print(f"y_.shape {y_.shape}", flush=True)
         y_ = torch.squeeze(y_)
-        print(f"y_ {y_}", flush=True)
+        
         epoch_acc += sum(np.argmax(y_.cpu().detach().numpy()) == outputGT.cpu().detach().numpy())
 
         # Set gradients to 0, compute the loss, gradients, and update the parameters
