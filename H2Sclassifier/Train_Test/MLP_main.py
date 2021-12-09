@@ -119,6 +119,7 @@ def main(args):
 def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, rng, clip_grad=False):
     model.train()
     epoch_loss, epoch_acc = [], 0
+    predY = []
     batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
     # rng.shuffle(batchinds)
     for bii, bi in enumerate(batchinds):
