@@ -128,8 +128,6 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
         inputData = Variable(torch.from_numpy(inputData).float()).to(device)
         outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
-        
-        GT = GT + outputGT.cpu().numpy().tolist()
 
         # Forward pass
         y_ = model(inputData)
