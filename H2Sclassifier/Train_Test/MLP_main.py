@@ -135,11 +135,6 @@ def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, r
         predY = predY + np.argmax(y_.cpu().detach().numpy(), axis=1).tolist()
         epoch_acc += sum(np.argmax(y_.cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
 
-        # Forward pass
-        # y_ = model(inputData)
-        # y_ = torch.squeeze(y_)
-        # epoch_acc += sum(np.argmax(y_.cpu().detach().numpy()) == outputGT.cpu().detach().numpy())
-
         # Set gradients to 0, compute the loss, gradients, and update the parameters
         optimizer.zero_grad()
         loss = loss_function(y_, outputGT)
@@ -176,7 +171,7 @@ def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
             # Compute loss
             loss = loss_function(y_, outputGT)
             val_loss += loss.item()
-    return val_loss,  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)
+    return val_loss/len(batchinds),  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)
 
 
 # Data load helper
