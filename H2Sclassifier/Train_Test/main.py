@@ -126,7 +126,8 @@ def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
     f = {"r6d": f"r6d_{key}.pkl",
          "grouped_r6d": f"Truer6d_{key}.pkl",
          "wordBert": f"{key}_wordBert_embeddings.pkl",
-         "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",}
+         "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",
+         "xy": f"True_confFalse_xy_{key}",}
     X = load_binary(f"{data_dir}/{f[data_type]}")
     Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl") if "grouped" in data_type else load_binary(f"{data_dir}/categs_{key}.pkl")
     if data_type not in ["wordBert", "groupedWordBert"]:
@@ -155,7 +156,7 @@ if __name__ == "__main__":
     parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay rate for regularization.")
     parser.add_argument('--dropout', type=float, default=0.1, help="Dropout at the end of each LSTM for regularization.")
     parser.add_argument('--optimizer', type=str, default="Adam", help="Available optimizers are Adam, AdamW and NAdam.")
-    parser.add_argument('--log_step', type=int , default=2, help="Print logs every log_step epochs")
+    parser.add_argument('--log_step', type=int, default=2, help="Print logs every log_step epochs")
 
     args = parser.parse_args()
     args.bidir = True if args.bidir in ["True", "T", "true"] else False
