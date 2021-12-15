@@ -1,5 +1,4 @@
 import os
-import re
 import glob
 import sys
 import json
@@ -134,26 +133,23 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
         print("*"*50, flush=True)
         print(f"PARTITION {i}", flush=True)
         print(flush=True)
-        print(f"LIFTED {int(i / nPartitions *100)}%", flush=True)
+        print(f"LIFTED {int(i / nPartitions * 100)}%", flush=True)
         print("*"*50, flush=True)
 
 
 # given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
-# returns [X1, Y1, ... Xn, Yn] or [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True
-
-## @jit
+# returns [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True else
+#         [X1, Y1, ... Xn, Yn] or [X1, Y1, ... Xn, Yn]
 def retrieve_coords(keypoints, keep_confidence=False):
     coords = []
     for i in range(0, len(keypoints), 3):
-        #coords.append([keypoints[i], keypoints[i+1]])
-        coords.append(keypoints[i])
-        coords.append(keypoints[i+1])
+        coords.append(keypoints[i]); coords.append(keypoints[i+1])
         if keep_confidence:
             coords.append(keypoints[i+2])
-    return coords # [elem for singleList in coords for elem in singleList]
+    return coords
 
 
-def load_clip(clip_path, pipeline, keep_confidence=True):
+def load_utterance(clip_path, pipeline, keep_confidence=True):
     in_kp, out_kp = np.array([]), np.array([])
     for frame in sorted(os.listdir(clip_path))[0:]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
@@ -164,7 +160,7 @@ def load_clip(clip_path, pipeline, keep_confidence=True):
                 in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)], axis=0)
             else:
                 in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)])
-            
+
             temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=keep_confidence),
                     retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=keep_confidence)]
             temp = [elem for singleList in temp for elem in singleList]
@@ -175,16 +171,51 @@ def load_clip(clip_path, pipeline, keep_confidence=True):
     return in_kp, out_kp
 
 
+def _groupClips(clips, in_features, out_features):
+    assert len(clips) == len(in_features) == len(out_features)
+
+    temp = sorted( zip(clips, in_features, out_features), key=lambda x: proc_text.natural_keys(x[0]) )  # natural sort based on clips
+    temp = list(map(list, zip(*temp)))  # temp is a tuple of three lists, one for clips, one for in_features and one for out_features
+    clips_grouped = []; in_features_grouped = {}; out_features_grouped = {}
+    for i in range(len(temp[0])):
+        clip_id = temp[0][i][:11]  # select first 11 characters of the utterance id
+        if clip_id not in in_features_grouped:
+            clips_grouped.append(clip_id)
+            in_features_grouped[clip_id] = in_features[i]
+            out_features_grouped[clip_id] = out_features[i]
+        else:
+            in_features_grouped[clip_id]  = np.concatenate( (in_features_grouped[clip_id],
+                                                             in_features[i]), axis=0 )
+            out_features_grouped[clip_id] = np.concatenate( (out_features_grouped[clip_id],
+                                                             out_features[i]), axis=0 )
+
+    print("********************", flush=True)
+    print(clips_grouped, flush=True)
+    print("********************", flush=True)
+
+    clips_grouped = sorted(clips_grouped)  # it's important that the result is sorted by clip ID
+    print(f"len(clips_grouped): {len(clips_grouped)}", flush=True)
+    in_features_grouped = [v for _, v in sorted(in_features_grouped.items())]  # it's important that the result is sorted by clip ID
+    print(f"len(in_features_grouped): {len(in_features_grouped)}", flush=True)
+    out_features_grouped = [v for _, v in sorted(out_features_grouped.items())]  # it's important that the result is sorted by clip ID
+    print(f"len(out_features_grouped): {len(out_features_grouped)}", flush=True)
+
+    return clips_grouped, in_features_grouped, out_features_grouped
+
+
 def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
 
 def _load(args):
     clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
-    in_kp, out_kp = load_clip(clip_path, pipeline)
+    in_kp, out_kp = load_utterance(clip_path, pipeline)
     return clip, in_kp, out_kp
 
-def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a certain % of the data only
+def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subset allows to keep a certain % of the data only
+
+    groupByClip = True #######
+
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
 
@@ -199,33 +230,38 @@ def _load_H2S_dataset(dir, pipeline, key, subset=1):  # subset allows to keep a 
     ids = sorted(ids)
     print(f"{key} len(ids): {len(ids)}", flush=True)
 
-    # get category for each of the clips
-    id_categ_dict = proc_categ.get_ids_categ(key=key)
-    categs = proc_categ.get_clips_categ(ids, id_categ_dict)
-    proc_categ.plot_barChart_categs(categs, key)
-
     # keep subset of data
     idx_max = int(len(ids)*subset)
     print(f"{key} idx_max: {idx_max}", flush=True)
     print(f"{key} len(ids[:idx_max]): {len(ids[:idx_max])}", flush=True)
-    #print(f"{key} len(ids[idx_max:]): {len(ids[idx_max:])}", flush=True)
 
-    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERT")  # obtain text embeddings for each clip
-    #embeds = proc_text.obtain_embeddings(key, ids[idx_max:])
+    # get category for each of the clips
+    id_categ_dict = proc_categ.get_ids_categ(key=key)
+    if groupByClip:
+        categs = [v for _, v in sorted(id_categ_dict.items())]
+    else:
+        categs = proc_categ.get_clips_categ(ids, id_categ_dict)
+    proc_categ.plot_barChart_categs(categs, key)
 
     # load keypoints for selected clips
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
         result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
-        # result = executor.map(_load, zip(ids[idx_max:], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
+
+    embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERTsentence", groupByClip=groupByClip)  # obtain text embeddings for each clip
+
+    if groupByClip:  # group keypoint sequences belonging to the same clip
+        clips, in_features, out_features = _groupClips(clips, in_features, out_features)
+
     print(f"Number of clips: {len(clips)}", flush=True)
     print(f"Number of input sequences (in_features): {len(in_features)}", flush=True)
     print(f"Number of output sequences (out_features): {len(out_features)}", flush=True)
+
     return in_features, out_features, embeds, categs[:idx_max]
 
-def load_H2S_dataset(data_dir, pipeline="arm2wh", num_samples=None, require_text=False, require_audio=False, subset=0.1):
+def load_H2S_dataset(data_dir, pipeline="arm2wh", subset=0.1):
     train_path = os.path.join(data_dir, DATA_PATHS["train"])
     val_path = os.path.join(data_dir, DATA_PATHS["val"])
     test_path = os.path.join(data_dir, DATA_PATHS["test"])
@@ -284,16 +320,6 @@ def obtain_vid_feats(key, hand_crops_list=None, data_dir=None):
     save_binary(feats_list, f"{data_dir}/{key}_vid_feats.pkl")
 
 
-def atof(text):
-    try:
-        retval = float(text)
-    except ValueError:
-        retval = text
-    return retval
-
-def natural_keys(text):
-    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
-
 def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     kp_path = os.path.join(kp_dir, DATA_PATHS[key])
     kp_dir_list = os.listdir(kp_path)
@@ -304,7 +330,7 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     ids = _join_ids(ids, clip_ids_vid)
     ids = sorted(ids)
     print("Obtained ids! Entering proc_vid.obtain_crops and proc_vid.obtain_feats_crops_ResNet", flush=True)
-    size = 500 ###
+    size = 500
     start = 0
     print(f"(start, len(ids), size) {start, len(ids), size}", flush=True)
     for subset in range(start, len(ids), size):
@@ -318,7 +344,7 @@ def obtain_vid_crops_and_feats(kp_dir, key, data_dir, return_feats=False):
     hand_feats = []
     vid_feats_files = glob.glob(f"{data_dir}/{key}_vid_feats_*.pkl")
     print(f"vid_feats_files {vid_feats_files}", flush=True)
-    vid_feats_files.sort(key=natural_keys)
+    vid_feats_files.sort(key=proc_text.natural_keys)
     print(f"vid_feats_files {vid_feats_files}", flush=True)
     for file in vid_feats_files:
         print(file, flush=True)
@@ -403,13 +429,17 @@ def save_results(input, output, pipeline, base_path, data_dir, tag="", infer_set
 
 
 def process_H2S_dataset(dir, data_dir):
+    groupByKey = True
+    if not groupByKey:
+        groupByKey = ""
+
     mkdir(data_dir)
 
     (in_train, out_train, embeds_train, categs_train), \
     (in_val, out_val, embeds_val, categs_val), \
     (in_test, out_test, embeds_test, categs_test) \
-        = load_H2S_dataset(dir, subset=0.1)
-    print("Loaded raw data from disk", flush=True)
+        = load_H2S_dataset(dir, subset=1)
+    # print("Loaded raw data from disk", flush=True)
     # neck_train, neck_val, neck_test = select_keypoints(in_train, NECK), select_keypoints(in_val, NECK), select_keypoints(in_test, NECK)
     # print("Selected NECK keypoints", flush=True)
     # arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS), select_keypoints(in_val, ARMS), select_keypoints(in_test, ARMS)
@@ -417,62 +447,62 @@ def process_H2S_dataset(dir, data_dir):
     # hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS), select_keypoints(out_val, HANDS), select_keypoints(out_test, HANDS)
     # print("Selected HANDS keypoints", flush=True)
 
-    #feats_train = hconcat_feats(neck_train, arms_train, hands_train)
-    #feats_val = hconcat_feats(neck_val, arms_val, hands_val)
-    #feats_test = hconcat_feats(neck_test, arms_test, hands_test)
+    # feats_train = hconcat_feats(neck_train, arms_train, hands_train)
+    # feats_val = hconcat_feats(neck_val, arms_val, hands_val)
+    # feats_test = hconcat_feats(neck_test, arms_test, hands_test)
 
-    #save_binary(feats_train, f"{data_dir}/xy_train.pkl", append=False)
-    #save_binary(feats_test, f"{data_dir}/xy_test.pkl", append=False)
-    #save_binary(feats_val, f"{data_dir}/xy_val.pkl", append=False)
+    # save_binary(feats_train, f"{data_dir}/{groupByKey}xy_train.pkl", append=False)
+    # save_binary(feats_test, f"{data_dir}/{groupByKey}xy_test.pkl", append=False)
+    # save_binary(feats_val, f"{data_dir}/{groupByKey}xy_val.pkl", append=False)
 
-    # save_binary(categs_train, f"{data_dir}/categs_train.pkl", append=False)
-    # save_binary(categs_test, f"{data_dir}/categs_test.pkl", append=False)
-    # save_binary(categs_val, f"{data_dir}/categs_val.pkl", append=False)
+    save_binary(categs_train, f"{data_dir}/{groupByKey}categs_train.pkl", append=False)
+    save_binary(categs_test, f"{data_dir}/{groupByKey}categs_test.pkl", append=False)
+    save_binary(categs_val, f"{data_dir}/{groupByKey}categs_val.pkl", append=False)
 
-    save_binary(embeds_train, f"{data_dir}/train_wordBert_embeddings.pkl", append=False)
-    save_binary(embeds_test, f"{data_dir}/test_wordBert_embeddings.pkl", append=False)
-    save_binary(embeds_val, f"{data_dir}/val_wordBert_embeddings.pkl", append=False)
-    print(f"Saved wordBert embeddings", flush=True)
-    
-    # save_binary(embeds_train, f"{data_dir}/train_sentence_embeddings.pkl", append=False)
-    # save_binary(embeds_test, f"{data_dir}/test_sentence_embeddings.pkl", append=False)
-    # save_binary(embeds_val, f"{data_dir}/val_sentence_embeddings.pkl", append=False)
-    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/average_train_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/average_val_sentence_embeddings.pkl")
-    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/average_test_sentence_embeddings.pkl")
+    # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_wordBert_sentEmbeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_wordBert_sentEmbeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_wordBert_sentEmbeddings.pkl", append=False)
+    # print(f"Saved {groupByKey}wordBert embeddings", flush=True)
+
+    # save_binary(embeds_train, f"{data_dir}/{groupByKey}train_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_test, f"{data_dir}/{groupByKey}test_sentence_embeddings.pkl", append=False)
+    # save_binary(embeds_val, f"{data_dir}/{groupByKey}val_sentence_embeddings.pkl", append=False)
+    # save_binary(proc_text.obtain_avg_embed(key="train", subset=1), f"{data_dir}/{groupByKey}average_train_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="val", subset=1), f"{data_dir}/{groupByKey}average_val_sentence_embeddings.pkl")
+    # save_binary(proc_text.obtain_avg_embed(key="test", subset=1), f"{data_dir}/{groupByKey}average_test_sentence_embeddings.pkl")
 
     # print()
     # print("saved xy original and text embeddings", flush=True)
     # print()
 
-    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_train.pkl"), f"{data_dir}/xyz_train.pkl")
-    # print("lifted train to 3d", flush=True)
-    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_val.pkl"), f"{data_dir}/xyz_val.pkl")
+    # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_val.pkl"), f"{data_dir}/{groupByKey}xyz_val.pkl")
     # print("lifted val to 3d", flush=True)
-    # lift_2d_to_3d(load_binary(f"{data_dir}/xy_test.pkl"), f"{data_dir}/xyz_test.pkl")
+    # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_test.pkl"), f"{data_dir}/{groupByKey}xyz_test.pkl")
     # print("lifted test to 3d", flush=True)
- 
+    # lift_2d_to_3d(load_binary(f"{data_dir}/{groupByKey}xy_train.pkl"), f"{data_dir}/{groupByKey}xyz_train.pkl")
+    # print("lifted train to 3d", flush=True)
+
     # print()
     # print("saved lifted xyz", flush=True)
     # print()
 
-    # train_3d = load_binary(f"{data_dir}/xyz_train.pkl")
-    # val_3d = load_binary(f"{data_dir}/xyz_val.pkl")
-    # test_3d = load_binary(f"{data_dir}/xyz_test.pkl")
+    # train_3d = load_binary(f"{data_dir}/{groupByKey}xyz_train.pkl")
+    # val_3d = load_binary(f"{data_dir}/{groupByKey}xyz_val.pkl")
+    # test_3d = load_binary(f"{data_dir}/{groupByKey}xyz_test.pkl")
 
     # structure = skeletalModel.getSkeletalModelStructure()
     # lengths = pose3D.get_bone_length(train_3d, structure)
-    # save_binary(lengths, f"{data_dir}/lengths_train.pkl")
+    # save_binary(lengths, f"{data_dir}/{groupByKey}lengths_train.pkl")
     # print("Obtained bone lengths.", flush=True)
 
-    # train_aa = xyz_to_aa(train_3d, structure, root_filename=f"{data_dir}/xyz_train_root.pkl")
-    # save_binary(aa_to_rot6d(train_aa), f"{data_dir}/r6d_train.pkl")
+    # train_aa = xyz_to_aa(train_3d, structure)
+    # save_binary(aa_to_rot6d(train_aa), f"{data_dir}/{groupByKey}r6d_train.pkl")
     # print("Train xyz to r6d.", flush=True)
-    # val_aa = xyz_to_aa(val_3d, structure, root_filename=f"{data_dir}/xyz_val_root.pkl")
-    # save_binary(aa_to_rot6d(val_aa), f"{data_dir}/r6d_val.pkl")
+    # val_aa = xyz_to_aa(val_3d, structure)
+    # save_binary(aa_to_rot6d(val_aa), f"{data_dir}/{groupByKey}r6d_val.pkl")
     # print("Val xyz to r6d.", flush=True)
-    # test_aa = xyz_to_aa(test_3d, structure, root_filename=f"{data_dir}/xyz_test_root.pkl")
-    # save_binary(aa_to_rot6d(test_aa), f"{data_dir}/r6d_test.pkl")
+    # test_aa = xyz_to_aa(test_3d, structure)
+    # save_binary(aa_to_rot6d(test_aa), f"{data_dir}/{groupByKey}r6d_test.pkl")
     # print("Test xyz to r6d.", flush=True)
 
     # print()
@@ -564,13 +594,13 @@ if __name__ == "__main__":
 
     # testing that kp match video coordinates
     # path_json = "/home/alvaro/Documents/ML and DL/How2Sign/B2H-H2S/Green Screen RGB clips* (frontal view)/test_2D_keypoints/openpose_output/json/G42xKICVj9U_4-10-rgb_front"
-    # in_kp, out_kp = load_clip(path_json, "arm2wh", keep_confidence=False)
+    # in_kp, out_kp = load_utterance(path_json, "arm2wh", keep_confidence=False)
 
     # print(type(in_kp), in_kp.shape)
     # arms = select_keypoints([in_kp], ARMS, keep_confidence=False)[0]
     # print(arms.shape)
 
-    # video = proc_vid.load_clip("G42xKICVj9U_4-10-rgb_front.mp4")
+    # video = proc_vid.load_utterance("G42xKICVj9U_4-10-rgb_front.mp4")
     # video_overlap = proc_vid.overlap_vid_points(np.moveaxis(video, 1, -1), arms)
     # print(video_overlap.shape)
     # video_overlap = np.moveaxis(video_overlap, -1, 1)

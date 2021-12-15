@@ -1,4 +1,4 @@
-import argparse
+import re
 import pickle
 
 import numpy as np
@@ -12,11 +12,31 @@ TEXT_PATHS = {
     "test": "/mnt/gpid08/datasets/How2Sign/How2Sign/utterance_level/test/text/en/raw_text/test.text.id.en"
 }
 
-
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
-def load_text(key, ids):
+def natural_keys(text):
+    def atof(text):
+        try:
+            retval = float(text)
+        except ValueError:
+            retval = text
+        return retval
+    return [ atof(c) for c in re.split(r'[+-]?([0-9]+(?:[.][0-9]*)?|[.][0-9]+)', text) ]
+
+
+def _groupByClip(dict_text):
+    utterance_ids = list(dict_text.keys()); utterance_ids.sort(key=natural_keys)
+    dict_text_grouped = {}
+    for utt_id in utterance_ids:
+        if utt_id[:11] not in dict_text_grouped:
+            dict_text_grouped[utt_id[:11]] = dict_text[utt_id].replace("\n", " ")
+        else:
+            dict_text_grouped[utt_id[:11]] += dict_text[utt_id].replace("\n", " ")
+    return dict_text_grouped
+
+
+def load_text(key, ids, groupByClip=False):
     file_path = TEXT_PATHS[key]
     dict_text = {}
     with open(file_path) as fp:
@@ -24,16 +44,18 @@ def load_text(key, ids):
             id, text = line.split(" ", 1)  # first space separates id from text
             if id in ids:
                 dict_text[id] = text
+
+    if groupByClip:
+        dict_text = _groupByClip(dict_text)
+
     sentence_list = [v for _, v in sorted(dict_text.items())]  # it's important that the result is sorted by clip ID
     print(f"len(sentence_list): {len(sentence_list)}", flush=True)
     return sentence_list
 
 
 # obtain embeddings for each sentence in the input list
-def obtain_embeddings(key, ids, method="BERT"):
-    sentence_list = load_text(key, ids)
-    
-    print(f"len(sentence_list) {len(sentence_list)}",  flush=True)
+def obtain_embeddings(key, ids, method="BERT", groupByClip=False):
+    sentence_list = load_text(key, ids, groupByClip=groupByClip)
 
     if method=="clip":
         model, _ = clip.load('ViT-B/32', device)        
@@ -42,11 +64,11 @@ def obtain_embeddings(key, ids, method="BERT"):
             embeddings = model.encode_text(sentence_tensor)
         return embeddings.cpu().numpy()
 
-    if method=="BERT":
+    if method=="BERTword":
         # Load pre-trained model tokenizer (vocabulary)
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         idxs_segmIDs = tokenizer.batch_encode_plus(sentence_list, add_special_tokens=True, padding="max_length",
-                                                   max_length=32, truncation=True, return_tensors="pt")
+                                                   max_length=512, truncation=True, return_tensors="pt")
 
         indexed_tokens = idxs_segmIDs["input_ids"]
         segments_ids = idxs_segmIDs["token_type_ids"]
@@ -68,6 +90,14 @@ def obtain_embeddings(key, ids, method="BERT"):
         hidden_states = torch.sum(torch.stack(hidden_states[-4:], dim=0), dim=0)  # Sum the vectors from the last four layers.
         print(f"hidden_states.shape {hidden_states.shape}", flush=True)
         return hidden_states  # shape Bx32x768
+
+    if method=="BERTsentence":
+        from sentence_transformers import SentenceTransformer
+
+        model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
+        embeddings = model.encode(sentence_list)
+        print(f"embeddings.shape {embeddings.shape}", flush=True)
+        return embeddings  # shape 2x384
 
 
 # returns the ID of those clips for which text is available

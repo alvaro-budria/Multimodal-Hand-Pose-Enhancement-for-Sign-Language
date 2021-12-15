@@ -1,73 +1,67 @@
 import sys
 import argparse
 import numpy as np
+import torch
 import torch.nn as nn
-
+from torch.autograd import Variable
+from torch import optim
 import gc
-
-sys.path.insert(1, '../Model')
-from ClassifLSTM import ClassifLSTM
-from hyperparameters import *
-
-from train_epoch import train_epoch
-from val_epoch import val_epoch
+import wandb
 
 sys.path.insert(1, "../../utils")
-from postprocess_utils import *
 from load_save_utils import load_binary
 
-# experiment logging
-import wandb
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+
+class SentenceClassifier(nn.Module):
+    def __init__(self):
+        super(SentenceClassifier, self).__init__()
+        self.classifier = nn.Sequential(
+            nn.Linear(384, 256),
+            nn.ReLU(),
+            nn.Linear(256, 10),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x):
+        return self.classifier(x)
 
 
 def main(args):
     wandb.login()
+
     ## variables
     config = dict(
                 data_dir=args.data_dir,
-                categs_dir=args.categs_dir,
                 num_epochs = args.num_epochs,
                 batch_size = args.batch_size,
                 learning_rate = args.learning_rate,
-                hidden_size=args.hidden_size,
-                num_layers=args.num_layers,
-                bidir=args.bidir,
-                dropout=args.dropout,
                 optimizer=args.optimizer,
                 weight_decay=args.weight_decay,
                 log_step=args.log_step)
 
     args.exp_name = (f"{args.data_dir.split('/')[-1]}__{args.num_epochs}"
                      f"__{args.batch_size}__{args.learning_rate}"
-                     f"__{args.hidden_size}__{args.num_layers}"
-                     f"__bidir{str(args.bidir)}__{args.weight_decay}"
-                     f"__{args.dropout}__{args.optimizer}")
+                     f"__{args.weight_decay}"
+                     f"__{args.optimizer}")
 
-    ## DONE variables
+
     with wandb.init(project="B2H-H2S", name=args.exp_name, id=args.exp_name, save_code=True, config=config):
         config = wandb.config
 
-        X_train, Y_train = load_data(data_dir=config.data_dir, data_type=args.data_type, key="train")
-        X_val, Y_val = load_data(data_dir=config.data_dir, data_type=args.data_type, key="val")
+        X_train, Y_train = load_data(data_dir=config.data_dir, key="train")
+        X_val, Y_val = load_data(data_dir=config.data_dir, key="val")
         print(f"X_train.shape, Y_train.shape {X_train.shape, Y_train.shape}", flush=True)
         print(f"X_val.shape, Y_val.shape {X_val.shape, Y_val.shape}", flush=True)
 
-        # PARAMETER DEFINITION
-        NUM_ROTATIONS = X_train.shape[2]
-        SEQ_LEN = X_train.shape[1]  # number of frames per clip
-        NUM_CLASSES = 10
-        print(f"NUM_ROTATIONS: {NUM_ROTATIONS}, SEQ_LEN: {SEQ_LEN}, NUM_CLASSES: {NUM_CLASSES}", flush=True)
-
-        # TRAIN AND VAL THE MODEL
-        # Initialize the model
-        model = ClassifLSTM(config.hidden_size, config.num_layers, SEQ_LEN, config.batch_size,
-                            NUM_ROTATIONS, NUM_CLASSES, bool(config.bidir), config.dropout)
+        model = SentenceClassifier()
         model.to(device)
         model.train()
-        # Define the loss function and the optimizer
+
+        optimizer = optim.Adam(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
         loss_function = nn.CrossEntropyLoss()
-        optimizer = optimizers[config.optimizer]
-        optimizer = optimizer(model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay)
+
         # log model stats
         wandb.watch(model, loss_function, log="all", log_freq=10)
 
@@ -117,47 +111,88 @@ def main(args):
             # Data shuffle
             I = np.arange(X_train.shape[0])
             rng.shuffle(I)
-            X_train = X_train[I,:,:]
+            X_train = X_train[I,:]
             Y_train = Y_train[I]
 
 
+# Define a function that trains the model for one epoch
+def train_epoch(model, train_X, train_Y, optimizer, loss_function, BATCH_SIZE, rng, clip_grad=False):
+    model.train()
+    epoch_loss, epoch_acc = [], 0
+    predY = []
+    batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
+    # rng.shuffle(batchinds)
+    for bii, bi in enumerate(batchinds):
+        ## setting batch data
+        idxStart = bi * BATCH_SIZE
+        inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :]
+        outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
+        inputData = Variable(torch.from_numpy(inputData).float()).to(device)
+        outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
+
+        # Forward pass
+        y_ = model(inputData)
+        predY = predY + np.argmax(y_.cpu().detach().numpy(), axis=1).tolist()
+        epoch_acc += sum(np.argmax(y_.cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
+
+        # Set gradients to 0, compute the loss, gradients, and update the parameters
+        optimizer.zero_grad()
+        loss = loss_function(y_, outputGT)
+        epoch_loss.append(loss.item())
+        loss.backward()
+        if clip_grad:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1)
+        optimizer.step()
+    return epoch_loss, epoch_acc/(len(batchinds)*BATCH_SIZE)
+
+
+def val_epoch(model, train_X, train_Y, loss_function, BATCH_SIZE, rng):
+    val_loss = 0
+    epoch_acc = 0
+    predY, GT = [], []
+    model.eval()
+    batchinds = np.arange(train_X.shape[0] // BATCH_SIZE)
+    rng.shuffle(batchinds)
+    with torch.no_grad():
+        for bii, bi in enumerate(batchinds):
+            ## setting batch data
+            idxStart = bi * BATCH_SIZE
+            inputData = train_X[idxStart:(idxStart + BATCH_SIZE), :]
+            outputGT = train_Y[idxStart:(idxStart + BATCH_SIZE)]
+            inputData = Variable(torch.from_numpy(inputData).float()).to(device)
+            outputGT = Variable(torch.from_numpy(outputGT-1)).to(device)
+            GT = GT + outputGT.cpu().numpy().tolist()
+
+            # Forward pass
+            y_ = model(inputData)
+            predY = predY + np.argmax(y_.cpu().detach().numpy(), axis=1).tolist()
+            epoch_acc += sum(np.argmax(y_.cpu().detach().numpy(), axis=1) == outputGT.cpu().detach().numpy())
+
+            # Compute loss
+            loss = loss_function(y_, outputGT)
+            val_loss += loss.item()
+    return val_loss/len(batchinds),  epoch_acc/(len(batchinds)*BATCH_SIZE), (GT, predY)
+
+
 # Data load helper
-def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
-    f = {"r6d": f"r6d_{key}.pkl",
-         "grouped_r6d": f"Truer6d_{key}.pkl",
-         "wordBert": f"{key}_wordBert_embeddings.pkl",
-         "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",}
-    X = load_binary(f"{data_dir}/{f[data_type]}")
-    Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl") if "grouped" in data_type else load_binary(f"{data_dir}/categs_{key}.pkl")
-    if data_type not in ["wordBert", "groupedWordBert"]:
-        X = make_equal_len(X, method="cutting+reflect", maxpad=192*(1 + 10*(data_type=="grouped_r6d")))  # make sequences have equal length, as initially they have different lengths
-        X, Y, _ = rmv_clips_nan(X, Y)  # remove those clips containing nan values
-    else:
-        X = X.numpy()
-        Y = np.array(Y)
-    print(f"data_type type(X), type(Y) {data_type, type(X), type(Y)}", flush=True)
-    return X, Y
+def load_data(data_dir="../../video_data_groupByClip", key="train"):
+    X = load_binary(f"{data_dir}/True{key}_wordBert_sentEmbeddings.pkl")
+    Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl")
+    return X, np.array(Y)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type=str, default="../../video_data" , help='Directory where results should be stored to and loaded from')
-    parser.add_argument('--categs_dir', type=str, default="../../video_data" , help='Directory where categories for each sequence can be loaded from')
-    parser.add_argument('--data_type', type=str, default="r6d" , help='Type of data to be used. Can be "r6d" or "wordBert".')
     parser.add_argument('--models_dir', type=str, default="models/" , help='Directory where checkpoints are stored.')
     parser.add_argument('--exp_name', type=str, default='experiment', help='Name for the experiment')
     parser.add_argument('--num_epochs', type=int, default=200, help="Number of training epochs")
     parser.add_argument('--batch_size', type=int, default=128, help="Batch size for training")
     parser.add_argument('--learning_rate', type=float, default=1e-4, help="Learning rate")
-    parser.add_argument('--hidden_size', type=int , default=1024, help="LSTM hidden size")
-    parser.add_argument('--num_layers', type=int , default=10, help="Number of LSTM layers")
-    parser.add_argument('--bidir', type=str, default="False", help="If 'True' is passed, bidirectional LSTM cells are chosen.")
     parser.add_argument('--weight_decay', type=float, default=1e-3, help="Weight decay rate for regularization.")
-    parser.add_argument('--dropout', type=float, default=0.1, help="Dropout at the end of each LSTM for regularization.")
     parser.add_argument('--optimizer', type=str, default="Adam", help="Available optimizers are Adam, AdamW and NAdam.")
     parser.add_argument('--log_step', type=int , default=2, help="Print logs every log_step epochs")
 
     args = parser.parse_args()
-    args.bidir = True if args.bidir in ["True", "T", "true"] else False
     print(args, flush=True)
     main(args)

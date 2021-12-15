@@ -44,6 +44,7 @@ def counter_to_relative(counter):
         relative[key] = counter[key] / total_count
     return relative
 
+
 def plot_barChart_categs(categs, key):
     count = OrderedDict(Counter(categs))
     df = pd.DataFrame.from_dict(count, orient='index')
