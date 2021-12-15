@@ -206,8 +206,8 @@ def _groupClips(clips, in_features, out_features):
 def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
 
-def _load(args, keep_confidence=True):
-    clip, dir, pipeline = args
+def _load(args):
+    clip, dir, pipeline, keep_confidence = args
     clip_path = os.path.join(dir, clip)
     in_kp, out_kp = load_utterance(clip_path, pipeline, keep_confidence=keep_confidence)
     return clip, in_kp, out_kp
