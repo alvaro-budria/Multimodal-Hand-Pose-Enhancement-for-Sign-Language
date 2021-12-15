@@ -206,15 +206,16 @@ def _groupClips(clips, in_features, out_features):
 def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
 
-def _load(args):
+def _load(args, keep_confidence=True):
     clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
-    in_kp, out_kp = load_utterance(clip_path, pipeline)
+    in_kp, out_kp = load_utterance(clip_path, pipeline, keep_confidence=keep_confidence)
     return clip, in_kp, out_kp
 
 def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subset allows to keep a certain % of the data only
 
     groupByClip = True #######
+    keep_confidence = False #######
 
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
@@ -246,8 +247,10 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
     # load keypoints for selected clips
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
+    keep_confidence
+    conf_ = [keep_confidence for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
-        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
+        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_, conf_))
     clips, in_features, out_features = map(list, zip(*result))
 
     embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERTsentence", groupByClip=groupByClip)  # obtain text embeddings for each clip
