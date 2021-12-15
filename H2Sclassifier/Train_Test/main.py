@@ -127,7 +127,7 @@ def load_data(data_dir="../../video_data", data_type="r6d", key="train"):
          "grouped_r6d": f"Truer6d_{key}.pkl",
          "wordBert": f"{key}_wordBert_embeddings.pkl",
          "groupedWordBert": f"True{key}_wordBert_embeddings.pkl",
-         "xy": f"True_confFalse_xy_{key}.pkl",}
+         "groupedxy": f"True_confFalse_xy_{key}.pkl",}
     X = load_binary(f"{data_dir}/{f[data_type]}")
     Y = load_binary(f"{data_dir}/Truecategs_{key}.pkl") if "grouped" in data_type else load_binary(f"{data_dir}/categs_{key}.pkl")
     if data_type not in ["wordBert", "groupedWordBert"]:
