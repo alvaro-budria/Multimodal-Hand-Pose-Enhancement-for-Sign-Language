@@ -108,8 +108,8 @@ def main(args):
             if epoch > 0 and (config.epochs_train_disc==0 or epoch % config.epochs_train_disc==0):
                 train_discriminator(args, generator, discriminator, gan_criterion, d_optimizer, train_X, train_Y, epoch, train_feats=train_feats)
             else:
-                train_generator(args, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_summary_writer, train_feats=train_feats)
-                currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=val_feats)
+                train_generator(args, generator, discriminator, reg_criterion, gan_criterion, g_optimizer, train_X, train_Y, epoch, train_feats=train_feats)
+                currBestLoss, prev_save_epoch = val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler, val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_feats=val_feats)
             # Data shuffle
             I = np.arange(len(train_X))
             rng.shuffle(I)
@@ -256,7 +256,7 @@ def train_discriminator(args, generator, discriminator, gan_criterion, d_optimiz
 
 ## training generator function
 def train_generator(args, generator, discriminator, reg_criterion, gan_criterion, g_optimizer,
-                    train_X, train_Y, epoch, train_summary_writer, clip_grad=False, train_feats=None):
+                    train_X, train_Y, epoch, clip_grad=False, train_feats=None):
     discriminator.eval()
     generator.train()
     batchinds = np.arange(train_X.shape[0] // args.batch_size)
@@ -310,7 +310,7 @@ def train_generator(args, generator, discriminator, reg_criterion, gan_criterion
 
 ## validating generator function
 def val_generator(args, generator, discriminator, reg_criterion, g_optimizer, d_optimizer, g_scheduler, d_scheduler,
-                  val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_summary_writer, val_feats=None):
+                  val_X, val_Y, currBestLoss, prev_save_epoch, epoch, val_feats=None):
     testLoss = 0
     generator.eval()
     discriminator.eval()
