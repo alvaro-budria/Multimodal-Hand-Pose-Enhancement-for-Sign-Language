@@ -404,11 +404,11 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		)
 
 	## create text embedding
-	def process_text(self, text_):
-		text_ = text_.unsqueeze(1)
-		B, TT, E = text_.shape
-		text_ = text_.view(-1, E)
-		feat = self.text_embeds_postprocess(text_)
+	def process_text(self, feats_):
+		feats_ = feats_.unsqueeze(1)
+		B, TT, E = feats_.shape
+		feats_ = feats_.view(-1, E)
+		feat = self.text_embeds_postprocess(feats_)
 		feat = feat.view(B, TT, self.embed_size)  # TT should == 1
 		feat = feat.permute(0, 2, 1).contiguous()
 		return feat
@@ -418,7 +418,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		return tensor.repeat_interleave(2, dim=2)[:,:,:shape[2]] 
 
 	## forward pass through generator
-	def forward(self, input_, audio_=None, percent_rand_=0.7, text_=None):
+	def forward(self, input_, audio_=None, percent_rand_=0.7, feats_=None):
 		B, T = input_.shape[0], input_.shape[2]
 		fourth_block = self.encoder(input_)
 
@@ -427,7 +427,7 @@ class regressor_fcn_bn_32_v2(nn.Module):
 		seventh_block = self.conv7(sixth_block)
 
 		if self.require_text:
-			feat = self.process_text(text_)
+			feat = self.process_text(feats_)
 			seventh_block = torch.cat((seventh_block, feat), dim=2)
 
 		sixth_block = self.upsample(seventh_block, sixth_block.shape) + sixth_block
@@ -517,11 +517,11 @@ class regressor_fcn_bn_32_v4(nn.Module):
 		)
 
 	## create text embedding
-	def process_text(self, text_, T):
-		text_ = text_.unsqueeze(1).repeat(1, T, 1)
-		B, _, E = text_.shape
-		text_ = text_.view(-1, E)
-		feat = self.text_embeds_postprocess(text_)
+	def process_text(self, feats_, T):
+		feats_ = feats_.unsqueeze(1).repeat(1, T, 1)
+		B, _, E = feats_.shape
+		feats_ = feats_.view(-1, E)
+		feat = self.text_embeds_postprocess(feats_)
 		feat = feat.view(B, T, -1)
 		feat = feat.permute(0, 2, 1).contiguous()
 		return feat
