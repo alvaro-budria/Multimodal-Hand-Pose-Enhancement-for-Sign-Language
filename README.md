@@ -11,18 +11,18 @@ The code used for preprocessing data, training models and evaluating them can al
 
 ## Article
 
-![](https://github.com/alvaro-budria/Multimodal-Hand-Pose-Enhancement-for-Sign-Language/blob/main/sample_images/article1.png?raw=true)
-
 An article presenting the work can be downloaded from this repository.
 
-![](https://github.com/alvaro-budria/Multimodal-Hand-Pose-Enhancement-for-Sign-Language/blob/main/sample_images/article2.png?raw=true)
+<img src=sample_images/article1.png width="450" />
+
+<img src=sample_images/article2.png width="450" />
 
 
 
 ## Presentation Slides
 
-![](https://github.com/alvaro-budria/Multimodal-Hand-Pose-Enhancement-for-Sign-Language/blob/main/sample_images/slides1.png?raw=true)
+You can also check out a visual summary of the article in the form of slides.
 
-A summary of the article in the form of slides can also be obtained here.
+<img src=sample_images/slides1.png width="450" />
 
-![](https://github.com/alvaro-budria/Multimodal-Hand-Pose-Enhancement-for-Sign-Language/blob/main/sample_images/slides2.png?raw=true)
+<img src=sample_images/slides2.png width="450" />
