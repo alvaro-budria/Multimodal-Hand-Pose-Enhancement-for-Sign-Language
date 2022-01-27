@@ -1,4 +1,4 @@
-# B2H-H2S
+# Multimodal 3D Hand Pose Enhancement for Sign Language
 
-The aim of this project is to generate convincing body hand poses for sign language production, based on text.
-To do so, I will try to combine the recently-published [How2Sign dataset](https://how2sign.github.io/), with the hand-pose generating model called [Body2Hands](http://people.eecs.berkeley.edu/~evonne_ng/projects/body2hands/).
+The application of recent deep learning breakthroughs to the domain of sign language has yielded very promising results. However, sign language processing systems depend on large amounts of labeled high-quality data to work properly. Current hand pose estimation methods are often unreliable and do not always produce estimations with enough quality. To mitigate this issue, we explore the applicability of the novel Body2Hands method for the obtainment of high-quality hand pose estimations.
+
