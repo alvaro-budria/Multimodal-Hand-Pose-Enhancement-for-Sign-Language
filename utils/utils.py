@@ -117,6 +117,7 @@ def _lift_2d_to_3d(inputSequence_2D):
 
 
 # input is a list of arrays, one array per clip
+# code from https://github.com/gopeith/SignLanguageProcessing
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
     feats_3d = []
     if os.path.exists(filename):
