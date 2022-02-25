@@ -117,7 +117,6 @@ def _lift_2d_to_3d(inputSequence_2D):
 
 
 # input is a list of arrays, one array per clip
-# code from https://github.com/gopeith/SignLanguageProcessing
 def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
     feats_3d = []
     if os.path.exists(filename):
@@ -139,18 +138,17 @@ def lift_2d_to_3d(feats, filename="feats_3d", nPartitions=40):
 
 
 # given a list of the form [X1, Y1, conf1, X2, Y2, conf2 ... Xn, Yn, conf_n]
-# returns [X1, Y1, W1 ... Xn, Yn, Wn] if keep_confidence=True else
-#         [X1, Y1, ... Xn, Yn] or [X1, Y1, ... Xn, Yn]
-def retrieve_coords(keypoints, keep_confidence=False):
+# returns [X1, Y1, W1 ... Xn, Yn, Wn]
+def retrieve_coords(keypoints):
     coords = []
     for i in range(0, len(keypoints), 3):
-        coords.append(keypoints[i]); coords.append(keypoints[i+1])
-        if keep_confidence:
-            coords.append(keypoints[i+2])
+        coords.append(keypoints[i])
+        coords.append(keypoints[i+1])
+        coords.append(keypoints[i+2])
     return coords
 
 
-def load_utterance(clip_path, pipeline, keep_confidence=True):
+def load_utterance(clip_path, pipeline):
     in_kp, out_kp = np.array([]), np.array([])
     for frame in sorted(os.listdir(clip_path))[0:]:  # for each frame, there is an associated .json file
         if os.path.isfile(os.path.join(clip_path, frame)):
@@ -158,12 +156,12 @@ def load_utterance(clip_path, pipeline, keep_confidence=True):
             data = json.load(f)
             f.close()
             if in_kp.shape != (0,):
-                in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)], axis=0)
+                in_kp = np.append(in_kp, [retrieve_coords(data["people"][0]["pose_keypoints_2d"])], axis=0)
             else:
-                in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"], keep_confidence=keep_confidence)])
+                in_kp = np.array([retrieve_coords(data["people"][0]["pose_keypoints_2d"])])
 
-            temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"], keep_confidence=keep_confidence),
-                    retrieve_coords(data["people"][0]["hand_left_keypoints_2d"], keep_confidence=keep_confidence)]
+            temp = [retrieve_coords(data["people"][0]["hand_right_keypoints_2d"]),
+                    retrieve_coords(data["people"][0]["hand_left_keypoints_2d"])]
             temp = [elem for singleList in temp for elem in singleList]
             if out_kp.shape != (0,):
                 out_kp = np.append(out_kp, [temp], axis=0)
@@ -208,15 +206,14 @@ def _join_ids(dir_list, clip_ids_text):
     return list(set(dir_list).intersection(clip_ids_text))
 
 def _load(args):
-    clip, dir, pipeline, keep_confidence = args
+    clip, dir, pipeline = args
     clip_path = os.path.join(dir, clip)
-    in_kp, out_kp = load_utterance(clip_path, pipeline, keep_confidence=keep_confidence)
+    in_kp, out_kp = load_utterance(clip_path, pipeline)
     return clip, in_kp, out_kp
 
 def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subset allows to keep a certain % of the data only
 
     groupByClip = True #######
-    keep_confidence = False #######
 
     dir_list = os.listdir(dir)
     print(f"{key} len(dir_list): {len(dir_list)}", flush=True)
@@ -248,10 +245,8 @@ def _load_H2S_dataset(dir, pipeline, key, groupByClip=False, subset=1):  # subse
     # load keypoints for selected clips
     dir_ = [dir for _ in range(idx_max)]
     pipe_ = [pipeline for _ in range(idx_max)]
-    keep_confidence
-    conf_ = [keep_confidence for _ in range(idx_max)]
     with ProcessPoolExecutor() as executor:
-        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_, conf_))
+        result = executor.map(_load, zip(ids[0:idx_max], dir_, pipe_))
     clips, in_features, out_features = map(list, zip(*result))
 
     embeds = proc_text.obtain_embeddings(key, ids[0:idx_max], method="BERTsentence", groupByClip=groupByClip)  # obtain text embeddings for each clip
@@ -434,7 +429,7 @@ def save_results(input, output, pipeline, base_path, data_dir, tag="", infer_set
 
 def process_H2S_dataset(dir, data_dir):
     groupByKey = True
-    keep_confidence = False
+    keep_confidence = True
     if not groupByKey:
         groupByKey = ""
 
@@ -445,23 +440,27 @@ def process_H2S_dataset(dir, data_dir):
     (in_test, out_test, embeds_test, categs_test) \
         = load_H2S_dataset(dir, subset=1)
     print("Loaded raw data from disk", flush=True)
+    print(f'in_train[0].shape {in_train[0].shape}', flush=True)
     neck_train, neck_val, neck_test = select_keypoints(in_train, NECK, keep_confidence=keep_confidence), \
                                       select_keypoints(in_val, NECK, keep_confidence=keep_confidence), \
                                       select_keypoints(in_test, NECK, keep_confidence=keep_confidence)
+    print(f'neck_train[0].shape {neck_train[0].shape}', flush=True)
     print("Selected NECK keypoints", flush=True)
     arms_train, arms_val, arms_test = select_keypoints(in_train, ARMS, keep_confidence=keep_confidence), \
                                       select_keypoints(in_val, ARMS, keep_confidence=keep_confidence), \
                                       select_keypoints(in_test, ARMS, keep_confidence=keep_confidence)
+    print(f'arms_train[0].shape {arms_train[0].shape}', flush=True)                                      
     print("Selected ARMS keypoints", flush=True)
     hands_train, hands_val, hands_test = select_keypoints(out_train, HANDS, keep_confidence=keep_confidence), \
                                          select_keypoints(out_val, HANDS, keep_confidence=keep_confidence), \
                                          select_keypoints(out_test, HANDS, keep_confidence=keep_confidence)
+    print(f'hands_train[0].shape {hands_train[0].shape}', flush=True)                                         
     print("Selected HANDS keypoints", flush=True)
 
     feats_train = hconcat_feats(neck_train, arms_train, hands_train)
     feats_val = hconcat_feats(neck_val, arms_val, hands_val)
     feats_test = hconcat_feats(neck_test, arms_test, hands_test)
-
+    print(f'feats_train[0].shape {feats_train[0].shape}', flush=True)
     save_binary(feats_train, f"{data_dir}/{groupByKey}_conf{keep_confidence}_xy_train.pkl", append=False)
     save_binary(feats_test, f"{data_dir}/{groupByKey}_conf{keep_confidence}_xy_test.pkl", append=False)
     save_binary(feats_val, f"{data_dir}/{groupByKey}_conf{keep_confidence}_xy_val.pkl", append=False)
