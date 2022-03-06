@@ -149,7 +149,7 @@ def xyz_to_aa(xyz, structure):
             v = xyz_clip[:,id_p_E*3:id_p_E*3+3] - xyz_clip[:,id_p_J*3:id_p_J*3+3]
             th = np.arccos( np.einsum('ij,ij->i', u, v)/(np.linalg.norm(u, axis=1)*np.linalg.norm(v, axis=1) + 1e-6) )
             a = np.cross(u, v)
-            a = a / np.linalg.norm(a, axis=1)[:,np.newaxis]  # rotation axis
+            a = a / (np.linalg.norm(a, axis=1)[:,np.newaxis] + 1e-6)  # rotation axis
             aa_clip = np.hstack(( aa_clip, np.multiply(a, th[:, np.newaxis]) )) if aa_clip.shape[0]!=0 else np.multiply(a, th[:, np.newaxis])
         aa.append(aa_clip)
     return aa
