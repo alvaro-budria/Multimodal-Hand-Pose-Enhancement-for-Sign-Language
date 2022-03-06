@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 def array_to_list(input):
-    if type(input) != type(list()):  # convert 3D array to list of 2D arrays
+    if type(input) == type(np.array([])) and len(input.shape) == 3:  # convert 3D array to list of 2D arrays
         input = list(input)
     return input
 
